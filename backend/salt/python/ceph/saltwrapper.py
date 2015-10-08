@@ -44,10 +44,10 @@ _monmaptool = utils.CommandPath("monmaptool",
 def enableLogger(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
-        print 'args=%s, kwargs=%s' % (args, kwargs)
+        #print 'args=%s, kwargs=%s' % (args, kwargs)
         log.info('args=%s, kwargs=%s' % (args, kwargs))
         rv = func(*args, **kwargs)
-        print 'rv=%s' % rv
+        #print 'rv=%s' % rv
         log.info('rv=%s' % rv)
         return rv
     return wrapper
