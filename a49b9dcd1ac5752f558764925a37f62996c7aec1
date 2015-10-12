@@ -16,6 +16,24 @@
       "revId": "a49b9dcd1ac5752f558764925a37f62996c7aec1",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_1f2c44ab",
+        "filename": "backend/salt/salt.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1006046
+      },
+      "writtenOn": "2015-10-12T08:55:47Z",
+      "side": 1,
+      "message": "1. Module name is ceph already.  In ceph module, saltwrapper is a module which provides salt bindings.  If calamari has python bindings, there will be ceph.calamari.\n\n2. skyring.provider module tree has to be managed by skyring core package and ceph package depends on that.  I don\u0027t know what you mean by moving sources.",
+      "parentUuid": "baada198_7f3b80eb",
+      "revId": "a49b9dcd1ac5752f558764925a37f62996c7aec1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
