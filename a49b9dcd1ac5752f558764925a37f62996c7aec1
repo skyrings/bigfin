@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baada198_7f3b80eb",
+        "filename": "backend/salt/salt.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-10-12T08:48:10Z",
+      "side": 1,
+      "message": "Why not make the module name as ceph only as the dir structure is already like that under python. Otherwise while build we need to move around the source file and then create the .egg file",
+      "revId": "a49b9dcd1ac5752f558764925a37f62996c7aec1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
