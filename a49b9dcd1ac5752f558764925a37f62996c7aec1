@@ -52,6 +52,24 @@
       "revId": "a49b9dcd1ac5752f558764925a37f62996c7aec1",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_02906b94",
+        "filename": "backend/salt/salt.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1006046
+      },
+      "writtenOn": "2015-10-12T10:47:40Z",
+      "side": 1,
+      "message": "You don\u0027t need to manual do any steps.  A distribution package supposes to do that at the time of installation.  I couldn\u0027t find the way to install as submodule.\n\nHowever I have modified this patch to work with this path, but distribution package should take care what to package.",
+      "parentUuid": "baada198_c212f357",
+      "revId": "a49b9dcd1ac5752f558764925a37f62996c7aec1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
