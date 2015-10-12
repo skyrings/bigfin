@@ -34,6 +34,24 @@
       "revId": "a49b9dcd1ac5752f558764925a37f62996c7aec1",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_c212f357",
+        "filename": "backend/salt/salt.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-10-12T09:11:24Z",
+      "side": 1,
+      "message": "All I did was ran \"setup.py install\" and whatever egg file I get, while import it says that \"skyring.provider.ceph.saltwrapper is not available\"\n\nAll I mean is why to do manual steps for moving this saltwrapper.py in some dir and create __init__.py etc??\n\nCant it be taken care autimatically as part if make or setup only?",
+      "parentUuid": "baada198_1f2c44ab",
+      "revId": "a49b9dcd1ac5752f558764925a37f62996c7aec1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
