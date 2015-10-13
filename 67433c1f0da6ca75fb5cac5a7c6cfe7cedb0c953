@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baada198_5817b2a3",
+        "filename": "backend/salt/python/ceph/saltwrapper.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1006046
+      },
+      "writtenOn": "2015-10-13T09:39:50Z",
+      "side": 1,
+      "message": "you supposes to give -1 for https://review.gerrithub.io/249375 to fix this than doing it here.",
+      "range": {
+        "startLine": 50,
+        "startChar": 14,
+        "endLine": 50,
+        "endChar": 15
+      },
+      "revId": "67433c1f0da6ca75fb5cac5a7c6cfe7cedb0c953",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_f81fa6b5",
+        "filename": "main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1006046
+      },
+      "writtenOn": "2015-10-13T09:39:50Z",
+      "side": 1,
+      "message": "why is it declared twice? (see also provider.go)",
+      "range": {
+        "startLine": 27,
+        "startChar": 18,
+        "endLine": 27,
+        "endChar": 24
+      },
+      "revId": "67433c1f0da6ca75fb5cac5a7c6cfe7cedb0c953",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_d8690227",
+        "filename": "provider/models.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1006046
+      },
+      "writtenOn": "2015-10-13T09:39:50Z",
+      "side": 1,
+      "message": "1. why do you need this abstraction?\n2. You are in ceph provider.  Why do you call CephProvider here?",
+      "range": {
+        "startLine": 16,
+        "startChar": 5,
+        "endLine": 16,
+        "endChar": 17
+      },
+      "revId": "67433c1f0da6ca75fb5cac5a7c6cfe7cedb0c953",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_18745afc",
+        "filename": "utils/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1006046
+      },
+      "writtenOn": "2015-10-13T09:39:50Z",
+      "side": 1,
+      "message": "If these functions are generic for all providers, it should be a package in skyring core.",
+      "range": {
+        "startLine": 35,
+        "startChar": 8,
+        "endLine": 35,
+        "endChar": 15
+      },
+      "revId": "67433c1f0da6ca75fb5cac5a7c6cfe7cedb0c953",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
