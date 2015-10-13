@@ -34,6 +34,23 @@
       "revId": "42ab57254918309e8959ba78494123563f96b9df",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_d88582ae",
+        "filename": "backend/salt/python/ceph/saltwrapper.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-10-13T10:00:29Z",
+      "side": 1,
+      "message": "print statements mix with provider stdout and providers are not able to write back the response properly. We should not use print statements.",
+      "revId": "42ab57254918309e8959ba78494123563f96b9df",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
