@@ -202,6 +202,24 @@
     },
     {
       "key": {
+        "uuid": "baada198_b3e2af01",
+        "filename": "provider/cluster.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-13T12:50:00Z",
+      "side": 1,
+      "message": "Are you not using the the RPCOUT struct here?. If not we should use that and marshal to the byte array and send it across",
+      "parentUuid": "baada198_533793b0",
+      "revId": "67433c1f0da6ca75fb5cac5a7c6cfe7cedb0c953",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baada198_d8690227",
         "filename": "provider/models.go",
         "patchSetId": 4
