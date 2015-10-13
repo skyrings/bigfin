@@ -84,6 +84,52 @@
     },
     {
       "key": {
+        "uuid": "baada198_b3aaafd2",
+        "filename": "provider/cluster.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1006046
+      },
+      "writtenOn": "2015-10-13T11:38:36Z",
+      "side": 1,
+      "message": "If this is a rpc funcction for any provider, skyring core should define it as interface and ceph provider implements it.",
+      "range": {
+        "startLine": 40,
+        "startChar": 23,
+        "endLine": 40,
+        "endChar": 36
+      },
+      "revId": "67433c1f0da6ca75fb5cac5a7c6cfe7cedb0c953",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_f3ab47d4",
+        "filename": "provider/cluster.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1006046
+      },
+      "writtenOn": "2015-10-13T11:38:36Z",
+      "side": 1,
+      "message": "why is the response as byte array?  The interface should define what type of return value the rpc function supposes to return.",
+      "range": {
+        "startLine": 133,
+        "startChar": 16,
+        "endLine": 133,
+        "endChar": 29
+      },
+      "revId": "67433c1f0da6ca75fb5cac5a7c6cfe7cedb0c953",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baada198_d8690227",
         "filename": "provider/models.go",
         "patchSetId": 4
