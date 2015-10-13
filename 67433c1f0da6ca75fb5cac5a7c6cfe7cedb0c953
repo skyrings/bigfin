@@ -25,6 +25,24 @@
     },
     {
       "key": {
+        "uuid": "baada198_b888cec7",
+        "filename": "backend/salt/python/ceph/saltwrapper.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-10-13T10:07:27Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baada198_5817b2a3",
+      "revId": "67433c1f0da6ca75fb5cac5a7c6cfe7cedb0c953",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baada198_f81fa6b5",
         "filename": "main.go",
         "patchSetId": 4
@@ -42,6 +60,24 @@
         "endLine": 27,
         "endChar": 24
       },
+      "revId": "67433c1f0da6ca75fb5cac5a7c6cfe7cedb0c953",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_58c172e3",
+        "filename": "main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-10-13T10:07:27Z",
+      "side": 1,
+      "message": "Duplicate removed",
+      "parentUuid": "baada198_f81fa6b5",
       "revId": "67433c1f0da6ca75fb5cac5a7c6cfe7cedb0c953",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -71,6 +107,24 @@
     },
     {
       "key": {
+        "uuid": "baada198_1890daeb",
+        "filename": "provider/models.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-10-13T10:07:27Z",
+      "side": 1,
+      "message": "This source not required. In main.go we need a struct to define the RPC method.",
+      "parentUuid": "baada198_d8690227",
+      "revId": "67433c1f0da6ca75fb5cac5a7c6cfe7cedb0c953",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baada198_18745afc",
         "filename": "utils/utils.go",
         "patchSetId": 4
@@ -88,6 +142,24 @@
         "endLine": 35,
         "endChar": 15
       },
+      "revId": "67433c1f0da6ca75fb5cac5a7c6cfe7cedb0c953",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_38bcbe6c",
+        "filename": "utils/utils.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-10-13T10:07:27Z",
+      "side": 1,
+      "message": "Done. Will add two generic methods\n1. for writing a sync response without requestid populated\n2. for writing async response with requestid populated",
+      "parentUuid": "baada198_18745afc",
       "revId": "67433c1f0da6ca75fb5cac5a7c6cfe7cedb0c953",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
