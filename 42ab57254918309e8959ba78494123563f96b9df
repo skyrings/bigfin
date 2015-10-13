@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baada198_f84886ce",
+        "filename": "backend/salt/python/ceph/__init__.py",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1006046
+      },
+      "writtenOn": "2015-10-13T09:26:42Z",
+      "side": 1,
+      "message": "Why is the source tree moved back from skyring/provider/?",
+      "revId": "42ab57254918309e8959ba78494123563f96b9df",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
