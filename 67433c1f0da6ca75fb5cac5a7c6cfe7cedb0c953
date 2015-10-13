@@ -297,6 +297,24 @@
     },
     {
       "key": {
+        "uuid": "baada198_737e57e6",
+        "filename": "provider/models.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-10-13T13:29:25Z",
+      "side": 1,
+      "message": "Better to remove from main.go and keep this as later we can add more model on requirement basis.",
+      "parentUuid": "baada198_1890daeb",
+      "revId": "67433c1f0da6ca75fb5cac5a7c6cfe7cedb0c953",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baada198_18745afc",
         "filename": "utils/utils.go",
         "patchSetId": 4
