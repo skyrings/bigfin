@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baada198_81bba071",
+        "filename": "backend/backend.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-13T06:20:13Z",
+      "side": 1,
+      "message": "We need to have methods to delete mons/osds/pools",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 14
+      },
+      "revId": "3d3736276bee080cb641c3cd1010eb3d1d55ab6b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
