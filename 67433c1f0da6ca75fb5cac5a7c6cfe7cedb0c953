@@ -107,6 +107,24 @@
     },
     {
       "key": {
+        "uuid": "baada198_73873762",
+        "filename": "provider/cluster.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-10-13T11:44:21Z",
+      "side": 1,
+      "message": "Thats valid one. Will do that.",
+      "parentUuid": "baada198_b3aaafd2",
+      "revId": "67433c1f0da6ca75fb5cac5a7c6cfe7cedb0c953",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baada198_f3ab47d4",
         "filename": "provider/cluster.go",
         "patchSetId": 4
@@ -124,6 +142,24 @@
         "endLine": 133,
         "endChar": 29
       },
+      "revId": "67433c1f0da6ca75fb5cac5a7c6cfe7cedb0c953",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_b381cf4c",
+        "filename": "provider/cluster.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-10-13T11:44:21Z",
+      "side": 1,
+      "message": "Response is always supposed to be a marshalled json in the format \n\n{\n  \"status\": {\"statuscode\": \u003chttp status code\u003e, \"statusmessage\": \"\u003cmsg\u003e\"},\n  \"data\": {\"requestid\": \"\u003cid for async calls\u003e\", \"result\": []byte}\n}\n\nAnyway above mentioned interface, would explain the requirements clearly.",
+      "parentUuid": "baada198_f3ab47d4",
       "revId": "67433c1f0da6ca75fb5cac5a7c6cfe7cedb0c953",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
