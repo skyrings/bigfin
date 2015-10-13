@@ -166,6 +166,24 @@
     },
     {
       "key": {
+        "uuid": "baada198_73ee5724",
+        "filename": "provider/cluster.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 133,
+      "author": {
+        "id": 1006046
+      },
+      "writtenOn": "2015-10-13T11:53:32Z",
+      "side": 1,
+      "message": "Why can\u0027t it be statically typed?  That will catch runtime errors at compile time itself.",
+      "parentUuid": "baada198_b381cf4c",
+      "revId": "67433c1f0da6ca75fb5cac5a7c6cfe7cedb0c953",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baada198_d8690227",
         "filename": "provider/models.go",
         "patchSetId": 4
