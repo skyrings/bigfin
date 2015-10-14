@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "baada198_aa20719c",
+        "filename": "backend/salt/python/skyring/provider/ceph/__init__.py",
+        "patchSetId": 10
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-10-14T09:53:59Z",
+      "side": 1,
+      "message": "All other __init__.py dont have license/copyright notice :)",
+      "revId": "af8104f221c3b3ab33af2ea307714d79bd169541",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baada198_a9d6c2c3",
         "filename": "backend/salt/python/skyring/provider/ceph/saltwrapper.py",
         "patchSetId": 10
@@ -13,6 +30,40 @@
       "writtenOn": "2015-10-14T03:52:13Z",
       "side": 1,
       "message": "Where the logging is done? Is there any log files created?",
+      "revId": "af8104f221c3b3ab33af2ea307714d79bd169541",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_4a3195eb",
+        "filename": "backend/salt/python/skyring/provider/ceph/saltwrapper.py",
+        "patchSetId": 10
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-10-14T09:53:59Z",
+      "side": 1,
+      "message": "I feel salt specific methods could be useful for other salt based storage providers as well. Can we try re-using these?",
+      "revId": "af8104f221c3b3ab33af2ea307714d79bd169541",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_aa579101",
+        "filename": "backend/salt/sls/add_ceph_mon.sls",
+        "patchSetId": 10
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-10-14T09:53:59Z",
+      "side": 1,
+      "message": "Do we need all these files to be root owned only?",
       "revId": "af8104f221c3b3ab33af2ea307714d79bd169541",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
