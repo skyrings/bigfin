@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baada198_a9d6c2c3",
+        "filename": "backend/salt/python/skyring/provider/ceph/saltwrapper.py",
+        "patchSetId": 10
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-14T03:52:13Z",
+      "side": 1,
+      "message": "Where the logging is done? Is there any log files created?",
+      "revId": "af8104f221c3b3ab33af2ea307714d79bd169541",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
