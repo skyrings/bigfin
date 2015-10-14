@@ -1,0 +1,182 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baada198_699aea15",
+        "filename": "Makefile",
+        "patchSetId": 5
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-14T05:33:38Z",
+      "side": 1,
+      "message": "Need to add fmt, godeps also here",
+      "range": {
+        "startLine": 16,
+        "startChar": 2,
+        "endLine": 16,
+        "endChar": 10
+      },
+      "revId": "c99d492f8a52c4d3ff02f4239fe7bb9a89877acf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_896d7e07",
+        "filename": "provider/cluster.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-14T05:33:38Z",
+      "side": 1,
+      "message": "Spelling",
+      "range": {
+        "startLine": 43,
+        "startChar": 54,
+        "endLine": 43,
+        "endChar": 61
+      },
+      "revId": "c99d492f8a52c4d3ff02f4239fe7bb9a89877acf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_c97696d8",
+        "filename": "provider/cluster.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-14T05:33:38Z",
+      "side": 1,
+      "message": "I think we shouldn\u0027t fall into default in this case. Suppose you passed three nodes and two of them has the IPs fall into the network specified and one does not have. so if you create a cluster with default IP, will it be able to communicate with other nodes properly?\nI think we need to fail the node which doesn\u0027t meet the criteria",
+      "range": {
+        "startLine": 65,
+        "startChar": 2,
+        "endLine": 69,
+        "endChar": 30
+      },
+      "revId": "c99d492f8a52c4d3ff02f4239fe7bb9a89877acf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_09816e8f",
+        "filename": "provider/cluster.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-14T05:33:38Z",
+      "side": 1,
+      "message": "Using a bool will be much better here",
+      "range": {
+        "startLine": 79,
+        "startChar": 29,
+        "endLine": 79,
+        "endChar": 30
+      },
+      "revId": "c99d492f8a52c4d3ff02f4239fe7bb9a89877acf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_a949628d",
+        "filename": "provider/cluster.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-14T05:33:38Z",
+      "side": 1,
+      "message": "Cluster status should be determined based on different parameters.\n\n1. Need to check whether min number of nodes are met, if not set the status accordingly - \n\nSTATUS_INACTIVE \u003d 1\nSTATUS_ACTIVE_NOT_AVAILABLE \u003d 2\nSTATUS_ACTIVE_AND_AVAILABLE \u003d 3\nSTATUS_CREATING \u003d 4\nSTATUS_FAILED \u003d 5\n\nCan discuss\n\n2. Should be based on the actual status of the cluster created\n\nThis is applicable to node status as well. See PRD MVP-018 for node status info\n\nI am fine to do this as a separate patch as well",
+      "range": {
+        "startLine": 100,
+        "startChar": 25,
+        "endLine": 100,
+        "endChar": 42
+      },
+      "revId": "c99d492f8a52c4d3ff02f4239fe7bb9a89877acf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_494a8684",
+        "filename": "provider/cluster.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 120,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-14T05:33:38Z",
+      "side": 1,
+      "message": "Are we storing the node.options to DB? Its required if you filter out mons Vs osds",
+      "range": {
+        "startLine": 113,
+        "startChar": 4,
+        "endLine": 120,
+        "endChar": 14
+      },
+      "revId": "c99d492f8a52c4d3ff02f4239fe7bb9a89877acf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_a9a40258",
+        "filename": "provider/models.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-14T05:33:38Z",
+      "side": 1,
+      "message": "Name \u0027models\u0027 bit confusing. I think we need to have separate \u0027models\u0027 package to define provider specific models if any. I think this file meant to define any provider data structures which are common. Probably you can rename as app.go or something else which is meaningful",
+      "revId": "c99d492f8a52c4d3ff02f4239fe7bb9a89877acf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_c98856c9",
+        "filename": "utils/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-14T05:33:38Z",
+      "side": 1,
+      "message": "I don\u0027t think this is right. I expect the jobId is generated and returned by job framework. We are not supposed generate by ourself here. One of the input to this method is jobId",
+      "range": {
+        "startLine": 42,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 20
+      },
+      "revId": "c99d492f8a52c4d3ff02f4239fe7bb9a89877acf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
