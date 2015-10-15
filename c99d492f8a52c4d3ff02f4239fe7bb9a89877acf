@@ -125,6 +125,24 @@
     },
     {
       "key": {
+        "uuid": "9ab29df4_9701243c",
+        "filename": "provider/cluster.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 69,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-15T10:51:05Z",
+      "side": 1,
+      "message": "Please open a card/bug to track",
+      "parentUuid": "baada198_a417c750",
+      "revId": "c99d492f8a52c4d3ff02f4239fe7bb9a89877acf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baada198_09816e8f",
         "filename": "provider/cluster.go",
         "patchSetId": 5
@@ -201,6 +219,24 @@
       "side": 1,
       "message": "Lets do this as a new patch",
       "parentUuid": "baada198_a949628d",
+      "revId": "c99d492f8a52c4d3ff02f4239fe7bb9a89877acf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ab29df4_f7e1809b",
+        "filename": "provider/cluster.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-15T10:51:05Z",
+      "side": 1,
+      "message": "can you add a card to trello to track?",
+      "parentUuid": "baada198_aa09512e",
       "revId": "c99d492f8a52c4d3ff02f4239fe7bb9a89877acf",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
