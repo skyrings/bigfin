@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "baada198_d32b9c2e",
+        "filename": "backend/salt/python/skyring/provider/ceph/__init__.py",
+        "patchSetId": 10
+      },
+      "lineNbr": 2,
+      "author": {
+        "id": 1006046
+      },
+      "writtenOn": "2015-10-15T03:30:51Z",
+      "side": 1,
+      "message": "As those files won\u0027t be shipped and always empty.  I don\u0027t think its required.",
+      "parentUuid": "baada198_aa20719c",
+      "revId": "af8104f221c3b3ab33af2ea307714d79bd169541",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baada198_a9d6c2c3",
         "filename": "backend/salt/python/skyring/provider/ceph/saltwrapper.py",
         "patchSetId": 10
@@ -30,6 +48,24 @@
       "writtenOn": "2015-10-14T03:52:13Z",
       "side": 1,
       "message": "Where the logging is done? Is there any log files created?",
+      "revId": "af8104f221c3b3ab33af2ea307714d79bd169541",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_331a1818",
+        "filename": "backend/salt/python/skyring/provider/ceph/saltwrapper.py",
+        "patchSetId": 10
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1006046
+      },
+      "writtenOn": "2015-10-15T03:30:51Z",
+      "side": 1,
+      "message": "The log has to be initialized prior according to the need.  initialization would involve how to store the logs",
+      "parentUuid": "baada198_a9d6c2c3",
       "revId": "af8104f221c3b3ab33af2ea307714d79bd169541",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -53,6 +89,24 @@
     },
     {
       "key": {
+        "uuid": "baada198_93d84455",
+        "filename": "backend/salt/python/skyring/provider/ceph/saltwrapper.py",
+        "patchSetId": 10
+      },
+      "lineNbr": 83,
+      "author": {
+        "id": 1006046
+      },
+      "writtenOn": "2015-10-15T03:30:51Z",
+      "side": 1,
+      "message": "May be.  When needed, these functions can be in separate module available at skyring core level.\n\nSo far I don\u0027t see the requirement.",
+      "parentUuid": "baada198_4a3195eb",
+      "revId": "af8104f221c3b3ab33af2ea307714d79bd169541",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baada198_aa579101",
         "filename": "backend/salt/sls/add_ceph_mon.sls",
         "patchSetId": 10
@@ -64,6 +118,24 @@
       "writtenOn": "2015-10-14T09:53:59Z",
       "side": 1,
       "message": "Do we need all these files to be root owned only?",
+      "revId": "af8104f221c3b3ab33af2ea307714d79bd169541",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baada198_131d1410",
+        "filename": "backend/salt/sls/add_ceph_mon.sls",
+        "patchSetId": 10
+      },
+      "lineNbr": 26,
+      "author": {
+        "id": 1006046
+      },
+      "writtenOn": "2015-10-15T03:30:51Z",
+      "side": 1,
+      "message": "No if you are talking about salt:// files",
+      "parentUuid": "baada198_aa579101",
       "revId": "af8104f221c3b3ab33af2ea307714d79bd169541",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
