@@ -19,6 +19,7 @@ import (
 	"github.com/skyrings/bigfin/backend"
 	"github.com/skyrings/skyring/tools/gopy"
 	"github.com/skyrings/skyring/tools/uuid"
+	"log"
 )
 
 var funcNames = [...]string{
@@ -56,6 +57,8 @@ func (s Salt) AddMon(clusterName string, mons []backend.Mon) (status bool, err e
 
 	if pyobj, err = pyFuncs["AddMon"].Call(clusterName, mons); err == nil {
 		status = gopy.Bool(pyobj)
+		log.Println(status)
+		log.Println(err)
 	}
 
 	return
@@ -76,6 +79,8 @@ func (s Salt) AddOSD(clusterName string, osd backend.OSD) (status bool, err erro
 
 	if pyobj, err = pyFuncs["AddOSD"].Call(clusterName, osd); err == nil {
 		status = gopy.Bool(pyobj)
+		log.Println(status)
+		log.Println(err)
 	}
 
 	return
