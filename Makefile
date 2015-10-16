@@ -13,7 +13,7 @@ getdeps: checkdeps getversion
 	@go get github.com/golang/lint/golint
 	@go get -t ./...
 
-verifiers: vet lint fmt getdeps
+verifiers: vet lint
 
 vet:
 	@echo "Doing $@"
