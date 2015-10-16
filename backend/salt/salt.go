@@ -19,6 +19,7 @@ import (
 	"github.com/skyrings/bigfin/backend"
 	"github.com/skyrings/skyring/tools/gopy"
 	"github.com/skyrings/skyring/tools/uuid"
+	"log"
 )
 
 var funcNames = [...]string{
@@ -46,6 +47,8 @@ func (s Salt) CreateCluster(clusterName string, fsid uuid.UUID, mons []backend.M
 	var pyobj *python.PyObject
 	if pyobj, err = pyFuncs["CreateCluster"].Call(clusterName, fsid.String(), mons); err == nil {
 		status = gopy.Bool(pyobj)
+		log.Println(status)
+		log.Println(err)
 	}
 
 	return
