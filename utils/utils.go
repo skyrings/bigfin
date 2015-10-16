@@ -13,7 +13,6 @@ limitations under the License.
 package utils
 
 import (
-	"encoding/json"
 	"github.com/skyrings/skyring/models"
 	"github.com/skyrings/skyring/tools/uuid"
 	"net"
@@ -29,20 +28,18 @@ func IsIPInSubnet(addr string, subnet string) (bool, error) {
 	return ipnet.Contains(ip), nil
 }
 
-func WriteResponse(code int, msg string) []byte {
+func WriteResponse(code int, msg string) models.RpcResponse {
 	var response models.RpcResponse
 	response.Status.StatusCode = code
 	response.Status.StatusMessage = msg
-	ret_val, _ := json.Marshal(response)
-	return ret_val
+	return response
 }
 
-func WriteAsyncResponse(uuid uuid.UUID, msg string, result []byte) []byte {
+func WriteAsyncResponse(taskId uuid.UUID, msg string, result []byte) models.RpcResponse {
 	var response models.RpcResponse
 	response.Status.StatusCode = http.StatusAccepted
 	response.Status.StatusMessage = msg
-	response.Data.RequestId = uuid.String()
+	response.Data.RequestId = taskId.String()
 	response.Data.Result = result
-	ret_val, _ := json.Marshal(response)
-	return ret_val
+	return response
 }
