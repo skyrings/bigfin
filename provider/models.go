@@ -13,4 +13,14 @@ limitations under the License.
 
 package provider
 
-type CephProvider struct{}
+import (
+	"github.com/skyrings/bigfin/backend"
+	"github.com/skyrings/skyring/tools/uuid"
+)
+
+type CephProvider struct {}
+
+type CephOSD struct {
+	ClusterId uuid.UUID   `json:"clusterid"`
+	OSD       backend.OSD `json:"osd"`
+}

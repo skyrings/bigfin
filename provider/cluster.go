@@ -15,6 +15,7 @@ package provider
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/skyrings/bigfin/backend"
 	"github.com/skyrings/bigfin/backend/salt"
 	"github.com/skyrings/bigfin/utils"
@@ -23,6 +24,7 @@ import (
 	"github.com/skyrings/skyring/models"
 	"github.com/skyrings/skyring/tools/uuid"
 	"gopkg.in/mgo.v2/bson"
+	"log"
 	"net"
 	"net/http"
 )
@@ -36,11 +38,11 @@ var (
 	salt_backend = salt.New()
 )
 
-func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *[]byte) error {
+func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResponse) error {
 	var request models.StorageCluster
 
 	if err := json.Unmarshal(req.RpcRequestData, &request); err != nil {
-		*resp = utils.WriteResponse(http.StatusBadRequest, "Unable to parse the request")
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unbale to parse the request %v", err))
 		return err
 	}
 
@@ -91,13 +93,14 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *[]byte) error 
 
 	ret_val, err := salt_backend.CreateCluster(request.ClusterName, request.ClusterId, mons)
 	if err != nil {
-		*resp = utils.WriteResponse(http.StatusInternalServerError, "Error while cluster creation")
+		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error while cluster creation %v", err))
 		return err
 	}
 
 	if ret_val {
 		// If success, persist the details in DB
 		request.ClusterStatus = CLUSTER_STATUS_UP
+		request.AdministrativeStatus = models.CLUSTER_STATUS_ACTIVE_AND_AVAILABLE
 		sessionCopy := db.GetDatastore().Copy()
 		defer sessionCopy.Close()
 
@@ -112,18 +115,126 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *[]byte) error 
 			if err := coll.Update(
 				bson.M{"hostname": node.Hostname},
 				bson.M{"$set": bson.M{
-					"clusterid":         request.ClusterId,
-					"managedstate":      models.NODE_STATE_USED,
-					"clusterip":         node_ips[node.Hostname]["cluster"],
+					"clusterid": request.ClusterId,
+					"administrativestatus": models.USED,
+					"clusterip": node_ips[node.Hostname]["cluster"],
 					"publicaddressipv4": node_ips[node.Hostname]["cluster"]}}); err != nil {
 				*resp = utils.WriteResponse(http.StatusInternalServerError, err.Error())
 				return err
 			}
 		}
+		log.Println("Cluster added to DB")
+
+		// Start mons
+		ret_val, err = startMon(mons)
+		if !ret_val {
+			*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Cluster created but failed to start mon %v", err))
+			return nil
+		}
+		log.Println("Mons started")
+
+		// Add OSDs
+		ret_val, _ = addOSDs(request.ClusterId, request.ClusterName, request.Nodes)
+		if !ret_val {
+			*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Cluster created but add OSDs failed %v", err))
+			return nil
+		}
+		log.Println("OSDs added")
 
 		// Send response
 		*resp = utils.WriteResponse(http.StatusOK, "Done")
 		return nil
 	}
+	return nil
+}
+
+func startMon(mons []backend.Mon) (bool, error) {
+	var nodenames []string
+	for _, mon := range mons {
+		nodenames = append(nodenames, mon.Node)
+	}
+	return salt_backend.StartMon(nodenames)
+}
+
+func addOSDs(clusterId uuid.UUID, clusterName string, nodes []models.ClusterNode) (bool, error) {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+
+	var osds []backend.OSD
+	updatedStorageDisksMap := make(map[string][]models.StorageDisk)
+	for _, node := range nodes {
+		// Get the node details from DB for disk details
+		var storageNode models.StorageNode
+		var updatedStorageDisks []models.StorageDisk
+		coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
+		if err := coll.Find(bson.M{"hostname": node.Hostname}).One(&storageNode); err != nil {
+			return false, err
+		}
+		for _, storageDisk := range storageNode.StorageDisks {
+			for _, devname := range node.Disks {
+				if storageDisk.Disk.Name == devname && storageDisk.AdministrativeStatus == models.FREE {
+					var osd = backend.OSD{
+						Node: node.Hostname,
+						PublicIP4: storageNode.PublicAddressIpv4,
+						ClusterIP4: storageNode.ClusterIp,
+						Device: devname,
+						FSType: storageDisk.Disk.FSType,
+					}
+					osds = append(osds, osd)
+					storageDisk.AdministrativeStatus = models.USED
+				}
+				updatedStorageDisks = append(updatedStorageDisks, storageDisk)
+			}
+		}
+		updatedStorageDisksMap[node.Hostname] = updatedStorageDisks
+	}
+
+	for _, osd := range osds {
+		log.Println(fmt.Sprintf("Adding osd... %v", osd))
+		if ret_val, err := salt_backend.AddOSD(clusterName, osd); err != nil {
+			return ret_val, err
+		}
+
+		// Persist OSD details to DB
+		sessionCopy := db.GetDatastore().Copy()
+		defer sessionCopy.Close()
+		coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_OSDS)
+		var cephosd = CephOSD{ClusterId: clusterId, OSD: osd}
+		if err := coll.Insert(cephosd); err != nil {
+			return false, err
+		}
+	}
+
+	log.Println(updatedStorageDisksMap)
+	// Update the storage disks as used
+	for hostname, updatedStorageDisks := range updatedStorageDisksMap {
+		coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
+		if err := coll.Update(
+			bson.M{"hostname": hostname},
+			bson.M{"$set": bson.M{"storagedisks": updatedStorageDisks}}); err != nil {
+			return false, err
+		}
+	}
+
+	return true, nil
+}
+
+func (s *CephProvider) RemoveStorage(req models.RpcRequest, resp *models.RpcResponse) error {
+	cluster_id := req.RpcRequestVars["cluster-id"]
+	uuid, _ := uuid.Parse(cluster_id)
+
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+
+	// Remove the OSDs
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_OSDS)
+	if err := coll.Remove(bson.M{"clusterid": *uuid}); err != nil {
+		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error removing OSD %v", err))
+		return nil
+	}
+
+	// TODO: Remove the pools
+
+	*resp = utils.WriteResponse(http.StatusOK, "Done")
 	return nil
 }
