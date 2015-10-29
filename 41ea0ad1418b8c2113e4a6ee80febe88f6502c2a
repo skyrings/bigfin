@@ -104,6 +104,236 @@
       "revId": "41ea0ad1418b8c2113e4a6ee80febe88f6502c2a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ab29df4_ebe7b0e2",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-29T06:05:45Z",
+      "side": 1,
+      "message": "remove these console prints. Please dont use std log as it always prints on the console",
+      "range": {
+        "startLine": 27,
+        "startChar": 1,
+        "endLine": 27,
+        "endChar": 6
+      },
+      "revId": "41ea0ad1418b8c2113e4a6ee80febe88f6502c2a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ab29df4_cbe2ecd4",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-29T06:05:45Z",
+      "side": 1,
+      "message": "should be managed or unmanaged",
+      "range": {
+        "startLine": 86,
+        "startChar": 29,
+        "endLine": 86,
+        "endChar": 41
+      },
+      "revId": "41ea0ad1418b8c2113e4a6ee80febe88f6502c2a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ab29df4_ab1218b2",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-29T06:05:45Z",
+      "side": 1,
+      "message": "I think the UI should send a list of discs to added as OSDs? we are not supposed add all discs right?",
+      "range": {
+        "startLine": 103,
+        "startChar": 2,
+        "endLine": 103,
+        "endChar": 19
+      },
+      "revId": "41ea0ad1418b8c2113e4a6ee80febe88f6502c2a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ab29df4_2bd1a8fb",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-29T06:05:45Z",
+      "side": 1,
+      "message": "Why you are doing the persistence of mons separately? I think that can be done along with start mons or you can have a single function  that does the persistence of the whole cluster",
+      "range": {
+        "startLine": 111,
+        "startChar": 15,
+        "endLine": 111,
+        "endChar": 25
+      },
+      "revId": "41ea0ad1418b8c2113e4a6ee80febe88f6502c2a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ab29df4_2bf8c87b",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-29T06:05:45Z",
+      "side": 1,
+      "message": "Should go into slu collection",
+      "range": {
+        "startLine": 202,
+        "startChar": 65,
+        "endLine": 202,
+        "endChar": 76
+      },
+      "revId": "41ea0ad1418b8c2113e4a6ee80febe88f6502c2a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ab29df4_ab04d87e",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 241,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-29T06:05:45Z",
+      "side": 1,
+      "message": "Do we have a separate table for mons? why?\nI dont think we need to have a separate table and entries to be maintained for mons. We need to just maintain the specific host option have mon flag enabled",
+      "range": {
+        "startLine": 241,
+        "startChar": 52,
+        "endLine": 241,
+        "endChar": 66
+      },
+      "revId": "41ea0ad1418b8c2113e4a6ee80febe88f6502c2a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ab29df4_6b49e0cf",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 338,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-29T06:05:45Z",
+      "side": 1,
+      "message": "why to return from here?",
+      "range": {
+        "startLine": 338,
+        "startChar": 5,
+        "endLine": 338,
+        "endChar": 14
+      },
+      "revId": "41ea0ad1418b8c2113e4a6ee80febe88f6502c2a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ab29df4_cb174ca2",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 368,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-29T06:05:45Z",
+      "side": 1,
+      "message": "same as cluster create should not add all the disks",
+      "range": {
+        "startLine": 368,
+        "startChar": 17,
+        "endLine": 368,
+        "endChar": 25
+      },
+      "revId": "41ea0ad1418b8c2113e4a6ee80febe88f6502c2a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ab29df4_eb5a5082",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 385,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-29T06:05:45Z",
+      "side": 1,
+      "message": "As discussed this is not required. We dont need to keep the node/disk information in the cluster collection as it can be cross referenced",
+      "range": {
+        "startLine": 385,
+        "startChar": 5,
+        "endLine": 385,
+        "endChar": 32
+      },
+      "revId": "41ea0ad1418b8c2113e4a6ee80febe88f6502c2a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ab29df4_2b544853",
+        "filename": "provider/models.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-10-29T06:05:45Z",
+      "side": 1,
+      "message": "All these should go into slu table and to be part of core models. Also we don\u0027t need to have an entry for mon in the table, just updating node options is good enough. Any specific uses case you are trying to address by having a specific entry for mon?",
+      "range": {
+        "startLine": 23,
+        "startChar": 1,
+        "endLine": 42,
+        "endChar": 1
+      },
+      "revId": "41ea0ad1418b8c2113e4a6ee80febe88f6502c2a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
