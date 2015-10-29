@@ -16,10 +16,13 @@ package main
 import (
 	// "encoding/json"
 	// "flag"
+	"fmt"
 	"github.com/natefinch/pie"
+	"github.com/op/go-logging"
 	"github.com/skyrings/bigfin/provider"
 	"github.com/skyrings/skyring/conf"
 	"github.com/skyrings/skyring/db"
+	"github.com/skyrings/skyring/tools/logger"
 	"log"
 	"net/rpc/jsonrpc"
 )
@@ -28,6 +31,10 @@ func main() {
 	conf.LoadAppConfiguration("/etc/skyring/skyring.conf")
 	if err := db.InitDBSession(conf.SystemConfig.DBConfig); err != nil {
 		log.Fatalf("Unable to initialize DB")
+	}
+
+	if err := logger.Init("/var/log/skyring/ceph.log", true, logging.DEBUG); err != nil {
+		panic(fmt.Sprintf("log init failed. %s", err))
 	}
 
 	// Get non flag command line arguments and unmarshal in DB config struct

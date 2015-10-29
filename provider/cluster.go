@@ -22,6 +22,7 @@ import (
 	"github.com/skyrings/skyring/conf"
 	"github.com/skyrings/skyring/db"
 	"github.com/skyrings/skyring/models"
+	"github.com/skyrings/skyring/tools/logger"
 	"github.com/skyrings/skyring/tools/uuid"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
@@ -198,6 +199,7 @@ func startAndPersistMons(clusterId uuid.UUID, mons []backend.Mon) (bool, error) 
 		if err := coll.Insert(slu); err != nil {
 			return false, err
 		}
+		logger.Get().Info(fmt.Sprintf("Mon added %s", mon.Node))
 	}
 	return true, nil
 }
@@ -275,6 +277,7 @@ func persistOSD(clusterId uuid.UUID, nodeId uuid.UUID, diskId uuid.UUID, osd bac
 	if err := coll.Insert(slu); err != nil {
 		return false, err
 	}
+	logger.Get().Info(fmt.Sprintf("OSD added %s %s", osd.Node, osd.Device))
 
 	return true, nil
 }
