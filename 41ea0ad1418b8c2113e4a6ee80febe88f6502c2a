@@ -189,6 +189,24 @@
     },
     {
       "key": {
+        "uuid": "9ab29df4_263abfcd",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 86,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-10-29T09:45:29Z",
+      "side": 1,
+      "message": "Also the node is decided to be used based on clusterid populated or not, now.",
+      "parentUuid": "9ab29df4_ab185885",
+      "revId": "41ea0ad1418b8c2113e4a6ee80febe88f6502c2a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9ab29df4_ab1218b2",
         "filename": "provider/cluster.go",
         "patchSetId": 3
