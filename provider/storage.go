@@ -20,6 +20,7 @@ import (
 	"github.com/skyrings/skyring/conf"
 	"github.com/skyrings/skyring/db"
 	"github.com/skyrings/skyring/models"
+	"github.com/skyrings/skyring/tools/logger"
 	"github.com/skyrings/skyring/tools/task"
 	"github.com/skyrings/skyring/tools/uuid"
 	"gopkg.in/mgo.v2/bson"
@@ -39,6 +40,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 	var request models.AddStorageRequest
 
 	if err := json.Unmarshal(req.RpcRequestData, &request); err != nil {
+		logger.Get().Error("Unbale to parse the request %v", err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unbale to parse the request %v", err))
 		return err
 	}
@@ -47,6 +49,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 	cluster_id_str := req.RpcRequestVars["cluster-id"]
 	cluster_id, err := uuid.Parse(cluster_id_str)
 	if err != nil {
+		logger.Get().Error("Error parsing the cluster id: %s", cluster_id_str)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
 		return err
 	}
@@ -55,8 +58,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 		t.UpdateStatus("Statrted ceph provider pool creation: %v", t.ID)
 		ok, err := createPool(*cluster_id, request, t)
 		if err != nil || !ok {
-			t.UpdateStatus("Failed. error: %v", err)
-			t.Done()
+			utils.FailTask("Create Pool failed", err, t)
 			return
 		}
 
@@ -65,8 +67,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 		var storage models.Storage
 		storage_id, err := uuid.New()
 		if err != nil {
-			t.UpdateStatus("Failed. error: %v", err)
-			t.Done()
+			utils.FailTask("Error creating id for node", err, t)
 			return
 		}
 		storage.StorageId = *storage_id
@@ -88,8 +89,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 		defer sessionCopy.Close()
 		coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
 		if err := coll.Insert(storage); err != nil {
-			t.UpdateStatus("Error. error: %v", err)
-			t.Done()
+			utils.FailTask("Error persisting pool", err, t)
 			return
 		}
 		t.UpdateStatus("Success")
@@ -216,11 +216,13 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 	cluster_id_str := req.RpcRequestVars["cluster-id"]
 	cluster_id, err := uuid.Parse(cluster_id_str)
 	if err != nil {
+		logger.Get().Error("Error parsing the cluster id: %s", cluster_id_str)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
 		return err
 	}
 	monnode, err := GetRandomMon(*cluster_id)
 	if err != nil {
+		logger.Get().Error("Error getting a mon node in cluster. error: %v", err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting a mon node in cluster. error: %v", err))
 		return err
 	}
@@ -231,6 +233,7 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 	var cluster models.Cluster
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
 	if err := coll.Find(bson.M{"clusterid": *cluster_id}).One(&cluster); err != nil {
+		logger.Get().Error("Error getting cluster details. error: %v", err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting cluster details. error: %v", err))
 		return err
 	}
@@ -238,6 +241,7 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 	// Get the pools for the cluster
 	pools, err := cephapi_backend.GetPools(monnode.Hostname, cluster.Name)
 	if err != nil {
+		logger.Get().Error("Error getting storages. error: %v", err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting storages. error: %v", err))
 		return err
 	}
@@ -269,6 +273,7 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 	}
 	result, err := json.Marshal(storages)
 	if err != nil {
+		logger.Get().Error("Error forming the output. error: %v", err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error forming the output. error: %v", err))
 		return err
 	}

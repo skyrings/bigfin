@@ -14,6 +14,8 @@ package utils
 
 import (
 	"github.com/skyrings/skyring/models"
+	"github.com/skyrings/skyring/tools/logger"
+	"github.com/skyrings/skyring/tools/task"
 	"github.com/skyrings/skyring/tools/uuid"
 	"math"
 	"math/rand"
@@ -125,4 +127,10 @@ func NextTwosPower(num uint) uint {
 		}
 		count += 1
 	}
+}
+
+func FailTask(msg string, err error, t *task.Task) {
+	logger.Get().Error("%s: %v", msg, err)
+	t.UpdateStatus("Failed. error: %v", err)
+	t.Done()
 }
