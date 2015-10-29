@@ -16,48 +16,41 @@ package main
 import (
 	// "encoding/json"
 	// "flag"
+	"fmt"
 	"github.com/natefinch/pie"
+	"github.com/op/go-logging"
 	"github.com/skyrings/bigfin/backend/cephapi/client"
 	"github.com/skyrings/bigfin/provider"
+	"github.com/skyrings/bigfin/tools/logger"
 	"github.com/skyrings/bigfin/tools/task"
 	"github.com/skyrings/skyring/conf"
 	"github.com/skyrings/skyring/db"
-	"log"
 	"net/rpc/jsonrpc"
 )
 
 func main() {
+	// Initialize the logger
+	if err := logger.Init("/var/log/skyring/ceph.log", true, logging.DEBUG); err != nil {
+		panic(fmt.Sprintf("log init failed. %s", err))
+	}
+
 	conf.LoadAppConfiguration("/etc/skyring/skyring.conf")
 	if err := db.InitDBSession(conf.SystemConfig.DBConfig); err != nil {
-		log.Fatalf("Unable to initialize DB")
+		logger.Get().Fatalf("Unable to initialize DB")
 	}
 
 	// Initialize the task manager
 	if err := task.InitializeTaskManager(); err != nil {
-		log.Fatalf("Failed to initialize task manager: %v", err)
+		logger.Get().Fatalf("Failed to initialize task manager: %v", err)
 	}
 
 	// Initialize ceph http client
 	client.InitCephApiSession()
 
-	// Get non flag command line arguments and unmarshal in DB config struct
-	// log.Println(flag.Args)
-	// dbConfigStr := flag.Args()[0]
-	// log.Println(dbConfigStr)
-	// var dbconf conf.MongoDBConfig
-	// if err := json.Unmarshal([]byte(dbConfigStr), &dbconf); err != nil {
-	// 	log.Fatalf("Failed to parse DB configuration")
-	// }
-	// log.Println(dbconf)
-	// if err := db.InitDBSession(dbconf); err != nil {
-	// 	log.Fatalf("Unable to initialize DB")
-	// }
-
-	log.SetPrefix("[cep provider log] ")
 	provd := &provider.CephProvider{}
 	p := pie.NewProvider()
 	if err := p.RegisterName("ceph", provd); err != nil {
-		log.Fatalf("Failed to register plugin: %s", err)
+		logger.Get().Fatalf("Failed to register plugin: %s", err)
 	}
 	p.ServeCodec(jsonrpc.NewServerCodec)
 }
