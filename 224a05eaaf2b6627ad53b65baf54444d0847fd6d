@@ -122,6 +122,24 @@
       "revId": "224a05eaaf2b6627ad53b65baf54444d0847fd6d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ab29df4_28d60950",
+        "filename": "utils/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-10-30T07:14:53Z",
+      "side": 1,
+      "message": "Actually this uuid is not required as the task farmework would provide and the same should be populated.\nWill change the signature as below \n\nfunc WriteAsyncResponse(taskId uuid.UUID, msg string, result []byte) models.RpcResponse",
+      "parentUuid": "9ab29df4_e8e4113d",
+      "revId": "224a05eaaf2b6627ad53b65baf54444d0847fd6d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
