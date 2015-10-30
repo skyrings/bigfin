@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9ab29df4_282c4999",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 5
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1006046
+      },
+      "writtenOn": "2015-10-30T05:48:10Z",
+      "side": 1,
+      "message": "you could have better commit log\n\ncluster: add to expand mon and OSDs",
+      "range": {
+        "startLine": 7,
+        "startChar": 8,
+        "endLine": 7,
+        "endChar": 15
+      },
+      "revId": "224a05eaaf2b6627ad53b65baf54444d0847fd6d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ab29df4_8813955b",
+        "filename": "provider/cluster.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1006046
+      },
+      "writtenOn": "2015-10-30T05:48:10Z",
+      "side": 1,
+      "message": "I see this is repeated from skyring core.  Please avoid.",
+      "range": {
+        "startLine": 34,
+        "startChar": 1,
+        "endLine": 34,
+        "endChar": 20
+      },
+      "revId": "224a05eaaf2b6627ad53b65baf54444d0847fd6d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ab29df4_e81a516d",
+        "filename": "utils/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1006046
+      },
+      "writtenOn": "2015-10-30T05:48:10Z",
+      "side": 1,
+      "message": "uuid is nil if uuid.New() fails",
+      "range": {
+        "startLine": 43,
+        "startChar": 27,
+        "endLine": 43,
+        "endChar": 31
+      },
+      "revId": "224a05eaaf2b6627ad53b65baf54444d0847fd6d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
