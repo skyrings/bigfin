@@ -212,6 +212,24 @@
       "revId": "224a05eaaf2b6627ad53b65baf54444d0847fd6d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ab29df4_df2c5dae",
+        "filename": "utils/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1006046
+      },
+      "writtenOn": "2015-11-02T09:18:55Z",
+      "side": 1,
+      "message": "OK. But who interprets []byte to \"value\"? My point is someone however interprets byte array to known value, as both are in golang why can\u0027t it be just usable value directly.",
+      "parentUuid": "9ab29df4_3f8479d3",
+      "revId": "224a05eaaf2b6627ad53b65baf54444d0847fd6d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
