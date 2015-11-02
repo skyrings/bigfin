@@ -194,6 +194,24 @@
       "revId": "224a05eaaf2b6627ad53b65baf54444d0847fd6d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9ab29df4_3f8479d3",
+        "filename": "utils/utils.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 43,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-11-02T08:03:07Z",
+      "side": 1,
+      "message": "Response definition goes as below \n\ntype RpcResponse struct {\n\tStatus RpcResponseStatus `json:\"status\"`\n\tData   RpcResponseData   `json:\"data\"`\n}\n\ntype RpcResponseStatus struct {\n\tStatusCode    int    `json:\"statuscode\"`\n\tStatusMessage string `json:\"statusmessage\"`\n}\n\ntype RpcResponseData struct {\n\tRequestId string `json:\"requestid\"`\n\tResult    []byte `json:\"result\"`\n}\n\nSo kept as []byte",
+      "parentUuid": "9ab29df4_bf4969d2",
+      "revId": "224a05eaaf2b6627ad53b65baf54444d0847fd6d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
