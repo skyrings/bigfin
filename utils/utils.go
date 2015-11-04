@@ -15,8 +15,10 @@ package utils
 import (
 	"github.com/skyrings/skyring/models"
 	"github.com/skyrings/skyring/tools/uuid"
+	"math/rand"
 	"net"
 	"net/http"
+	"time"
 )
 
 func IsIPInSubnet(addr string, subnet string) (bool, error) {
@@ -51,4 +53,9 @@ func StringInSlice(value string, slice []string) bool {
 		}
 	}
 	return false
+}
+
+func RandomNum(min, max int) int {
+	rand.Seed(time.Now().Unix())
+	return rand.Intn(max-min) + min
 }
