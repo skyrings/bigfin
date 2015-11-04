@@ -17,7 +17,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/skyrings/bigfin/backend"
-	"github.com/skyrings/bigfin/backend/salt"
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring/conf"
 	"github.com/skyrings/skyring/db"
@@ -28,12 +27,6 @@ import (
 
 	skyring_backend "github.com/skyrings/skyring/backend"
 )
-
-var (
-	salt_backend = salt.New()
-)
-
-type CephProvider struct{}
 
 func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResponse) error {
 	var request models.AddClusterRequest
@@ -181,29 +174,7 @@ func startAndPersistMons(clusterId uuid.UUID, mons []backend.Mon) (bool, error) 
 	defer sessionCopy.Close()
 	for _, mon := range mons {
 		coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
-		var node models.Node
-		if err := coll.Find(bson.M{"hostname": mon.Node}).One(&node); err != nil {
-			return false, err
-		}
-
-		id, err := uuid.New()
-		if err != nil {
-			return false, errors.New("Error creating SLU id")
-		}
-		var slu models.StorageLogicalUnit
-		slu.SluId = *id
-		slu.Name = fmt.Sprintf("mon-%v", *id)
-		slu.Type = models.CEPH_MON
-		slu.ClusterId = clusterId
-		slu.NodeId = node.NodeId
-		var options = make(map[string]string)
-		options["node"] = mon.Node
-		options["publicip4"] = mon.PublicIP4
-		options["clusterip4"] = mon.ClusterIP4
-		slu.Options = options
-
-		coll = sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
-		if err := coll.Insert(slu); err != nil {
+		if err := coll.Update(bson.M{"hostname": mon.Node}, bson.M{"$set": bson.M{"options.mon": "Y"}}); err != nil {
 			return false, err
 		}
 	}
@@ -377,19 +348,19 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 	if len(mons) > 0 {
 		// If mon node already exists, error out
 		for _, new_node := range new_nodes {
-			coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
+			coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 			nodeid, err := uuid.Parse(new_node.NodeId)
 			if err != nil {
 				*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the node id: %s", new_node.NodeId))
 				return err
 			}
-			var slu models.StorageLogicalUnit
+			var monNode models.Node
 			// No need to check for error here as in case of error, slu instance would not be populated
 			// and the same already eing checked below
-			_ = coll.Find(bson.M{"clusterid": *cluster_id, "nodeid": *nodeid, "type": models.CEPH_MON}).One(&slu)
-			if !slu.SluId.IsZero() {
+			_ = coll.Find(bson.M{"clusterid": *cluster_id, "nodeid": *nodeid}).One(&monNode)
+			if monNode.Hostname != "" {
 				*resp = utils.WriteResponse(http.StatusInternalServerError, "The mon node already available")
-				return errors.New(fmt.Sprintf("Mon already exists for node: %v", *nodeid))
+				return errors.New(fmt.Sprintf("Mon already exists: %v", *nodeid))
 			}
 		}
 
