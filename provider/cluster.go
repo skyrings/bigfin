@@ -17,7 +17,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/skyrings/bigfin/backend"
-	"github.com/skyrings/bigfin/backend/salt"
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring/conf"
 	"github.com/skyrings/skyring/db"
@@ -28,12 +27,6 @@ import (
 
 	skyring_backend "github.com/skyrings/skyring/backend"
 )
-
-var (
-	salt_backend = salt.New()
-)
-
-type CephProvider struct{}
 
 func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResponse) error {
 	var request models.AddClusterRequest
