@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7ac7a964_b95a9b4e",
+        "filename": "provider/cluster.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-11-05T19:45:12Z",
+      "side": 1,
+      "message": "Correct error handling. Discourage the use of _ as much as we can",
+      "revId": "c7d99039ed95ece6c8eb3ac13bf2557941cbbabd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
