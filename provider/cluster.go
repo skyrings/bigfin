@@ -219,6 +219,9 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 			for _, storageDisk := range storageNode.StorageDisks {
 				for _, device := range requestNode.Devices {
 					if storageDisk.Name == device.Name && !storageDisk.Used {
+						if device.FSType == "" {
+							device.FSType = models.DEFAULT_FS_TYPE
+						}
 						var osd = backend.OSD{
 							Node:       storageNode.Hostname,
 							PublicIP4:  storageNode.PublicIP4,
