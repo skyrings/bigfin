@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7ac7a964_d3d72bbe",
+        "filename": "provider/storage.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-11-09T14:13:03Z",
+      "side": 1,
+      "message": "I think we shouldn\u0027t store mons in slu table because it doesn\u0027t provide any storage. Mons are just a set of nodes remains in the the nodes table with a flag mon\u003dtrue",
+      "range": {
+        "startLine": 89,
+        "startChar": 4,
+        "endLine": 93,
+        "endChar": 2
+      },
+      "revId": "d7a54057d6e2feefb48af1a4cec64a010414e9e6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7ac7a964_b301cf3b",
+        "filename": "provider/storage.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-11-09T14:13:03Z",
+      "side": 1,
+      "message": "If request with one mon failed, would you be trying with other mons?",
+      "range": {
+        "startLine": 117,
+        "startChar": 32,
+        "endLine": 117,
+        "endChar": 55
+      },
+      "revId": "d7a54057d6e2feefb48af1a4cec64a010414e9e6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7ac7a964_93edb38e",
+        "filename": "provider/storage.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-11-09T14:13:03Z",
+      "side": 1,
+      "message": "You could do it in a single step as you have done in the other func \n\nif err !\u003d nil || !ok {",
+      "range": {
+        "startLine": 118,
+        "startChar": 1,
+        "endLine": 125,
+        "endChar": 2
+      },
+      "revId": "d7a54057d6e2feefb48af1a4cec64a010414e9e6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
