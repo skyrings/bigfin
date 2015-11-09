@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7ac7a964_739f3704",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-11-09T14:18:01Z",
+      "side": 1,
+      "message": "Is this already defined?",
+      "range": {
+        "startLine": 223,
+        "startChar": 29,
+        "endLine": 223,
+        "endChar": 45
+      },
+      "revId": "2b4f2386e4a89c8a7364d0d30fc7030bca43edb0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
