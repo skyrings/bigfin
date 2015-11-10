@@ -25,6 +25,24 @@
     },
     {
       "key": {
+        "uuid": "7ac7a964_275f3510",
+        "filename": "provider/storage.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-11-10T04:28:18Z",
+      "side": 1,
+      "message": "We cannot have a separate field \"mon\" for a node. May be we can have this information stored as part of Tags or Options field.\nWhat you say?",
+      "parentUuid": "7ac7a964_d3d72bbe",
+      "revId": "d7a54057d6e2feefb48af1a4cec64a010414e9e6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7ac7a964_b301cf3b",
         "filename": "provider/storage.go",
         "patchSetId": 2
@@ -48,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "7ac7a964_479b51c9",
+        "filename": "provider/storage.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-11-10T04:28:18Z",
+      "side": 1,
+      "message": "May be we can try. Currently its not. Anyway ceph apis might take care later I feel.",
+      "parentUuid": "7ac7a964_b301cf3b",
+      "revId": "d7a54057d6e2feefb48af1a4cec64a010414e9e6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7ac7a964_93edb38e",
         "filename": "provider/storage.go",
         "patchSetId": 2
@@ -65,6 +101,24 @@
         "endLine": 125,
         "endChar": 2
       },
+      "revId": "d7a54057d6e2feefb48af1a4cec64a010414e9e6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7ac7a964_67a04df5",
+        "filename": "provider/storage.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-11-10T04:28:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "7ac7a964_93edb38e",
       "revId": "d7a54057d6e2feefb48af1a4cec64a010414e9e6",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
