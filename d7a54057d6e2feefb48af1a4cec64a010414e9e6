@@ -43,6 +43,24 @@
     },
     {
       "key": {
+        "uuid": "7ac7a964_47a191a8",
+        "filename": "provider/storage.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-11-10T07:29:29Z",
+      "side": 1,
+      "message": "Use \u0027options\u0027 field",
+      "parentUuid": "7ac7a964_275f3510",
+      "revId": "d7a54057d6e2feefb48af1a4cec64a010414e9e6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "7ac7a964_b301cf3b",
         "filename": "provider/storage.go",
         "patchSetId": 2
@@ -78,6 +96,24 @@
       "side": 1,
       "message": "May be we can try. Currently its not. Anyway ceph apis might take care later I feel.",
       "parentUuid": "7ac7a964_b301cf3b",
+      "revId": "d7a54057d6e2feefb48af1a4cec64a010414e9e6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "7ac7a964_67a68dc3",
+        "filename": "provider/storage.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-11-10T07:29:29Z",
+      "side": 1,
+      "message": "I don\u0027t think Ceph APIs will take care of this. its again will be targeted to a MON. I think this needs to be taken care from our side. If this is a considerable amount of work, we could do it as a separate patch but add a trello card in that case",
+      "parentUuid": "7ac7a964_479b51c9",
       "revId": "d7a54057d6e2feefb48af1a4cec64a010414e9e6",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
