@@ -50,4 +50,9 @@ func main() {
 		log.Fatalf("Failed to register plugin: %s", err)
 	}
 	p.ServeCodec(jsonrpc.NewServerCodec)
+
+	// Initialize the task manager
+	if err := provd.InitializeTaskManager(); err != nil {
+		log.Fatalf("Failed to initialize task manager: %v", err)
+	}
 }

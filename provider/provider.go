@@ -14,10 +14,21 @@ package provider
 
 import (
 	"github.com/skyrings/bigfin/backend/salt"
+	"github.com/skyrings/skyring/tools/task"
 )
 
 var (
 	salt_backend = salt.New()
+	TaskManager  task.Manager
 )
 
 type CephProvider struct{}
+
+func (a *CephProvider) InitializeTaskManager() error {
+	TaskManager = task.NewManager()
+	return nil
+}
+
+func (a *CephProvider) GetTaskManager() *task.Manager {
+	return &TaskManager
+}
