@@ -21,8 +21,10 @@ import (
 	"github.com/skyrings/skyring/conf"
 	"github.com/skyrings/skyring/db"
 	"github.com/skyrings/skyring/models"
+	"github.com/skyrings/skyring/tools/task"
 	"github.com/skyrings/skyring/tools/uuid"
 	"gopkg.in/mgo.v2/bson"
+	"log"
 	"net/http"
 
 	skyring_backend "github.com/skyrings/skyring/backend"
@@ -72,71 +74,84 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 		return errors.New("ceph_provider: No mons mentioned in the node list")
 	}
 
-	ret_val, err := salt_backend.CreateCluster(request.Name, *cluster_uuid, mons)
-	if err != nil {
-		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error while cluster creation %v", err))
-		return err
-	}
-
-	if ret_val {
-		// Update nodes details
-		sessionCopy := db.GetDatastore().Copy()
-		defer sessionCopy.Close()
-		for _, node := range nodes {
-			coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
-			if err := coll.Update(
-				bson.M{"nodeid": node.NodeId},
-				bson.M{"$set": bson.M{
-					"clusterid":  *cluster_uuid,
-					"clusterip4": node_ips[node.NodeId]["cluster"],
-					"publicip4":  node_ips[node.NodeId]["public"]}}); err != nil {
-				*resp = utils.WriteResponse(http.StatusInternalServerError, err.Error())
-				return err
-			}
-		}
-
-		// Start and persist the mons
-		ret_val, err := startAndPersistMons(*cluster_uuid, mons)
-		if !ret_val {
-			*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Cluster created but failed to start mon %v", err))
-			return nil
-		}
-
-		// Add OSDs
-		updated_nodes, err := getNodes(request.Nodes)
+	asyncTask := func(t *task.Task) {
+		t.UpdateStatus("Started ceph provider task for cluster creation: %v", t.ID)
+		ret_val, err := salt_backend.CreateCluster(request.Name, *cluster_uuid, mons)
 		if err != nil {
-			*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error getting updated nodes from DB %v", err))
-			return err
-		}
-		ret_val, err = addOSDs(*cluster_uuid, request.Name, updated_nodes, request.Nodes)
-		if err != nil || !ret_val {
-			*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Cluster created but add OSDs failed %v", err))
-			return nil
+			t.UpdateStatus("Failed. Error creating cluster")
+			return
 		}
 
-		// Add cluster to DB
-		var cluster models.Cluster
-		cluster.ClusterId = *cluster_uuid
-		cluster.Name = request.Name
-		cluster.CompatVersion = request.CompatVersion
-		cluster.Type = request.Type
-		cluster.WorkLoad = request.WorkLoad
-		cluster.Status = models.CLUSTER_STATUS_ACTIVE_AND_AVAILABLE
-		cluster.Tags = request.Tags
-		cluster.Options = request.Options
-		cluster.Networks = request.Networks
-		cluster.OpenStackServices = request.OpenStackServices
-		cluster.Enabled = true
-		coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
-		if err := coll.Insert(cluster); err != nil {
-			*resp = utils.WriteResponse(http.StatusInternalServerError, err.Error())
-			return err
-		}
+		if ret_val {
+			t.UpdateStatus("Updating node details for cluster")
+			// Update nodes details
+			sessionCopy := db.GetDatastore().Copy()
+			defer sessionCopy.Close()
+			for _, node := range nodes {
+				coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
+				if err := coll.Update(
+					bson.M{"nodeid": node.NodeId},
+					bson.M{"$set": bson.M{
+						"clusterid":  *cluster_uuid,
+						"clusterip4": node_ips[node.NodeId]["cluster"],
+						"publicip4":  node_ips[node.NodeId]["public"]}}); err != nil {
+					t.UpdateStatus("Failed. Error updating node details: %v", err)
+					return
+				}
+			}
 
-		// Send response
-		*resp = utils.WriteResponse(http.StatusOK, "Done")
-		return nil
+			// Start and persist the mons
+			t.UpdateStatus("Starting and creating mons")
+			ret_val, err := startAndPersistMons(*cluster_uuid, mons)
+			if !ret_val {
+				t.UpdateStatus("Failed. Error starting/persisting mons: %v", err)
+				return
+			}
+
+			// Add OSDs
+			t.UpdateStatus("Getting updated nodes list for OSD creation")
+			updated_nodes, err := getNodes(request.Nodes)
+			if err != nil {
+				t.UpdateStatus("Failed. Error getting updated nodes")
+				return
+			}
+			t.UpdateStatus("Adding OSDs")
+			ret_val, err = addOSDs(*cluster_uuid, request.Name, updated_nodes, request.Nodes)
+			if err != nil || !ret_val {
+				t.UpdateStatus("Failed. Error adding OSDs: %v", err)
+				return
+			}
+
+			// Add cluster to DB
+			t.UpdateStatus("Persisting cluster details")
+			var cluster models.Cluster
+			cluster.ClusterId = *cluster_uuid
+			cluster.Name = request.Name
+			cluster.CompatVersion = request.CompatVersion
+			cluster.Type = request.Type
+			cluster.WorkLoad = request.WorkLoad
+			cluster.Status = models.CLUSTER_STATUS_ACTIVE_AND_AVAILABLE
+			cluster.Tags = request.Tags
+			cluster.Options = request.Options
+			cluster.Networks = request.Networks
+			cluster.OpenStackServices = request.OpenStackServices
+			cluster.Enabled = true
+			coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+			if err := coll.Insert(cluster); err != nil {
+				t.UpdateStatus("Failed. Error persisting the cluster details: %v", err)
+				return
+			}
+			t.UpdateStatus("Success")
+			t.Done()
+		}
 	}
+	if taskId, err := s.GetTaskManager().Run("CEPH-CreateCluster", asyncTask); err != nil {
+		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for create cluster")
+		return err
+	} else {
+		*resp = utils.WriteAsyncResponse(taskId, "Task Created", []byte{})
+	}
+
 	return nil
 }
 
@@ -213,6 +228,7 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 						if ret_val, err := persistOSD(clusterId, storageNode.NodeId, storageDisk.FSUUID, osd); err != nil || !ret_val {
 							return ret_val, err
 						}
+						log.Println("OSD Added!!")
 						storageDisk.Used = true
 					}
 					updatedStorageDisks = append(updatedStorageDisks, storageDisk)
