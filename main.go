@@ -18,6 +18,7 @@ import (
 	// "flag"
 	"github.com/natefinch/pie"
 	"github.com/skyrings/bigfin/provider"
+	"github.com/skyrings/bigfin/tools/task"
 	"github.com/skyrings/skyring/conf"
 	"github.com/skyrings/skyring/db"
 	"log"
@@ -28,6 +29,11 @@ func main() {
 	conf.LoadAppConfiguration("/etc/skyring/skyring.conf")
 	if err := db.InitDBSession(conf.SystemConfig.DBConfig); err != nil {
 		log.Fatalf("Unable to initialize DB")
+	}
+
+	// Initialize the task manager
+	if err := task.InitializeTaskManager(); err != nil {
+		log.Fatalf("Failed to initialize task manager: %v", err)
 	}
 
 	// Get non flag command line arguments and unmarshal in DB config struct
