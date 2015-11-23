@@ -35,6 +35,6 @@ type Backend interface {
 	AddMon(clusterName string, mons []Mon) (bool, error)
 	StartMon(nodes []string) (bool, error)
 	AddOSD(clusterName string, osd OSD) (bool, error)
-	CreatePool(name string, mon string, clusterName string, pgnum uint) (bool, error)
+	CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64) (bool, error)
 	ListPool(mon string, clusterName string) ([]string, error)
 }

@@ -17,6 +17,7 @@ import (
 	// "encoding/json"
 	// "flag"
 	"github.com/natefinch/pie"
+	"github.com/skyrings/bigfin/backend/cephapi/client"
 	"github.com/skyrings/bigfin/provider"
 	"github.com/skyrings/bigfin/tools/task"
 	"github.com/skyrings/skyring/conf"
@@ -35,6 +36,9 @@ func main() {
 	if err := task.InitializeTaskManager(); err != nil {
 		log.Fatalf("Failed to initialize task manager: %v", err)
 	}
+
+	// Initialize ceph http client
+	client.InitCephApiSession()
 
 	// Get non flag command line arguments and unmarshal in DB config struct
 	// log.Println(flag.Args)

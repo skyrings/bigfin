@@ -73,7 +73,7 @@ func (s Salt) AddOSD(clusterName string, osd backend.OSD) (status bool, err erro
 	return
 }
 
-func (s Salt) CreatePool(name string, mon string, clusterName string, pgnum uint) (status bool, err error) {
+func (s Salt) CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64) (status bool, err error) {
 	if pyobj, err := pyFuncs["CreatePool"].Call(name, mon, clusterName, pgnum); err == nil {
 		status = gopy.Bool(pyobj)
 	}

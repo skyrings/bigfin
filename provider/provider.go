@@ -13,11 +13,13 @@ limitations under the License.
 package provider
 
 import (
+	"github.com/skyrings/bigfin/backend/cephapi"
 	"github.com/skyrings/bigfin/backend/salt"
 )
 
 var (
-	salt_backend = salt.New()
+	salt_backend    = salt.New()
+	cephapi_backend = cephapi.New()
 )
 
 type CephProvider struct{}
