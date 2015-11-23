@@ -15,9 +15,12 @@ package utils
 import (
 	"github.com/skyrings/skyring/models"
 	"github.com/skyrings/skyring/tools/uuid"
+	"math"
 	"math/rand"
 	"net"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 )
 
@@ -58,4 +61,59 @@ func StringInSlice(value string, slice []string) bool {
 func RandomNum(min, max int) int {
 	rand.Seed(time.Now().Unix())
 	return rand.Intn(max-min) + min
+}
+
+func SizeFromStr(size string) uint64 {
+	if strings.HasSuffix(size, "MB") {
+		trimStr := strings.TrimSuffix(size, "MB")
+		val, _ := strconv.Atoi(trimStr)
+		return uint64(val * 1024)
+	}
+	if strings.HasSuffix(size, "mb") {
+		trimStr := strings.TrimSuffix(size, "mb")
+		val, _ := strconv.Atoi(trimStr)
+		return uint64(val * 1024)
+	}
+	if strings.HasSuffix(size, "GB") {
+		trimStr := strings.TrimSuffix(size, "GB")
+		val, _ := strconv.Atoi(trimStr)
+		return uint64(val * 1024 * 1024)
+	}
+	if strings.HasSuffix(size, "gb") {
+		trimStr := strings.TrimSuffix(size, "gb")
+		val, _ := strconv.Atoi(trimStr)
+		return uint64(val * 1024 * 1024)
+	}
+	if strings.HasSuffix(size, "TB") {
+		trimStr := strings.TrimSuffix(size, "TB")
+		val, _ := strconv.Atoi(trimStr)
+		return uint64(val * 1024 * 1024 * 1024)
+	}
+	if strings.HasSuffix(size, "tb") {
+		trimStr := strings.TrimSuffix(size, "tb")
+		val, _ := strconv.Atoi(trimStr)
+		return uint64(val * 1024 * 1024 * 1024)
+	}
+	if strings.HasSuffix(size, "PB") {
+		trimStr := strings.TrimSuffix(size, "PB")
+		val, _ := strconv.Atoi(trimStr)
+		return uint64(val * 1024 * 1024 * 1024 * 1024)
+	}
+	if strings.HasSuffix(size, "pb") {
+		trimStr := strings.TrimSuffix(size, "pb")
+		val, _ := strconv.Atoi(trimStr)
+		return uint64(val * 1024 * 1024 * 1024 * 1024)
+	}
+	return uint64(0)
+}
+
+func NextTwosPower(num uint) uint {
+	count := 1
+	for {
+		val := math.Pow(2, float64(count))
+		if val >= float64(num) {
+			return uint(val)
+		}
+		count += 1
+	}
 }

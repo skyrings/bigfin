@@ -230,7 +230,12 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 						if ret_val, err := salt_backend.AddOSD(clusterName, osd); err != nil || !ret_val {
 							return ret_val, err
 						}
-						if ret_val, err := persistOSD(clusterId, storageNode.NodeId, storageDisk.FSUUID, osd); err != nil || !ret_val {
+						if ret_val, err := persistOSD(
+							clusterId,
+							storageNode.NodeId,
+							storageDisk.FSUUID,
+							storageDisk.Size,
+							osd); err != nil || !ret_val {
 							return ret_val, err
 						}
 						storageDisk.Used = true
@@ -255,7 +260,7 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 	return true, nil
 }
 
-func persistOSD(clusterId uuid.UUID, nodeId uuid.UUID, diskId uuid.UUID, osd backend.OSD) (bool, error) {
+func persistOSD(clusterId uuid.UUID, nodeId uuid.UUID, diskId uuid.UUID, diskSize uint64, osd backend.OSD) (bool, error) {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
@@ -271,6 +276,7 @@ func persistOSD(clusterId uuid.UUID, nodeId uuid.UUID, diskId uuid.UUID, osd bac
 	slu.ClusterId = clusterId
 	slu.NodeId = nodeId
 	slu.StorageDeviceId = diskId
+	slu.StorageDeviceSize = diskSize
 	var options = make(map[string]string)
 	options["node"] = osd.Node
 	options["publicip4"] = osd.PublicIP4
