@@ -20,6 +20,7 @@ import (
 	"github.com/skyrings/skyring/conf"
 	"github.com/skyrings/skyring/db"
 	"github.com/skyrings/skyring/models"
+	"github.com/skyrings/skyring/tools/task"
 	"github.com/skyrings/skyring/tools/uuid"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
@@ -41,56 +42,70 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
 		return err
 	}
-	ok, err := createPool(*cluster_id, request)
-	if err != nil || !ok {
-		*resp = utils.WriteResponse(http.StatusInternalServerError, err.Error())
-		return err
-	}
 
-	// Add storage entity to DB
-	var storage models.Storage
-	storage_id, err := uuid.New()
-	if err != nil {
-		*resp = utils.WriteResponse(http.StatusInternalServerError, "Error creating storage id")
-		return err
-	}
-	storage.StorageId = *storage_id
-	storage.Name = request.Name
-	storage.Type = request.Type
-	storage.Tags = request.Tags
-	storage.ClusterId = *cluster_id
-	storage.Size = request.Size
-	storage.Status = models.STATUS_UP
-	storage.Options = request.Options
-	sessionCopy := db.GetDatastore().Copy()
-	defer sessionCopy.Close()
-	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
-	if err := coll.Insert(storage); err != nil {
-		*resp = utils.WriteResponse(http.StatusInternalServerError, err.Error())
-		return err
-	}
+	asyncTask := func(t *task.Task) {
+		t.UpdateStatus("Statrted ceph provider pool creation: %v", t.ID)
+		ok, err := createPool(*cluster_id, request, t)
+		if err != nil || !ok {
+			t.UpdateStatus("Failed. error: %v", err)
+			return
+		}
 
-	// Send response
-	*resp = utils.WriteResponse(http.StatusOK, "Done")
+		t.UpdateStatus("Perisisting the storage entity")
+		// Add storage entity to DB
+		var storage models.Storage
+		storage_id, err := uuid.New()
+		if err != nil {
+			t.UpdateStatus("Failed. error: %v", err)
+			return
+		}
+		storage.StorageId = *storage_id
+		storage.Name = request.Name
+		storage.Type = request.Type
+		storage.Tags = request.Tags
+		storage.ClusterId = *cluster_id
+		storage.Size = request.Size
+		storage.Status = models.STATUS_UP
+		storage.Options = request.Options
+		sessionCopy := db.GetDatastore().Copy()
+		defer sessionCopy.Close()
+		coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+		if err := coll.Insert(storage); err != nil {
+			t.UpdateStatus("Error. error: %v", err)
+			return
+		}
+		t.UpdateStatus("Success")
+		t.Done()
+	}
+	if taskId, err := s.GetTaskManager().Run("CEPH-CreateStorage", asyncTask, nil, nil, nil); err != nil {
+		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for storage creation")
+		return err
+	} else {
+		*resp = utils.WriteAsyncResponse(taskId, "Task Created", []byte{})
+	}
 	return nil
 }
 
-func createPool(clusterId uuid.UUID, request models.AddStorageRequest) (bool, error) {
+func createPool(clusterId uuid.UUID, request models.AddStorageRequest, t *task.Task) (bool, error) {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 
+	t.UpdateStatus("Getting cluster details")
 	// Get cluster details
 	var cluster models.Cluster
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
 	if err := coll.Find(bson.M{"clusterid": clusterId}).One(&cluster); err != nil {
+		t.UpdateStatus("Error getting the cluster details")
 		return false, err
 	}
 
+	t.UpdateStatus("Getting mons for cluster")
 	// Get the mons
 	var mons models.Nodes
 	var clusterNodes models.Nodes
 	coll = sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 	if err := coll.Find(bson.M{"clusterid": clusterId}).All(&clusterNodes); err != nil {
+		t.UpdateStatus("Failed to get mons list for cluster")
 		return false, err
 	}
 	for _, clusterNode := range clusterNodes {
@@ -101,9 +116,11 @@ func createPool(clusterId uuid.UUID, request models.AddStorageRequest) (bool, er
 		}
 	}
 	if len(mons) <= 0 {
+		t.UpdateStatus("No mons found for cluster")
 		return false, errors.New("No mons available")
 	}
 
+	t.UpdateStatus("Getting mon node details")
 	// Pick a random mon from the list
 	var monNodeId uuid.UUID
 	if len(mons) == 1 {
@@ -115,18 +132,19 @@ func createPool(clusterId uuid.UUID, request models.AddStorageRequest) (bool, er
 	var monnode models.Node
 	coll = sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 	if err := coll.Find(bson.M{"nodeid": monNodeId}).One(&monnode); err != nil {
+		t.UpdateStatus("Error getting mon node details")
 		return false, err
 	}
 
+	t.UpdateStatus("Creating pool")
 	// Invoke backend api to create pool
-	// TODO: Later once ceph apis are ready, those should be used instead of salt wrapper apis
 	var pgNum int
 	if request.Options["pgnum"] != "" {
 		pgNum, _ = strconv.Atoi(request.Options["pgnum"])
 	} else {
 		pgNum = 0
 	}
-	ok, err := salt_backend.CreatePool(request.Name, monnode.Hostname, cluster.Name, uint(pgNum))
+	ok, err := cephapi_backend.CreatePool(request.Name, monnode.Hostname, cluster.Name, uint(pgNum))
 	if err != nil || !ok {
 		return false, err
 	} else {

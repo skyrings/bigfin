@@ -13,13 +13,15 @@ limitations under the License.
 package provider
 
 import (
+	"github.com/skyrings/bigfin/backend/cephapi"
 	"github.com/skyrings/bigfin/backend/salt"
 	"github.com/skyrings/skyring/tools/task"
 )
 
 var (
-	salt_backend = salt.New()
-	TaskManager  task.Manager
+	salt_backend    = salt.New()
+	cephapi_backend = cephapi.New()
+	TaskManager     task.Manager
 )
 
 type CephProvider struct{}
