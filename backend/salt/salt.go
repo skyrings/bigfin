@@ -15,7 +15,6 @@
 package salt
 
 import (
-	"github.com/sbinet/go-python"
 	"github.com/skyrings/bigfin/backend"
 	"github.com/skyrings/skyring/tools/gopy"
 	"github.com/skyrings/skyring/tools/uuid"
@@ -43,8 +42,7 @@ type Salt struct {
 }
 
 func (s Salt) CreateCluster(clusterName string, fsid uuid.UUID, mons []backend.Mon) (status bool, err error) {
-	var pyobj *python.PyObject
-	if pyobj, err = pyFuncs["CreateCluster"].Call(clusterName, fsid.String(), mons); err == nil {
+	if pyobj, err := pyFuncs["CreateCluster"].Call(clusterName, fsid.String(), mons); err == nil {
 		status = gopy.Bool(pyobj)
 	}
 
@@ -52,9 +50,7 @@ func (s Salt) CreateCluster(clusterName string, fsid uuid.UUID, mons []backend.M
 }
 
 func (s Salt) AddMon(clusterName string, mons []backend.Mon) (status bool, err error) {
-	var pyobj *python.PyObject
-
-	if pyobj, err = pyFuncs["AddMon"].Call(clusterName, mons); err == nil {
+	if pyobj, err := pyFuncs["AddMon"].Call(clusterName, mons); err == nil {
 		status = gopy.Bool(pyobj)
 	}
 
@@ -62,9 +58,7 @@ func (s Salt) AddMon(clusterName string, mons []backend.Mon) (status bool, err e
 }
 
 func (s Salt) StartMon(nodes []string) (status bool, err error) {
-	var pyobj *python.PyObject
-
-	if pyobj, err = pyFuncs["StartMon"].Call(nodes); err == nil {
+	if pyobj, err := pyFuncs["StartMon"].Call(nodes); err == nil {
 		status = gopy.Bool(pyobj)
 	}
 
@@ -72,9 +66,7 @@ func (s Salt) StartMon(nodes []string) (status bool, err error) {
 }
 
 func (s Salt) AddOSD(clusterName string, osd backend.OSD) (status bool, err error) {
-	var pyobj *python.PyObject
-
-	if pyobj, err = pyFuncs["AddOSD"].Call(clusterName, osd); err == nil {
+	if pyobj, err := pyFuncs["AddOSD"].Call(clusterName, osd); err == nil {
 		status = gopy.Bool(pyobj)
 	}
 
@@ -82,9 +74,7 @@ func (s Salt) AddOSD(clusterName string, osd backend.OSD) (status bool, err erro
 }
 
 func (s Salt) CreatePool(name string, mon string, clusterName string, pgnum uint) (status bool, err error) {
-	var pyobj *python.PyObject
-
-	if pyobj, err = pyFuncs["CreatePool"].Call(name, mon, clusterName, pgnum); err == nil {
+	if pyobj, err := pyFuncs["CreatePool"].Call(name, mon, clusterName, pgnum); err == nil {
 		status = gopy.Bool(pyobj)
 	}
 
@@ -92,9 +82,7 @@ func (s Salt) CreatePool(name string, mon string, clusterName string, pgnum uint
 }
 
 func (s Salt) ListPool(mon string, clusterName string) (names []string, err error) {
-	var pyobj *python.PyObject
-
-	if pyobj, err = pyFuncs["ListPool"].Call(mon, clusterName); err == nil {
+	if pyobj, err := pyFuncs["ListPool"].Call(mon, clusterName); err == nil {
 		err = gopy.Convert(pyobj, &names)
 	}
 
