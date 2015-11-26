@@ -25,6 +25,24 @@
     },
     {
       "key": {
+        "uuid": "5ac4a560_ecc99d5b",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-11-26T07:03:19Z",
+      "side": 1,
+      "message": "Not sure if I understood the comment.\nCan you put exact change required here?",
+      "parentUuid": "5ac4a560_4cb6113f",
+      "revId": "63047d5d1c4e946f99a781860ade65b3e67314a4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5ac4a560_aca5e505",
         "filename": "provider/cluster.go",
         "patchSetId": 2
@@ -42,6 +60,24 @@
         "endLine": 80,
         "endChar": 39
       },
+      "revId": "63047d5d1c4e946f99a781860ade65b3e67314a4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5ac4a560_ccb5c1ce",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 80,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-11-26T07:03:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5ac4a560_aca5e505",
       "revId": "63047d5d1c4e946f99a781860ade65b3e67314a4",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -71,6 +107,24 @@
     },
     {
       "key": {
+        "uuid": "5ac4a560_ace7a5e3",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 81,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-11-26T07:03:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5ac4a560_6c82ed53",
+      "revId": "63047d5d1c4e946f99a781860ade65b3e67314a4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5ac4a560_8c874961",
         "filename": "provider/cluster.go",
         "patchSetId": 2
@@ -88,6 +142,24 @@
         "endLine": 370,
         "endChar": 2
       },
+      "revId": "63047d5d1c4e946f99a781860ade65b3e67314a4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5ac4a560_ccece1ca",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 370,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-11-26T07:03:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5ac4a560_8c874961",
       "revId": "63047d5d1c4e946f99a781860ade65b3e67314a4",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -117,6 +189,24 @@
     },
     {
       "key": {
+        "uuid": "5ac4a560_ecd0bdf9",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 392,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-11-26T07:03:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5ac4a560_ac7c0574",
+      "revId": "63047d5d1c4e946f99a781860ade65b3e67314a4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5ac4a560_cc81414c",
         "filename": "provider/cluster.go",
         "patchSetId": 2
@@ -134,6 +224,24 @@
         "endLine": 400,
         "endChar": 16
       },
+      "revId": "63047d5d1c4e946f99a781860ade65b3e67314a4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5ac4a560_0cced95a",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 400,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-11-26T07:03:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5ac4a560_cc81414c",
       "revId": "63047d5d1c4e946f99a781860ade65b3e67314a4",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
@@ -163,6 +271,24 @@
     },
     {
       "key": {
+        "uuid": "5ac4a560_2cdb951c",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 410,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-11-26T07:03:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5ac4a560_ec951d89",
+      "revId": "63047d5d1c4e946f99a781860ade65b3e67314a4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5ac4a560_0c9339a4",
         "filename": "provider/cluster.go",
         "patchSetId": 2
@@ -180,6 +306,24 @@
         "endLine": 416,
         "endChar": 32
       },
+      "revId": "63047d5d1c4e946f99a781860ade65b3e67314a4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5ac4a560_4cd8d11d",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 416,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-11-26T07:03:19Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5ac4a560_0c9339a4",
       "revId": "63047d5d1c4e946f99a781860ade65b3e67314a4",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
