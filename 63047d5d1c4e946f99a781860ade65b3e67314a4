@@ -43,6 +43,24 @@
     },
     {
       "key": {
+        "uuid": "5ac4a560_af9a3212",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 76,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-11-27T05:35:56Z",
+      "side": 1,
+      "message": "UI will look for \u0027Failed\u0027 or \u0027success\u0027 if task is completed to determine the task is failed or successful",
+      "parentUuid": "5ac4a560_ecc99d5b",
+      "revId": "63047d5d1c4e946f99a781860ade65b3e67314a4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5ac4a560_aca5e505",
         "filename": "provider/cluster.go",
         "patchSetId": 2
