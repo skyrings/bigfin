@@ -1,6 +1,8 @@
 parent: null
 package: github.com/skyrings/bigfin
 import:
+- package: github.com/skyrings/skyring
+  version: f716957ce33addc156241b7f6dde99134b4cc20e
 - package: github.com/gorilla/context
   version: 1c83b3eabd45b6d76072b66b746c20815fb2872d
 - package: github.com/gorilla/mux
