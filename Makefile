@@ -1,3 +1,12 @@
+CWD := $(shell pwd)
+BUILDS    := .build
+VERSION   := 1.0
+DEPLOY    := $(BUILDS)/deploy
+TARDIR    := skyring-ceph-provider-$(VERSION)
+BIGFINDIR := bigfin
+RPMBUILD  := $(HOME)/rpmbuild/
+PRINT_STATUS = export EC=$$?; cd $(CWD); if [ "$$EC" -eq "0" ]; then printf "SUCCESS!\n"; else exit $$EC; fi
+
 all: install
 
 checkdeps:
@@ -54,3 +63,20 @@ saltinstall:
 install: build pyinstall saltinstall
 	@echo "Doing $@"
 	@go install
+
+rpm:
+	@echo "Building RPM"
+	mkdir -p $(DEPLOY)/latest $(HOME)/$(BUILDS)
+	cd .. ;\
+	cp -fr $(BIGFINDIR) $(TARDIR) ; \
+	cp -f $(TARDIR)/backend/salt/python/setup.py $(TARDIR); \
+	cp -fr $(TARDIR)/backend/salt/python/skyring $(TARDIR)/; \
+	tar -zcf skyring-ceph-provider-$(VERSION).tar.gz $(TARDIR); \
+	cp skyring-ceph-provider-$(VERSION).tar.gz $(RPMBUILD)/SOURCES
+	rpmbuild -ba skyring-ceph-provider.spec
+	$(PRINT_STATUS); \
+	if [ "$$EC" -eq "0" ]; then \
+		cp -f $(RPMBUILD)/RPMS/noarch/skyring-ceph-provider-$(VERSION)*.rpm $(DEPLOY)/latest/; \
+		printf "\nThe Skyring Ceph Provider RPMs are located at:\n\n"; \
+		printf "   $(DEPLOY)/latest\n\n\n\n"; \
+	fi
