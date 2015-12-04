@@ -11,13 +11,13 @@ getversion:
 getdeps: checkdeps getversion
 	@echo "Doing $@"
 	@go get github.com/golang/lint/golint
-	@go get -t ./...
+	@go get github.com/Masterminds/glide
 
-verifiers: vet lint fmt getdeps
+verifiers: getdeps vet fmt lint
 
 vet:
 	@echo "Doing $@"
-	@go tool vet .
+	@bash $(PWD)/build-aux/run-vet.sh
 
 fmt:
 	@echo "Doing $@"
@@ -29,15 +29,19 @@ lint:
 
 test:
 	@echo "Doing $@"
-	@go test -v ./...
+	@GO15VENDOREXPERIMENT=1 go test $$(GO15VENDOREXPERIMENT=1 glide nv)
 
 pybuild:
 	@echo "Doing $@"
 	@cd backend/salt/python; python setup.py build
 
-build: verifiers pybuild test
+vendor-update:
+	@echo "Updating vendored packages"
+	@GO15VENDOREXPERIMENT=1 glide -q up
+
+build: getdeps verifiers vendor-update pybuild test
 	@echo "Doing $@"
-	@go build -o ceph_provider
+	@GO15VENDOREXPERIMENT=1 go build
 
 pyinstall:
 	@echo "Doing $@"
@@ -53,4 +57,4 @@ saltinstall:
 
 install: build pyinstall saltinstall
 	@echo "Doing $@"
-	@go install
+	@GO15VENDOREXPERIMENT=1 go install
