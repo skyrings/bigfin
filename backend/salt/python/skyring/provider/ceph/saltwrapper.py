@@ -501,3 +501,23 @@ def ListPool(monitor, cluster_name):
 
     log.error("list_pool failed. error=%s" % out)
     raise Exception("list_pool failed. error=%s" % out)
+
+
+def ClusterUp(monitor, cluster_name):
+    cmd = "ceph -s --cluster %s" % cluster_name
+
+    out = local.cmd(monitor, 'cmd.run_all', [cmd])
+
+    if out.get(monitor, {}).get('retcode') == 0:
+        stdout = out.get(monitor, {}).get('stdout')
+        arr = stdout.rstrip().split('\n')
+        for entry in arr:
+            if entry.strip().startswith('health'):
+                status = entry.strip().split(' ')[1]
+                if status in ['HEALTH_WARN', 'HEALTH_OK']:
+                    return True
+                else:
+                    return False
+
+    log.error("ceph cluster status failed. error=%s", out)
+    raise Exception("ceph cluster status failed. error=%s" % out)

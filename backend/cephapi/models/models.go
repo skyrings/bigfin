@@ -14,21 +14,6 @@
 
 package models
 
-type CephPool struct {
-	Id                  int    `json:"id"`
-	Name                string `json:"name"`
-	Size                int    `json:"size"`
-	MinSize             uint64 `json:"min_size"`
-	QuotaMaxObjects     int    `json:"quota_max_objects"`
-	HashPsPool          bool   `json:"hashpspool"`
-	QuotaMaxBytes       uint64 `json:"quota_max_bytes"`
-	PgNum               int    `json:"pg_num"`
-	PgpNum              int    `json:"pgp_num"`
-	Full                bool   `json:"full"`
-	CrashReplayInterval int    `json:"crash_replay_interval"`
-	CrushRuleSet        int    `json:"crush_ruleset"`
-}
-
 type CephCluster struct {
 	Name       string `json:"name"`
 	Id         string `json:"id"`
