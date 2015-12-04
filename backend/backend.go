@@ -14,7 +14,9 @@
 
 package backend
 
-import "github.com/skyrings/skyring/tools/uuid"
+import (
+	"github.com/skyrings/skyring/tools/uuid"
+)
 
 type Mon struct {
 	Node       string
@@ -30,11 +32,28 @@ type OSD struct {
 	FSType     string
 }
 
+type CephPool struct {
+	Id                  int    `json:"id"`
+	Name                string `json:"name"`
+	Size                int    `json:"size"`
+	MinSize             uint64 `json:"min_size"`
+	QuotaMaxObjects     int    `json:"quota_max_objects"`
+	HashPsPool          bool   `json:"hashpspool"`
+	QuotaMaxBytes       uint64 `json:"quota_max_bytes"`
+	PgNum               int    `json:"pg_num"`
+	PgpNum              int    `json:"pgp_num"`
+	Full                bool   `json:"full"`
+	CrashReplayInterval int    `json:"crash_replay_interval"`
+	CrushRuleSet        int    `json:"crush_ruleset"`
+}
+
 type Backend interface {
 	CreateCluster(clusterName string, fsid uuid.UUID, mons []Mon) (bool, error)
 	AddMon(clusterName string, mons []Mon) (bool, error)
 	StartMon(nodes []string) (bool, error)
 	AddOSD(clusterName string, osd OSD) (bool, error)
 	CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64) (bool, error)
-	ListPool(mon string, clusterName string) ([]string, error)
+	ListPoolNames(mon string, clusterName string) ([]string, error)
+	GetClusterStatus(mon string, clusterName string) (string, error)
+	GetPools(mon string, clusterName string) ([]CephPool, error)
 }

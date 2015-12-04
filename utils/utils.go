@@ -40,6 +40,15 @@ func WriteResponse(code int, msg string) models.RpcResponse {
 	return response
 }
 
+func WriteResponseWithData(code int, msg string, result []byte) models.RpcResponse {
+	var response models.RpcResponse
+	response.Status.StatusCode = code
+	response.Status.StatusMessage = msg
+	response.Data.RequestId = ""
+	response.Data.Result = result
+	return response
+}
+
 func WriteAsyncResponse(taskId uuid.UUID, msg string, result []byte) models.RpcResponse {
 	var response models.RpcResponse
 	response.Status.StatusCode = http.StatusAccepted
