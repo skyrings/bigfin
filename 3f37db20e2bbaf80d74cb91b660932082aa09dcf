@@ -1,0 +1,193 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5ac4a560_66dbc5ed",
+        "filename": "backend/cephapi/cephapi.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-04T09:46:28Z",
+      "side": 1,
+      "message": "Why getting the id from ceph API? Are we not storing this in DB?",
+      "range": {
+        "startLine": 59,
+        "startChar": 20,
+        "endLine": 59,
+        "endChar": 48
+      },
+      "revId": "3f37db20e2bbaf80d74cb91b660932082aa09dcf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5ac4a560_c61d79bf",
+        "filename": "backend/cephapi/cephapi.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 71,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-04T09:46:28Z",
+      "side": 1,
+      "message": "Is this def value correct as per API doc?",
+      "range": {
+        "startLine": 71,
+        "startChar": 2,
+        "endLine": 71,
+        "endChar": 25
+      },
+      "revId": "3f37db20e2bbaf80d74cb91b660932082aa09dcf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5ac4a560_067f71e1",
+        "filename": "backend/cephapi/cephapi.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 73,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-04T09:46:28Z",
+      "side": 1,
+      "message": "Is this def value correct as per API doc?",
+      "range": {
+        "startLine": 73,
+        "startChar": 2,
+        "endLine": 73,
+        "endChar": 29
+      },
+      "revId": "3f37db20e2bbaf80d74cb91b660932082aa09dcf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5ac4a560_26846dd3",
+        "filename": "backend/cephapi/cephapi.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 77,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-04T09:46:28Z",
+      "side": 1,
+      "message": "Is this def value correct as per API doc?",
+      "range": {
+        "startLine": 77,
+        "startChar": 2,
+        "endLine": 77,
+        "endChar": 25
+      },
+      "revId": "3f37db20e2bbaf80d74cb91b660932082aa09dcf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5ac4a560_663f4526",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-04T09:46:28Z",
+      "side": 1,
+      "message": "How you are managing the login. I haven\u0027t seen that authentication is done anywhere?\n\nWhy we are creating a client object every time you send a POST request? Can we create a single object use that every time? More like https://github.com/influxdb/influxdb/blob/master/client/v2/client.go\n\nsample -\u003e\n  c :\u003d client.NewHTTPClient(client.HTTPConfig{\n        Addr: \"http://localhost:8086\",\n        Username: username,\n        Password: password,\n    })\n\n    // Create a new point batch\n    bp :\u003d client.NewBatchPoints(client.BatchPointsConfig{\n        Database:  MyDB,\n        Precision: \"s\",\n    })",
+      "revId": "3f37db20e2bbaf80d74cb91b660932082aa09dcf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5ac4a560_061851d2",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 42,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-04T09:46:28Z",
+      "side": 1,
+      "message": "Why to pass this every time?",
+      "range": {
+        "startLine": 42,
+        "startChar": 14,
+        "endLine": 42,
+        "endChar": 29
+      },
+      "revId": "3f37db20e2bbaf80d74cb91b660932082aa09dcf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5ac4a560_a6931df9",
+        "filename": "backend/cephapimodels/misc.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-04T09:46:28Z",
+      "side": 1,
+      "message": "It would be better if you have dir struct like\n/backend/cephapi\n\n/backend/cephapi/models\n/backend/cephapi/api or something",
+      "revId": "3f37db20e2bbaf80d74cb91b660932082aa09dcf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5ac4a560_c69019ef",
+        "filename": "backend/cephapimodels/models.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-04T09:46:28Z",
+      "side": 1,
+      "message": "Why we needs to have these models here? what is the purpose of these?",
+      "revId": "3f37db20e2bbaf80d74cb91b660932082aa09dcf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5ac4a560_26454d70",
+        "filename": "provider/storage.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 232,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-04T09:46:28Z",
+      "side": 1,
+      "message": "What you are doing here?",
+      "range": {
+        "startLine": 232,
+        "startChar": 8,
+        "endLine": 232,
+        "endChar": 27
+      },
+      "revId": "3f37db20e2bbaf80d74cb91b660932082aa09dcf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
