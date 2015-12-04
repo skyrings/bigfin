@@ -122,6 +122,10 @@ func (c CephApi) ListPool(mon string, clusterName string) ([]string, error) {
 	return []string{}, nil
 }
 
+func (c CephApi) ClusterUp(mon string, clusterName string) (status bool, err error) {
+	return true, nil
+}
+
 func New() backend.Backend {
 	api := new(CephApi)
 	api.LoadRoutes()

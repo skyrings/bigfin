@@ -446,3 +446,70 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 
 	return nil
 }
+
+func (s *CephProvider) ClusterUp(req models.RpcRequest, resp *models.RpcResponse) error {
+	cluster_id_str := req.RpcRequestVars["cluster-id"]
+	cluster_id, err := uuid.Parse(cluster_id_str)
+	if err != nil {
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
+		return err
+	}
+
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	// Get cluster details
+	var cluster models.Cluster
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	if err := coll.Find(bson.M{"clusterid": *cluster_id}).One(&cluster); err != nil {
+		*resp = utils.WriteResponse(http.StatusInternalServerError, "Error getting the cluster details")
+		return err
+	}
+
+	// Get the mons
+	var mons models.Nodes
+	var clusterNodes models.Nodes
+	coll = sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
+	if err := coll.Find(bson.M{"clusterid": *cluster_id}).All(&clusterNodes); err != nil {
+		*resp = utils.WriteResponse(http.StatusInternalServerError, "Failed to get mons list for cluster")
+		return err
+	}
+	for _, clusterNode := range clusterNodes {
+		for k, v := range clusterNode.Options {
+			if k == "mon" && v == "Y" {
+				mons = append(mons, clusterNode)
+			}
+		}
+	}
+	if len(mons) <= 0 {
+		*resp = utils.WriteResponse(http.StatusNotFound, "No mons available")
+		return errors.New("No mons available")
+	}
+
+	// Pick a random mon from the list
+	var monNodeId uuid.UUID
+	if len(mons) == 1 {
+		monNodeId = mons[0].NodeId
+	} else {
+		randomIndex := utils.RandomNum(0, len(mons)-1)
+		monNodeId = mons[randomIndex].NodeId
+	}
+	var monnode models.Node
+	coll = sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
+	if err := coll.Find(bson.M{"nodeid": monNodeId}).One(&monnode); err != nil {
+		*resp = utils.WriteResponse(http.StatusInternalServerError, "Error getting mon node details")
+		return err
+	}
+
+	// Get the cluser status
+	ok, err := salt_backend.ClusterUp(monnode.Hostname, cluster.Name)
+	if err != nil {
+		*resp = utils.WriteResponse(http.StatusInternalServerError, "Error getting cluster status")
+		return err
+	}
+	if ok {
+		*resp = utils.WriteResponse(http.StatusOK, "UP")
+	} else {
+		*resp = utils.WriteResponse(http.StatusOK, "DOWN")
+	}
+	return nil
+}

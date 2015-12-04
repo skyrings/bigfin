@@ -28,6 +28,7 @@ var funcNames = [...]string{
 	"AddOSD",
 	"CreatePool",
 	"ListPool",
+	"ClusterUp",
 }
 
 var pyFuncs map[string]*gopy.PyFunction
@@ -96,6 +97,16 @@ func (s Salt) ListPool(mon string, clusterName string) (names []string, err erro
 
 	if pyobj, err = pyFuncs["ListPool"].Call(mon, clusterName); err == nil {
 		err = gopy.Convert(pyobj, &names)
+	}
+
+	return
+}
+
+func (s Salt) ClusterUp(mon string, clusterName string) (status bool, err error) {
+	var pyobj *python.PyObject
+
+	if pyobj, err = pyFuncs["ClusterUp"].Call(clusterName); err == nil {
+		status = gopy.Bool(pyobj)
 	}
 
 	return

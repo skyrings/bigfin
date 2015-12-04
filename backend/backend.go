@@ -37,4 +37,5 @@ type Backend interface {
 	AddOSD(clusterName string, osd OSD) (bool, error)
 	CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64) (bool, error)
 	ListPool(mon string, clusterName string) ([]string, error)
+	ClusterUp(mon string, clusterName string) (bool, error)
 }
