@@ -117,39 +117,9 @@ func createPool(clusterId uuid.UUID, request models.AddStorageRequest, t *task.T
 		return false, err
 	}
 
-	t.UpdateStatus("Getting mons for cluster")
-	// Get the mons
-	var mons models.Nodes
-	var clusterNodes models.Nodes
-	coll = sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
-	if err := coll.Find(bson.M{"clusterid": clusterId}).All(&clusterNodes); err != nil {
-		t.UpdateStatus("Failed to get mons list for cluster")
-		return false, err
-	}
-	for _, clusterNode := range clusterNodes {
-		for k, v := range clusterNode.Options {
-			if k == "mon" && v == "Y" {
-				mons = append(mons, clusterNode)
-			}
-		}
-	}
-	if len(mons) <= 0 {
-		t.UpdateStatus("No mons found for cluster")
-		return false, errors.New("No mons available")
-	}
-
-	t.UpdateStatus("Getting mon node details")
-	// Pick a random mon from the list
-	var monNodeId uuid.UUID
-	if len(mons) == 1 {
-		monNodeId = mons[0].NodeId
-	} else {
-		randomIndex := utils.RandomNum(0, len(mons)-1)
-		monNodeId = mons[randomIndex].NodeId
-	}
-	var monnode models.Node
-	coll = sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
-	if err := coll.Find(bson.M{"nodeid": monNodeId}).One(&monnode); err != nil {
+	t.UpdateStatus("Getting a mon from cluster")
+	monnode, err := GetRandomMon(clusterId)
+	if err != nil {
 		t.UpdateStatus("Error getting mon node details")
 		return false, err
 	}
@@ -240,4 +210,68 @@ func avg_osd_size(slus []models.StorageLogicalUnit) uint64 {
 		totalOsdSize += slu.StorageDeviceSize
 	}
 	return totalOsdSize / uint64(len(slus))
+}
+
+func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcResponse) error {
+	cluster_id_str := req.RpcRequestVars["cluster-id"]
+	cluster_id, err := uuid.Parse(cluster_id_str)
+	if err != nil {
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
+		return err
+	}
+	monnode, err := GetRandomMon(*cluster_id)
+	if err != nil {
+		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting a mon node in cluster. error: %v", err))
+		return err
+	}
+
+	// Get cluster details
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	var cluster models.Cluster
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	if err := coll.Find(bson.M{"clusterid": *cluster_id}).One(&cluster); err != nil {
+		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting cluster details. error: %v", err))
+		return err
+	}
+
+	// Get the pools for the cluster
+	pools, err := cephapi_backend.GetPools(monnode.Hostname, cluster.Name)
+	if err != nil {
+		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting storages. error: %v", err))
+		return err
+	}
+	var storages []models.AddStorageRequest
+	for _, pool := range pools {
+		storage := models.AddStorageRequest{
+			Name:     pool.Name,
+			Type:     "replicated",
+			Replicas: pool.Size,
+		}
+		if pool.QuotaMaxObjects != 0 && pool.QuotaMaxBytes != 0 {
+			storage.QuotaEnabled = true
+			quotaParams := make(map[string]string)
+			quotaParams["quota_max_objects"] = strconv.Itoa(pool.QuotaMaxObjects)
+			quotaParams["quota_max_bytes"] = strconv.FormatUint(pool.QuotaMaxBytes, 10)
+			storage.QuotaParams = quotaParams
+		}
+		options := make(map[string]string)
+		options["id"] = strconv.Itoa(pool.Id)
+		options["pgnum"] = strconv.Itoa(pool.PgNum)
+		options["pgp_num"] = strconv.Itoa(pool.PgpNum)
+		options["full"] = strconv.FormatBool(pool.Full)
+		options["hashpspool"] = strconv.FormatBool(pool.HashPsPool)
+		options["min_size"] = strconv.FormatUint(pool.MinSize, 10)
+		options["crash_replay_interval"] = strconv.Itoa(pool.CrashReplayInterval)
+		options["crush_ruleset"] = strconv.Itoa(pool.CrushRuleSet)
+		storage.Options = options
+		storages = append(storages, storage)
+	}
+	result, err := json.Marshal(storages)
+	if err != nil {
+		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error forming the output. error: %v", err))
+		return err
+	}
+	*resp = utils.WriteResponseWithData(http.StatusOK, "", result)
+	return nil
 }

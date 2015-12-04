@@ -135,7 +135,12 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 			cluster.CompatVersion = request.CompatVersion
 			cluster.Type = request.Type
 			cluster.WorkLoad = request.WorkLoad
-			cluster.Status = models.CLUSTER_STATUS_ACTIVE_AND_AVAILABLE
+			ok, err := cluster_up(*cluster_uuid)
+			if err != nil || !ok {
+				cluster.Status = models.CLUSTER_STATUS_NOT_AVAILABLE
+			} else {
+				cluster.Status = models.CLUSTER_STATUS_ACTIVE_AND_AVAILABLE
+			}
 			cluster.Tags = request.Tags
 			cluster.Options = request.Options
 			cluster.Networks = request.Networks
@@ -446,4 +451,44 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 	}
 
 	return nil
+}
+
+func (s *CephProvider) GetClusterStatus(req models.RpcRequest, resp *models.RpcResponse) error {
+	cluster_id_str := req.RpcRequestVars["cluster-id"]
+	cluster_id, err := uuid.Parse(cluster_id_str)
+	if err != nil {
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
+		return err
+	}
+	ok, err := cluster_up(*cluster_id)
+	if ok {
+		*resp = utils.WriteResponse(http.StatusOK, models.STATUS_UP)
+	} else {
+		*resp = utils.WriteResponse(http.StatusOK, models.STATUS_DOWN)
+	}
+	return nil
+}
+
+func cluster_up(clusterId uuid.UUID) (status bool, err error) {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	// Get cluster details
+	var cluster models.Cluster
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	if err := coll.Find(bson.M{"clusterid": clusterId}).One(&cluster); err != nil {
+		return false, err
+	}
+
+	// Pick a random mon from the list
+	monnode, err := GetRandomMon(clusterId)
+	if err != nil {
+		return false, errors.New(fmt.Sprintf("Error getting a mon. error: %v", err))
+	}
+
+	// Get the cluser status
+	ok, err := salt_backend.ClusterUp(monnode.Hostname, cluster.Name)
+	if err != nil || !ok {
+		return false, err
+	}
+	return ok, nil
 }
