@@ -51,6 +51,12 @@ func (c *CephApi) LoadRoutes() {
 			Method:  "GET",
 			Version: 2,
 		},
+		{
+			Name:    "GetPools",
+			Pattern: "cluster/{cluster-fsid}/pool?format=json",
+			Method:  "GET",
+			Version: 2,
+		},
 	}
 	for _, route := range routes {
 		CEPH_API_ROUTES[route.Name] = route

@@ -118,12 +118,12 @@ func (c CephApi) CreatePool(name string, mon string, clusterName string, pgnum u
 	return true, nil
 }
 
-func (c CephApi) ListPool(mon string, clusterName string) ([]string, error) {
+func (c CephApi) ListPoolNames(mon string, clusterName string) ([]string, error) {
 	return []string{}, nil
 }
 
-func (c CephApi) ClusterUp(mon string, clusterName string) (status bool, err error) {
-	return true, nil
+func (c CephApi) GetClusterStatus(mon string, clusterName string) (status string, err error) {
+	return "", nil
 }
 
 func New() backend.Backend {
@@ -155,4 +155,29 @@ func route_request(route CephApiRoute, mon string, body io.Reader) (*http.Respon
 		return handler.HttpGet(fmt.Sprintf("http://%s:%d/%s/v%d/%s", mon, models.CEPH_API_PORT, models.CEPH_API_DEFAULT_PREFIX, route.Version, route.Pattern))
 	}
 	return nil, errors.New("Invalid method type")
+}
+
+func (c CephApi) GetPools(mon string, clusterName string) ([]backend.CephPool, error) {
+	// Get the cluster id
+	cluster_id, err := cluster_id(clusterName)
+	if err != nil {
+		return []backend.CephPool{}, errors.New(fmt.Sprintf("Could not get id for cluster: %v", err))
+	}
+
+	// Replace cluster id in route pattern
+	getPoolsRoute := CEPH_API_ROUTES["GetPools"]
+	getPoolsRoute.Pattern = strings.Replace(getPoolsRoute.Pattern, "{cluster-fsid}", cluster_id, 1)
+	resp, err := route_request(getPoolsRoute, mon, bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return []backend.CephPool{}, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return []backend.CephPool{}, err
+	}
+	var pools []backend.CephPool
+	if err := json.Unmarshal(respBody, &pools); err != nil {
+		return []backend.CephPool{}, err
+	}
+	return pools, nil
 }
