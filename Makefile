@@ -41,7 +41,7 @@ vendor-update:
 
 build: getdeps verifiers vendor-update pybuild test
 	@echo "Doing $@"
-	@GO15VENDOREXPERIMENT=1 go build
+	@GO15VENDOREXPERIMENT=1 go build -o ceph_provider
 
 pyinstall:
 	@echo "Doing $@"
