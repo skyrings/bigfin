@@ -56,7 +56,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 		ok, err := createPool(*cluster_id, request, t)
 		if err != nil || !ok {
 			t.UpdateStatus("Failed. error: %v", err)
-			t.Done()
+			t.Done(models.TASK_STATUS_FAILURE)
 			return
 		}
 
@@ -66,7 +66,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 		storage_id, err := uuid.New()
 		if err != nil {
 			t.UpdateStatus("Failed. error: %v", err)
-			t.Done()
+			t.Done(models.TASK_STATUS_FAILURE)
 			return
 		}
 		storage.StorageId = *storage_id
@@ -89,11 +89,11 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 		coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
 		if err := coll.Insert(storage); err != nil {
 			t.UpdateStatus("Error. error: %v", err)
-			t.Done()
+			t.Done(models.TASK_STATUS_FAILURE)
 			return
 		}
 		t.UpdateStatus("Success")
-		t.Done()
+		t.Done(models.TASK_STATUS_SUCCESS)
 	}
 	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-CreateStorage", asyncTask, nil, nil, nil); err != nil {
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for storage creation")

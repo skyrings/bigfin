@@ -79,7 +79,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 		ret_val, err := salt_backend.CreateCluster(request.Name, *cluster_uuid, mons)
 		if err != nil {
 			t.UpdateStatus("Failed. error: %v", err)
-			t.Done()
+			t.Done(models.TASK_STATUS_FAILURE)
 			return
 		}
 
@@ -97,7 +97,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 						"clusterip4": node_ips[node.NodeId]["cluster"],
 						"publicip4":  node_ips[node.NodeId]["public"]}}); err != nil {
 					t.UpdateStatus("Failed. error: %v", err)
-					t.Done()
+					t.Done(models.TASK_STATUS_FAILURE)
 					return
 				}
 			}
@@ -107,7 +107,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 			ret_val, err := startAndPersistMons(*cluster_uuid, mons)
 			if !ret_val {
 				t.UpdateStatus("Failed. error: %v", err)
-				t.Done()
+				t.Done(models.TASK_STATUS_FAILURE)
 				return
 			}
 
@@ -116,14 +116,14 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 			updated_nodes, err := getNodes(request.Nodes)
 			if err != nil {
 				t.UpdateStatus("Failed. error: %v", err)
-				t.Done()
+				t.Done(models.TASK_STATUS_FAILURE)
 				return
 			}
 			t.UpdateStatus("Adding OSDs")
 			ret_val, err = addOSDs(*cluster_uuid, request.Name, updated_nodes, request.Nodes)
 			if err != nil || !ret_val {
 				t.UpdateStatus("Failed. error: %v", err)
-				t.Done()
+				t.Done(models.TASK_STATUS_FAILURE)
 				return
 			}
 
@@ -144,11 +144,11 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 			coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
 			if err := coll.Insert(cluster); err != nil {
 				t.UpdateStatus("Failed. error: %v", err)
-				t.Done()
+				t.Done(models.TASK_STATUS_FAILURE)
 				return
 			}
 			t.UpdateStatus("Success")
-			t.Done()
+			t.Done(models.TASK_STATUS_SUCCESS)
 		}
 	}
 	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-CreateCluster", asyncTask, nil, nil, nil); err != nil {
@@ -393,7 +393,7 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 					"clusterip4": node_ips[node.NodeId]["cluster"],
 					"publicip4":  node_ips[node.NodeId]["public"]}}); err != nil {
 				t.UpdateStatus("Failed. error: %v", err)
-				t.Done()
+				t.Done(models.TASK_STATUS_FAILURE)
 				return
 			}
 		}
@@ -404,7 +404,7 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 			ret_val, err := salt_backend.AddMon(cluster.Name, mons)
 			if err != nil {
 				t.UpdateStatus("Failed. error: %v", err)
-				t.Done()
+				t.Done(models.TASK_STATUS_FAILURE)
 				return
 			}
 			if ret_val {
@@ -413,7 +413,7 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 				ret_val, err := startAndPersistMons(*cluster_id, mons)
 				if err != nil || !ret_val {
 					t.UpdateStatus("Failed. error: %v", err)
-					t.Done()
+					t.Done(models.TASK_STATUS_FAILURE)
 					return
 				}
 			}
@@ -424,18 +424,18 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 		updated_nodes, err := getNodes(new_nodes)
 		if err != nil {
 			t.UpdateStatus("Failed. error: %v", err)
-			t.Done()
+			t.Done(models.TASK_STATUS_FAILURE)
 			return
 		}
 		t.UpdateStatus("Adding OSDs")
 		ret_val, err := addOSDs(*cluster_id, cluster.Name, updated_nodes, new_nodes)
 		if err != nil || !ret_val {
 			t.UpdateStatus("Failed. error: %v", err)
-			t.Done()
+			t.Done(models.TASK_STATUS_FAILURE)
 			return
 		}
 		t.UpdateStatus("Success")
-		t.Done()
+		t.Done(models.TASK_STATUS_SUCCESS)
 	}
 
 	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-ExpandCluster", asyncTask, nil, nil, nil); err != nil {
