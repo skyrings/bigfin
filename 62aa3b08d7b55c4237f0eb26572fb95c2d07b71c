@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5ac4a560_b0d42148",
+        "filename": "backend/backend.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1006048
+      },
+      "writtenOn": "2015-12-09T11:57:04Z",
+      "side": 1,
+      "message": "You might want call this as \u0027ClusterStatus\u0027 or \u0027GetClusterStatus\u0027",
+      "revId": "62aa3b08d7b55c4237f0eb26572fb95c2d07b71c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
