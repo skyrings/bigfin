@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5ac4a560_8a3b5637",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-12-16T06:57:55Z",
+      "side": 1,
+      "message": "Where is skyring_backend defined?",
+      "revId": "d517382da788e8e5f3a91230fc3fde6ea894f3bc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
