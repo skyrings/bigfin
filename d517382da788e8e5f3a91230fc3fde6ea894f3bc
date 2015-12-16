@@ -34,6 +34,24 @@
       "revId": "d517382da788e8e5f3a91230fc3fde6ea894f3bc",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5ac4a560_2aea4275",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-12-16T07:25:30Z",
+      "side": 1,
+      "message": "got it",
+      "parentUuid": "5ac4a560_0a658644",
+      "revId": "d517382da788e8e5f3a91230fc3fde6ea894f3bc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
