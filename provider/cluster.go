@@ -141,6 +141,11 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 			cluster.Networks = request.Networks
 			cluster.OpenStackServices = request.OpenStackServices
 			cluster.Enabled = true
+			if request.MonitoringPlugins == nil || len(request.MonitoringPlugins) == 0 {
+				request.MonitoringPlugins = skyring_backend.GetDefaultThresholdValues()
+			}
+			cluster.MonitoringPlugins = request.MonitoringPlugins
+
 			coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
 			if err := coll.Insert(cluster); err != nil {
 				t.UpdateStatus("Failed. error: %v", err)
