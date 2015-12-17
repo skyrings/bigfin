@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3ac1b152_b4fe2037",
+        "filename": "main.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-17T04:00:25Z",
+      "side": 1,
+      "message": "This should be read from the config file and should be configurable Or you can inherit it from the skyring. Both level and path",
+      "range": {
+        "startLine": 32,
+        "startChar": 1,
+        "endLine": 35,
+        "endChar": 2
+      },
+      "revId": "445719bddda48eb4c363490ab340754d163de46d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
