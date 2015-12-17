@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3ac1b152_14eef48b",
+        "filename": "backend/cephapi/api.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 74,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-17T03:54:08Z",
+      "side": 1,
+      "message": "In this case, whatever values you not provided will be initialized with go defaults . Ints will be 0 and bool will false and send across with payload. if you want avoid this, you need to construct a map with required keys and send",
+      "range": {
+        "startLine": 69,
+        "startChar": 1,
+        "endLine": 74,
+        "endChar": 30
+      },
+      "revId": "f995e06709ebabef972b2c21caac33bbf066d294",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
