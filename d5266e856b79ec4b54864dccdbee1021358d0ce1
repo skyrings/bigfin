@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3ac1b152_b421c0b6",
+        "filename": "backend/cephapi/models/models.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-22T19:46:50Z",
+      "side": 0,
+      "message": "Why moved this to backend?  its better to have everything in models and refer from here, rather than having this at multiple places?",
+      "range": {
+        "startLine": 19,
+        "startChar": 1,
+        "endLine": 24,
+        "endChar": 32
+      },
+      "revId": "d5266e856b79ec4b54864dccdbee1021358d0ce1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
