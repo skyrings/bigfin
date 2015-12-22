@@ -17,7 +17,7 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="skyring-ceph-provider",
+    name="bigfin",
     version="0.0.1",
     description='Python wrappers for SkyRing Ceph provider',
     license='Apache-2.0',

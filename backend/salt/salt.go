@@ -33,7 +33,7 @@ var pyFuncs map[string]*gopy.PyFunction
 
 func init() {
 	var err error
-	if pyFuncs, err = gopy.Import("skyring.provider.ceph.saltwrapper", funcNames[:]...); err != nil {
+	if pyFuncs, err = gopy.Import("bigfin.saltwrapper", funcNames[:]...); err != nil {
 		panic(err)
 	}
 }
