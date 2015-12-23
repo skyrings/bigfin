@@ -28,7 +28,7 @@ import salt.config
 import utils
 
 
-log = logging.getLogger(__name__)
+log = logging.getLogger(__name__).root
 opts = salt.config.master_config('/etc/salt/master')
 
 _CEPH_CLUSTER_CONF_DIR = '/srv/salt/skyring/conf/ceph'
