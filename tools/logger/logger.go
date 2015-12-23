@@ -6,8 +6,6 @@ import (
 	"github.com/skyrings/skyring/tools/gopy"
 	"os"
 	"path"
-
-	sys_log "log"
 )
 
 var fileFormat = logging.MustStringFormatter(
@@ -21,13 +19,11 @@ var log *logging.Logger
 var logInit = false
 
 func Init(filename string, logToStderr bool, level logging.Level) error {
-	sys_log.Println(logInit)
 	if logInit {
 		return nil
 	}
 
 	logName := path.Base(os.Args[0])
-	sys_log.Println(logName)
 
 	if pyFunc, err := gopy.Import("bigfin", "InitLog"); err != nil {
 		return err
@@ -41,12 +37,10 @@ func Init(filename string, logToStderr bool, level logging.Level) error {
 	var fileLeveled, stderrLeveled logging.LeveledBackend
 
 	log = logging.MustGetLogger(logName)
-	sys_log.Println(log)
 
 	if file, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err != nil {
 		return err
 	} else {
-		sys_log.Println(filename)
 		fileBackend = logging.NewLogBackend(file, "", 0)
 		fileLeveled = logging.AddModuleLevel(logging.NewBackendFormatter(fileBackend, fileFormat))
 		fileLeveled.SetLevel(level, "")
@@ -62,7 +56,6 @@ func Init(filename string, logToStderr bool, level logging.Level) error {
 	}
 
 	logInit = true
-	sys_log.Println("Log initialized")
 	return nil
 }
 
