@@ -1,0 +1,119 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "9aa7fdbe_587c3173",
+        "filename": "Makefile",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-23T03:50:04Z",
+      "side": 1,
+      "message": "why we copying the vendor/* to $(BIGFIN_BUILD)/golang/gopath/src/? should it be remain in (BIGFIN_BUILD_SRC)/vendor/?",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 71
+      },
+      "revId": "fa048d3ab542b7d80b5c86eb977c92e32a10882e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa7fdbe_38876d63",
+        "filename": "Makefile",
+        "patchSetId": 3
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-23T03:50:04Z",
+      "side": 1,
+      "message": "binary is available in BUILD_SRC? which version of golang are we using? in latest versions it will be present in $GOPATH/bin",
+      "range": {
+        "startLine": 68,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 24
+      },
+      "revId": "fa048d3ab542b7d80b5c86eb977c92e32a10882e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa7fdbe_d8b8212d",
+        "filename": "bigfin.spec",
+        "patchSetId": 3
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-23T03:50:04Z",
+      "side": 1,
+      "message": "Need to be \u003e\u003d 2015.5.5\nDo we really need to specify this dependency? skyring already pulls in that dependency right?",
+      "range": {
+        "startLine": 20,
+        "startChar": 10,
+        "endLine": 20,
+        "endChar": 20
+      },
+      "revId": "fa048d3ab542b7d80b5c86eb977c92e32a10882e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa7fdbe_f8b5e531",
+        "filename": "bigfin.spec",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-23T03:50:04Z",
+      "side": 1,
+      "message": "%{_sysconfdir}?",
+      "range": {
+        "startLine": 37,
+        "startChar": 34,
+        "endLine": 37,
+        "endChar": 37
+      },
+      "revId": "fa048d3ab542b7d80b5c86eb977c92e32a10882e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa7fdbe_1882a952",
+        "filename": "bigfin.spec",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-23T03:50:04Z",
+      "side": 1,
+      "message": "same as above",
+      "range": {
+        "startLine": 38,
+        "startChar": 41,
+        "endLine": 38,
+        "endChar": 45
+      },
+      "revId": "fa048d3ab542b7d80b5c86eb977c92e32a10882e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
