@@ -65,17 +65,15 @@ func (c CephApi) CreatePool(name string, mon string, clusterName string, pgnum u
 	createPoolRoute := CEPH_API_ROUTES["CreatePool"]
 	createPoolRoute.Pattern = strings.Replace(createPoolRoute.Pattern, "{cluster-fsid}", cluster_id, 1)
 
-	pool := models.CephPoolRequest{
-		Name:                name,
-		Size:                replicas,
-		MinSize:             1,
-		QuotaMaxObjects:     quotaMaxObjects,
-		HashPsPool:          false,
-		QuotaMaxBytes:       quotaMaxBytes,
-		PgNum:               int(pgnum),
-		PgpNum:              int(pgnum),
-		CrashReplayInterval: 0,
+	pool := map[string]interface{}{
+		"name":              name,
+		"size":              replicas,
+		"quota_max_objects": quotaMaxObjects,
+		"quota_max_bytes":   quotaMaxBytes,
+		"pg_num":            int(pgnum),
+		"pgp_num":           int(pgnum),
 	}
+
 	buf, err := json.Marshal(pool)
 	if err != nil {
 		return false, errors.New(fmt.Sprintf("Error formaing request body: %v", err))
