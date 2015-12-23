@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "9aa7fdbe_b8ca7d6c",
+        "filename": "Makefile",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-23T06:46:12Z",
+      "side": 1,
+      "message": "ok",
+      "parentUuid": "9aa7fdbe_18e9c91a",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 71
+      },
+      "revId": "fa048d3ab542b7d80b5c86eb977c92e32a10882e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9aa7fdbe_38876d63",
         "filename": "Makefile",
         "patchSetId": 3
@@ -84,6 +108,30 @@
       "side": 1,
       "message": "\u0027go build\u0027 will create the binary in the src.\n\u0027go install\u0027 will create+copy the binary to $GOPATH/bin\n\nHere, we are doing \u0027go build\u0027",
       "parentUuid": "9aa7fdbe_38876d63",
+      "range": {
+        "startLine": 68,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 24
+      },
+      "revId": "fa048d3ab542b7d80b5c86eb977c92e32a10882e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa7fdbe_d8c74163",
+        "filename": "Makefile",
+        "patchSetId": 3
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-23T06:46:12Z",
+      "side": 1,
+      "message": "ok",
+      "parentUuid": "9aa7fdbe_d8e66144",
       "range": {
         "startLine": 68,
         "startChar": 1,
