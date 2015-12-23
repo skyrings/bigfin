@@ -43,6 +43,24 @@
     },
     {
       "key": {
+        "uuid": "9aa7fdbe_38a68dc2",
+        "filename": "backend/salt/python/skyring/provider/ceph/saltwrapper.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 519,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-23T06:51:52Z",
+      "side": 1,
+      "message": "ok. I feel we need to handle all these, otherwise we wont have any clue what is going on",
+      "parentUuid": "9aa7fdbe_3863edb2",
+      "revId": "9e71c3e9f1d044a00c1a3b3fdbdf7c5b77e42b47",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9aa7fdbe_550f9ce1",
         "filename": "provider/storage.go",
         "patchSetId": 4
@@ -84,6 +102,24 @@
     },
     {
       "key": {
+        "uuid": "9aa7fdbe_58ab5189",
+        "filename": "provider/storage.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 121,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-23T06:51:52Z",
+      "side": 1,
+      "message": "ok",
+      "parentUuid": "9aa7fdbe_5858b1fa",
+      "revId": "9e71c3e9f1d044a00c1a3b3fdbdf7c5b77e42b47",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9aa7fdbe_150514c2",
         "filename": "provider/storage.go",
         "patchSetId": 4
@@ -119,6 +155,24 @@
       "side": 1,
       "message": "Its invoked as part of SyncClusterDetails from skyring.\n\nhttps://review.gerrithub.io/#/c/254196/4/apps/skyring/sync.go\n\nfunction name sync_cluster_storage_entities",
       "parentUuid": "9aa7fdbe_150514c2",
+      "revId": "9e71c3e9f1d044a00c1a3b3fdbdf7c5b77e42b47",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa7fdbe_78b015f5",
+        "filename": "provider/storage.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 218,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-23T06:51:52Z",
+      "side": 1,
+      "message": "ok",
+      "parentUuid": "9aa7fdbe_9871397a",
       "revId": "9e71c3e9f1d044a00c1a3b3fdbdf7c5b77e42b47",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
