@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "9aa7fdbe_18e9c91a",
+        "filename": "Makefile",
+        "patchSetId": 3
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1006048
+      },
+      "writtenOn": "2015-12-23T04:59:58Z",
+      "side": 1,
+      "message": "We can do that by adding (BIGFIN_BUILD_SRC)/vendor/ to GOPATH.\n\nAlternate option would be to use GO15VENDOREXPERIMENT\u003d1\n\nI will send a follow-up patch to address this.",
+      "parentUuid": "9aa7fdbe_587c3173",
+      "range": {
+        "startLine": 65,
+        "startChar": 1,
+        "endLine": 65,
+        "endChar": 71
+      },
+      "revId": "fa048d3ab542b7d80b5c86eb977c92e32a10882e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9aa7fdbe_38876d63",
         "filename": "Makefile",
         "patchSetId": 3
@@ -36,6 +60,30 @@
       "writtenOn": "2015-12-23T03:50:04Z",
       "side": 1,
       "message": "binary is available in BUILD_SRC? which version of golang are we using? in latest versions it will be present in $GOPATH/bin",
+      "range": {
+        "startLine": 68,
+        "startChar": 1,
+        "endLine": 68,
+        "endChar": 24
+      },
+      "revId": "fa048d3ab542b7d80b5c86eb977c92e32a10882e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa7fdbe_d8e66144",
+        "filename": "Makefile",
+        "patchSetId": 3
+      },
+      "lineNbr": 68,
+      "author": {
+        "id": 1006048
+      },
+      "writtenOn": "2015-12-23T04:59:58Z",
+      "side": 1,
+      "message": "\u0027go build\u0027 will create the binary in the src.\n\u0027go install\u0027 will create+copy the binary to $GOPATH/bin\n\nHere, we are doing \u0027go build\u0027",
+      "parentUuid": "9aa7fdbe_38876d63",
       "range": {
         "startLine": 68,
         "startChar": 1,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "9aa7fdbe_f8e32531",
+        "filename": "bigfin.spec",
+        "patchSetId": 3
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1006048
+      },
+      "writtenOn": "2015-12-23T04:59:58Z",
+      "side": 1,
+      "message": "Done.\n\nThis dependency is required because salt is used directly.",
+      "parentUuid": "9aa7fdbe_d8b8212d",
+      "range": {
+        "startLine": 20,
+        "startChar": 10,
+        "endLine": 20,
+        "endChar": 20
+      },
+      "revId": "fa048d3ab542b7d80b5c86eb977c92e32a10882e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9aa7fdbe_f8b5e531",
         "filename": "bigfin.spec",
         "patchSetId": 3
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "9aa7fdbe_78f815e6",
+        "filename": "bigfin.spec",
+        "patchSetId": 3
+      },
+      "lineNbr": 37,
+      "author": {
+        "id": 1006048
+      },
+      "writtenOn": "2015-12-23T04:59:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9aa7fdbe_f8b5e531",
+      "range": {
+        "startLine": 37,
+        "startChar": 34,
+        "endLine": 37,
+        "endChar": 37
+      },
+      "revId": "fa048d3ab542b7d80b5c86eb977c92e32a10882e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9aa7fdbe_1882a952",
         "filename": "bigfin.spec",
         "patchSetId": 3
@@ -105,6 +201,30 @@
       "writtenOn": "2015-12-23T03:50:04Z",
       "side": 1,
       "message": "same as above",
+      "range": {
+        "startLine": 38,
+        "startChar": 41,
+        "endLine": 38,
+        "endChar": 45
+      },
+      "revId": "fa048d3ab542b7d80b5c86eb977c92e32a10882e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa7fdbe_98dcd976",
+        "filename": "bigfin.spec",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1006048
+      },
+      "writtenOn": "2015-12-23T04:59:58Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9aa7fdbe_1882a952",
       "range": {
         "startLine": 38,
         "startChar": 41,
