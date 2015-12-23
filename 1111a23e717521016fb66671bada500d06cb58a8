@@ -25,6 +25,24 @@
     },
     {
       "key": {
+        "uuid": "9aa7fdbe_f8ba4509",
+        "filename": "main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 34,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-12-23T05:19:55Z",
+      "side": 1,
+      "message": "Being sent as part of \n\nhttps://review.gerrithub.io/#/c/254196/4/apps/skyring/skyring.go",
+      "parentUuid": "9aa7fdbe_d88f4174",
+      "revId": "1111a23e717521016fb66671bada500d06cb58a8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "9aa7fdbe_f88c0582",
         "filename": "main.go",
         "patchSetId": 4
@@ -42,6 +60,24 @@
         "endLine": 44,
         "endChar": 22
       },
+      "revId": "1111a23e717521016fb66671bada500d06cb58a8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "9aa7fdbe_183709b2",
+        "filename": "main.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2015-12-23T05:19:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "9aa7fdbe_f88c0582",
       "revId": "1111a23e717521016fb66671bada500d06cb58a8",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
