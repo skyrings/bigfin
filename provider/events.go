@@ -93,7 +93,7 @@ func update_cluster_status(clusterStatus int, event models.Event) error {
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
 	if err := coll.Update(bson.M{"clusterid": event.ClusterId}, bson.M{"$set": bson.M{"status": clusterStatus}}); err != nil {
-		logger.Get().Error("Error updating the cluster status: %s", err)
+		logger.Get().Error("Error updating the cluster status: %v", err)
 		return err
 	}
 	return nil
@@ -121,12 +121,12 @@ func (s *CephProvider) ProcessEvent(req models.RpcRequest, resp *models.RpcRespo
 			if match {
 				if err := handler.(func(models.Event) error)(e); err != nil {
 					*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Event Handling Failed for event: %s", err))
-					logger.Get().Error("Event Handling Failed for event: %s", err)
+					logger.Get().Error("Event Handling Failed for event: %v", err)
 					return err
 				}
 				if err := event.Persist_event(e); err != nil {
 					*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Could not persist the event to DB: %s", err))
-					logger.Get().Error("Could not persist the event to DB: %s", err)
+					logger.Get().Error("Could not persist the event to DB: %v", err)
 					return err
 				} else {
 					*resp = utils.WriteResponse(http.StatusOK, "")
@@ -135,7 +135,7 @@ func (s *CephProvider) ProcessEvent(req models.RpcRequest, resp *models.RpcRespo
 			}
 		} else {
 			*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error while mapping handler: %s", err))
-			logger.Get().Error("Error while maping handler: %s", err)
+			logger.Get().Error("Error while maping handler: %v", err)
 			return err
 		}
 	}

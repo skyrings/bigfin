@@ -98,7 +98,7 @@ func (c CephApi) CreatePool(name string, mon string, clusterName string, pgnum u
 			route.Pattern = strings.Replace(route.Pattern, "{request-fsid}", asyncReq.RequestId, 1)
 			resp, err := route_request(route, mon, bytes.NewBuffer([]byte{}))
 			if err != nil {
-				return false, errors.New("Error syncing request status from cluster")
+				return false, errors.New(fmt.Sprintf("Error syncing request status from cluster: %v", err))
 			}
 			var reqStatus models.CephRequestStatus
 			respBodyStr, err := ioutil.ReadAll(resp.Body)
