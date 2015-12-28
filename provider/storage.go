@@ -40,8 +40,8 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 	var request models.AddStorageRequest
 
 	if err := json.Unmarshal(req.RpcRequestData, &request); err != nil {
-		logger.Get().Error("Unbale to parse the request %v", err)
-		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unbale to parse the request %v", err))
+		logger.Get().Error("Unbale to parse the request. error: %v", err)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unbale to parse the request. error: %v", err))
 		return err
 	}
 
@@ -49,7 +49,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 	cluster_id_str := req.RpcRequestVars["cluster-id"]
 	cluster_id, err := uuid.Parse(cluster_id_str)
 	if err != nil {
-		logger.Get().Error("Error parsing the cluster id: %s", cluster_id_str)
+		logger.Get().Error("Error parsing the cluster id: %s. error: %v", cluster_id_str, err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
 		return err
 	}
@@ -96,6 +96,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 		t.Done(models.TASK_STATUS_SUCCESS)
 	}
 	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-CreateStorage", asyncTask, nil, nil, nil); err != nil {
+		logger.Get().Error("Task creation failed for storage creation. error: %v", err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for storage creation")
 		return err
 	} else {
@@ -216,7 +217,7 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 	cluster_id_str := req.RpcRequestVars["cluster-id"]
 	cluster_id, err := uuid.Parse(cluster_id_str)
 	if err != nil {
-		logger.Get().Error("Error parsing the cluster id: %s", cluster_id_str)
+		logger.Get().Error("Error parsing the cluster id: %s. error: %v", cluster_id_str, err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
 		return err
 	}

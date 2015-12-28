@@ -43,32 +43,32 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 	var request models.AddClusterRequest
 
 	if err := json.Unmarshal(req.RpcRequestData, &request); err != nil {
-		logger.Get().Error("Unbale to parse the request %v", err)
-		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unbale to parse the request %v", err))
+		logger.Get().Error("Unbale to parse the request. error: %v", err)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unbale to parse the request. error: %v", err))
 		return err
 	}
 
 	// Get corresponding nodes from DB
 	nodes, err := getNodes(request.Nodes)
 	if err != nil {
-		logger.Get().Error("Error getting nodes from DB %v", err)
-		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error getting nodes from DB %v", err))
+		logger.Get().Error("Error getting nodes from DB. error: %v", err)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error getting nodes from DB. error: %v", err))
 		return err
 	}
 
 	// Get the cluster and public IPs for nodes
 	node_ips, err := nodeIPs(request.Networks, nodes)
 	if err != nil {
-		logger.Get().Error("Node IP does fall in provided subnets: %v", err)
-		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Node IP does fall in provided subnets: %v", err))
+		logger.Get().Error("Node IP does fall in provided subnets. error: %v", err)
+		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Node IP does fall in provided subnets. error: %v", err))
 		return nil
 	}
 
 	// Invoke the cluster create backend
 	cluster_uuid, err := uuid.New()
 	if err != nil {
-		logger.Get().Error("Error creating cluster id: %v", err)
-		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error creating cluster id: %v", err))
+		logger.Get().Error("Error creating cluster id. error: %v", err)
+		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error creating cluster id. error: %v", err))
 		return nil
 	}
 	var mons []backend.Mon
@@ -85,7 +85,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 	if len(mons) == 0 {
 		logger.Get().Error("No mons mentioned in the node list")
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "No mons mentioned in the node list")
-		return errors.New("ceph_provider: No mons mentioned in the node list")
+		return errors.New("No mons mentioned in the node list")
 	}
 
 	asyncTask := func(t *task.Task) {
@@ -231,7 +231,7 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 			var updatedStorageDisks []skyring_backend.Disk
 			uuid, err := uuid.Parse(requestNode.NodeId)
 			if err != nil {
-				logger.Get().Error("Error parsing node id: %s", requestNode.NodeId)
+				logger.Get().Error("Error parsing node id: %s. error: %v", requestNode.NodeId, err)
 				return false, errors.New(fmt.Sprintf("Error parsing node id: %v", requestNode.NodeId))
 			}
 			storageNode := nodes[*uuid]
@@ -340,23 +340,23 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 	cluster_id_str := req.RpcRequestVars["cluster-id"]
 	cluster_id, err := uuid.Parse(cluster_id_str)
 	if err != nil {
-		logger.Get().Error("Error parsing the cluster id: %s", cluster_id_str)
-		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
+		logger.Get().Error("Error parsing the cluster id: %s. error: %v", cluster_id_str, err)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s. error: %v", cluster_id_str, err))
 		return err
 	}
 
 	var new_nodes []models.ClusterNode
 	if err := json.Unmarshal(req.RpcRequestData, &new_nodes); err != nil {
-		logger.Get().Error("Unbale to parse the request %v", err)
-		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unbale to parse the request %v", err))
+		logger.Get().Error("Unbale to parse the request. error: %v", err)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unbale to parse the request. error: %v", err))
 		return err
 	}
 
 	// Get corresponding nodes from DB
 	nodes, err := getNodes(new_nodes)
 	if err != nil {
-		logger.Get().Error("Error getting the nodes from DB: %v", err)
-		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error getting the nodes from DB: %v", err))
+		logger.Get().Error("Error getting the nodes from DB. error: %v", err)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error getting the nodes from DB. error: %v", err))
 		return err
 	}
 
@@ -365,16 +365,16 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
 	var cluster models.Cluster
 	if err := coll.Find(bson.M{"clusterid": *cluster_id}).One(&cluster); err != nil {
-		logger.Get().Error("Error getting cluster details %v", err)
-		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting cluster details %v", err))
+		logger.Get().Error("Error getting cluster details. error: %v", err)
+		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting cluster details. error: %v", err))
 		return nil
 	}
 
 	// Get the cluster and public IPs for nodes
 	node_ips, err := nodeIPs(cluster.Networks, nodes)
 	if err != nil {
-		logger.Get().Error("Node IP does fall in provided subnets: %v", err)
-		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Node IP does fall in provided subnets: %v", err))
+		logger.Get().Error("Node IP does fall in provided subnets. error: %v", err)
+		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Node IP does fall in provided subnets. error: %v", err))
 		return nil
 	}
 
@@ -395,7 +395,7 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 		coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 		nodeid, err := uuid.Parse(new_node.NodeId)
 		if err != nil {
-			logger.Get().Error("Error parsing the node id: %s", new_node.NodeId)
+			logger.Get().Error("Error parsing the node id: %s. error: %v", new_node.NodeId, err)
 			*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the node id: %s", new_node.NodeId))
 			return err
 		}
@@ -465,6 +465,7 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 	}
 
 	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-ExpandCluster", asyncTask, nil, nil, nil); err != nil {
+		logger.Get().Error("Task creation failed for cluster expansion. error: %v", err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for cluster expansion")
 		return err
 	} else {
@@ -478,7 +479,7 @@ func (s *CephProvider) GetClusterStatus(req models.RpcRequest, resp *models.RpcR
 	cluster_id_str := req.RpcRequestVars["cluster-id"]
 	cluster_id, err := uuid.Parse(cluster_id_str)
 	if err != nil {
-		logger.Get().Error("Error parsing the cluster id: %s", cluster_id_str)
+		logger.Get().Error("Error parsing the cluster id: %s. error: %v", cluster_id_str, err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
 		return err
 	}
@@ -494,7 +495,7 @@ func (s *CephProvider) GetClusterStatus(req models.RpcRequest, resp *models.RpcR
 
 	status, err := cluster_status(*cluster_id, cluster.Name)
 	if err != nil {
-		*resp = utils.WriteResponse(http.StatusInternalServerError, "")
+		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("error: %v", err))
 	} else {
 		*resp = utils.WriteResponse(http.StatusOK, status)
 	}
