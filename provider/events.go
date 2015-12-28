@@ -93,7 +93,7 @@ func update_cluster_status(clusterStatus int, event models.Event) error {
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
 	if err := coll.Update(bson.M{"clusterid": event.ClusterId}, bson.M{"$set": bson.M{"status": clusterStatus}}); err != nil {
-		logger.Get().Error("Error updating the cluster status: %s", err)
+		logger.Get().Error("Error updating the status of cluster: %v. error: %v", event.ClusterId, err)
 		return err
 	}
 	return nil
@@ -111,8 +111,8 @@ func (s *CephProvider) ProcessEvent(req models.RpcRequest, resp *models.RpcRespo
 	var e models.Event
 
 	if err := json.Unmarshal(req.RpcRequestData, &e); err != nil {
-		logger.Get().Error("Unbale to parse the request %v", err)
-		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unbale to parse the request %v", err))
+		logger.Get().Error("Unbale to parse the request. error: %v", err)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unbale to parse the request. error: %v", err))
 		return err
 	}
 
@@ -121,12 +121,12 @@ func (s *CephProvider) ProcessEvent(req models.RpcRequest, resp *models.RpcRespo
 			if match {
 				if err := handler.(func(models.Event) error)(e); err != nil {
 					*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Event Handling Failed for event: %s", err))
-					logger.Get().Error("Event Handling Failed for event: %s", err)
+					logger.Get().Error("Event Handling Failed for event: %s. error: %v", e.Tag, err)
 					return err
 				}
 				if err := event.Persist_event(e); err != nil {
 					*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Could not persist the event to DB: %s", err))
-					logger.Get().Error("Could not persist the event to DB: %s", err)
+					logger.Get().Error("Could not persist the event: %s to DB. error: %v", e.Tag, err)
 					return err
 				} else {
 					*resp = utils.WriteResponse(http.StatusOK, "")
@@ -135,7 +135,7 @@ func (s *CephProvider) ProcessEvent(req models.RpcRequest, resp *models.RpcRespo
 			}
 		} else {
 			*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error while mapping handler: %s", err))
-			logger.Get().Error("Error while maping handler: %s", err)
+			logger.Get().Error("Error while maping handler for event: %s. error: %v", e.Tag, err)
 			return err
 		}
 	}

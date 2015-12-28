@@ -58,7 +58,7 @@ func (c CephApi) CreatePool(name string, mon string, clusterName string, pgnum u
 	// Get the cluster id
 	cluster_id, err := cluster_id(clusterName)
 	if err != nil {
-		return false, errors.New(fmt.Sprintf("Could not get id for cluster: %v", err))
+		return false, errors.New(fmt.Sprintf("Could not get id for cluster: %s. error: %v", clusterName, err))
 	}
 
 	// Replace cluster id in route pattern
@@ -76,20 +76,20 @@ func (c CephApi) CreatePool(name string, mon string, clusterName string, pgnum u
 
 	buf, err := json.Marshal(pool)
 	if err != nil {
-		return false, errors.New(fmt.Sprintf("Error formaing request body: %v", err))
+		return false, errors.New(fmt.Sprintf("Error forming request body. error: %v", err))
 	}
 	body := bytes.NewBuffer(buf)
 	resp, err := route_request(createPoolRoute, mon, body)
 	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted) {
-		return false, errors.New(fmt.Sprintf("Failed to create pool: %v", err))
+		return false, errors.New(fmt.Sprintf("Failed to create pool: %s for cluster: %s. error: %v", name, clusterName, err))
 	} else {
 		var asyncReq models.CephAsyncRequest
 		respBodyStr, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			return false, errors.New(fmt.Sprintf("Error parsing response data: %v", err))
+			return false, errors.New(fmt.Sprintf("Error parsing response data during create pool: %s for cluster: %s. error: %v", name, clusterName, err))
 		}
 		if err := json.Unmarshal(respBodyStr, &asyncReq); err != nil {
-			return false, errors.New(fmt.Sprintf("Error parsing response data: %v", err))
+			return false, errors.New(fmt.Sprintf("Error parsing response data during create pool: %s for cluster: %s. error: %v", name, clusterName, err))
 		}
 		// Keep checking for the status of the request, and if completed return
 		for {
@@ -98,15 +98,15 @@ func (c CephApi) CreatePool(name string, mon string, clusterName string, pgnum u
 			route.Pattern = strings.Replace(route.Pattern, "{request-fsid}", asyncReq.RequestId, 1)
 			resp, err := route_request(route, mon, bytes.NewBuffer([]byte{}))
 			if err != nil {
-				return false, errors.New("Error syncing request status from cluster")
+				return false, errors.New(fmt.Sprintf("Error syncing create pool request status for %s on cluster: %s. error: %v", name, clusterName, err))
 			}
 			var reqStatus models.CephRequestStatus
 			respBodyStr, err := ioutil.ReadAll(resp.Body)
 			if err != nil {
-				return false, errors.New(fmt.Sprintf("Error parsing response data: %v", err))
+				return false, errors.New(fmt.Sprintf("Error parsing response data of check status of create pool: %s on cluster: %s. error: %v", name, clusterName, err))
 			}
 			if err := json.Unmarshal(respBodyStr, &reqStatus); err != nil {
-				return false, errors.New(fmt.Sprintf("Error parsing response data: %v", err))
+				return false, errors.New(fmt.Sprintf("Error parsing response data of check status of create pool: %s on cluster: %s. error: %v", name, clusterName, err))
 			}
 			if reqStatus.State == "complete" {
 				break
@@ -152,14 +152,14 @@ func route_request(route CephApiRoute, mon string, body io.Reader) (*http.Respon
 	if route.Method == "GET" {
 		return handler.HttpGet(fmt.Sprintf("http://%s:%d/%s/v%d/%s", mon, models.CEPH_API_PORT, models.CEPH_API_DEFAULT_PREFIX, route.Version, route.Pattern))
 	}
-	return nil, errors.New("Invalid method type")
+	return nil, errors.New(fmt.Sprintf("Invalid method type: %s", route.Method))
 }
 
 func (c CephApi) GetPools(mon string, clusterName string) ([]backend.CephPool, error) {
 	// Get the cluster id
 	cluster_id, err := cluster_id(clusterName)
 	if err != nil {
-		return []backend.CephPool{}, errors.New(fmt.Sprintf("Could not get id for cluster: %v", err))
+		return []backend.CephPool{}, errors.New(fmt.Sprintf("Could not get id for cluster: %s. error: %v", clusterName, err))
 	}
 
 	// Replace cluster id in route pattern

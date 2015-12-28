@@ -14,6 +14,7 @@ package provider
 
 import (
 	"errors"
+	"fmt"
 	"github.com/skyrings/bigfin/backend/cephapi"
 	"github.com/skyrings/bigfin/backend/salt"
 	"github.com/skyrings/bigfin/utils"
@@ -48,7 +49,7 @@ func GetRandomMon(clusterId uuid.UUID) (*models.Node, error) {
 		}
 	}
 	if len(mons) <= 0 {
-		return nil, errors.New("No mons available")
+		return nil, errors.New(fmt.Sprintf("No mons available for cluster: %v", clusterId))
 	}
 
 	// Pick a random mon from the list
