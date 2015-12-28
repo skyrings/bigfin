@@ -25,6 +25,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"strconv"
+	"time"
 
 	bigfin_task "github.com/skyrings/bigfin/tools/task"
 )
@@ -37,7 +38,6 @@ const (
 
 func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResponse) error {
 	var request models.AddStorageRequest
-
 	if err := json.Unmarshal(req.RpcRequestData, &request); err != nil {
 		logger.Get().Error("Unbale to parse the request. error: %v", err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unbale to parse the request. error: %v", err))
@@ -54,15 +54,23 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 	}
 
 	asyncTask := func(t *task.Task) {
-		t.UpdateStatus("Started ceph provider pool creation: %v", t.ID)
-		if ok := createPool(*cluster_id, request, t); !ok {
-			return
-		}
+		for {
+			select {
+			case <-t.StopCh:
+				return
+			default:
+				t.UpdateStatus("Started ceph provider pool creation: %v", t.ID)
+				if ok := createPool(*cluster_id, request, t); !ok {
+					return
+				}
 
-		t.UpdateStatus("Success")
-		t.Done(models.TASK_STATUS_SUCCESS)
+				t.UpdateStatus("Success")
+				t.Done(models.TASK_STATUS_SUCCESS)
+				return
+			}
+		}
 	}
-	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-CreateStorage", asyncTask, nil, nil, nil); err != nil {
+	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-CreateStorage", asyncTask, 120*time.Second, nil, nil, nil); err != nil {
 		logger.Get().Error("Task creation failed for create storage %s on cluster: %v. error: %v", request.Name, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for storage creation")
 		return err
