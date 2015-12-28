@@ -40,8 +40,8 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 	var request models.AddStorageRequest
 
 	if err := json.Unmarshal(req.RpcRequestData, &request); err != nil {
-		logger.Get().Error("Unbale to parse the request %v", err)
-		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unbale to parse the request %v", err))
+		logger.Get().Error("Unbale to parse the request. error: %v", err)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unbale to parse the request. error: %v", err))
 		return err
 	}
 
@@ -49,7 +49,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 	cluster_id_str := req.RpcRequestVars["cluster-id"]
 	cluster_id, err := uuid.Parse(cluster_id_str)
 	if err != nil {
-		logger.Get().Error("Error parsing the cluster id: %s", cluster_id_str)
+		logger.Get().Error("Error parsing the cluster id: %s. error: %v", cluster_id_str, err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
 		return err
 	}
@@ -58,7 +58,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 		t.UpdateStatus("Statrted ceph provider pool creation: %v", t.ID)
 		ok, err := createPool(*cluster_id, request, t)
 		if err != nil || !ok {
-			utils.FailTask("Create Pool failed", err, t)
+			utils.FailTask(fmt.Sprintf("Create Pool %s failed for cluster: %v", request.Name, *cluster_id), err, t)
 			return
 		}
 
@@ -67,7 +67,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 		var storage models.Storage
 		storage_id, err := uuid.New()
 		if err != nil {
-			utils.FailTask("Error creating id for node", err, t)
+			utils.FailTask(fmt.Sprintf("Error creating id for storage entity: %s on cluster: %v", request.Name, *cluster_id), err, t)
 			return
 		}
 		storage.StorageId = *storage_id
@@ -89,17 +89,18 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 		defer sessionCopy.Close()
 		coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
 		if err := coll.Insert(storage); err != nil {
-			utils.FailTask("Error persisting pool", err, t)
+			utils.FailTask(fmt.Sprintf("Error persisting pool %s for cluster: %v", request.Name, *cluster_id), err, t)
 			return
 		}
 		t.UpdateStatus("Success")
 		t.Done(models.TASK_STATUS_SUCCESS)
 	}
 	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-CreateStorage", asyncTask, nil, nil, nil); err != nil {
+		logger.Get().Error("Task creation failed for create storage %s on cluster: %v. error: %v", request.Name, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for storage creation")
 		return err
 	} else {
-		*resp = utils.WriteAsyncResponse(taskId, "Task Created", []byte{})
+		*resp = utils.WriteAsyncResponse(taskId, fmt.Sprintf("Task Created for create storage %s on cluster: %v", request.Name, *cluster_id), []byte{})
 	}
 	return nil
 }
@@ -142,12 +143,12 @@ func createPool(clusterId uuid.UUID, request models.AddStorageRequest, t *task.T
 		var err error
 		if request.QuotaParams["quota_max_objects"] != "" {
 			if quotaMaxObjects, err = strconv.Atoi(request.QuotaParams["quota_max_objects"]); err != nil {
-				return false, errors.New(fmt.Sprintf("Error parsing quota config value for quota_max_objects"))
+				return false, errors.New(fmt.Sprintf("Error parsing quota config value quota_max_objects for pool %s on cluster: %v", request.Name, clusterId))
 			}
 		}
 		if request.QuotaParams["quota_max_bytes"] != "" {
 			if quotaMaxBytes, err = strconv.ParseUint(request.QuotaParams["quota_max_bytes"], 10, 64); err != nil {
-				return false, errors.New(fmt.Sprintf("Error parsing quota config value for quota_max_bytes"))
+				return false, errors.New(fmt.Sprintf("Error parsing quota config value quota_max_bytes for pool %s on cluster: %v", request.Name, clusterId))
 			}
 		}
 	}
@@ -216,13 +217,13 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 	cluster_id_str := req.RpcRequestVars["cluster-id"]
 	cluster_id, err := uuid.Parse(cluster_id_str)
 	if err != nil {
-		logger.Get().Error("Error parsing the cluster id: %s", cluster_id_str)
+		logger.Get().Error("Error parsing the cluster id: %s. error: %v", cluster_id_str, err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
 		return err
 	}
 	monnode, err := GetRandomMon(*cluster_id)
 	if err != nil {
-		logger.Get().Error("Error getting a mon node in cluster. error: %v", err)
+		logger.Get().Error("Error getting a mon node in cluster: %v. error: %v", *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting a mon node in cluster. error: %v", err))
 		return err
 	}
@@ -233,7 +234,7 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 	var cluster models.Cluster
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
 	if err := coll.Find(bson.M{"clusterid": *cluster_id}).One(&cluster); err != nil {
-		logger.Get().Error("Error getting cluster details. error: %v", err)
+		logger.Get().Error("Error getting details for cluster: %v. error: %v", *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting cluster details. error: %v", err))
 		return err
 	}
@@ -241,7 +242,7 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 	// Get the pools for the cluster
 	pools, err := cephapi_backend.GetPools(monnode.Hostname, cluster.Name)
 	if err != nil {
-		logger.Get().Error("Error getting storages. error: %v", err)
+		logger.Get().Error("Error getting storages for cluster: %s. error: %v", cluster.Name, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting storages. error: %v", err))
 		return err
 	}
@@ -273,7 +274,7 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 	}
 	result, err := json.Marshal(storages)
 	if err != nil {
-		logger.Get().Error("Error forming the output. error: %v", err)
+		logger.Get().Error("Error forming the output for storage list for cluster: %s. error: %v", cluster.Name, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error forming the output. error: %v", err))
 		return err
 	}
