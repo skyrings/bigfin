@@ -28,6 +28,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"strconv"
+	"time"
 
 	bigfin_task "github.com/skyrings/bigfin/tools/task"
 	skyring_backend "github.com/skyrings/skyring/backend"
@@ -91,123 +92,130 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 	}
 
 	asyncTask := func(t *task.Task) {
-		t.UpdateStatus("Started ceph provider task for cluster creation: %v", t.ID)
-		ret_val, err := salt_backend.CreateCluster(request.Name, *cluster_uuid, []backend.Mon{mons[0]})
-		if err != nil {
-			utils.FailTask(fmt.Sprintf("Cluster creation failed for %s", request.Name), err, t)
-			return
-		}
+		for {
+			select {
+			case <-t.StopCh:
+				return
+			default:
+				t.UpdateStatus("Started ceph provider task for cluster creation: %v", t.ID)
+				ret_val, err := salt_backend.CreateCluster(request.Name, *cluster_uuid, []backend.Mon{mons[0]})
+				if err != nil {
+					utils.FailTask(fmt.Sprintf("Cluster creation failed for %s", request.Name), err, t)
+					return
+				}
 
-		if ret_val {
-			// Add other mons
-			t.UpdateStatus("Adding mons")
-			if len(mons) > 1 {
-				for _, mon := range mons[1:] {
-					if ret_val, err := salt_backend.AddMon(request.Name, []backend.Mon{mon}); err != nil || !ret_val {
-						utils.FailTask(fmt.Sprintf("Error adding mons while create cluster %s", request.Name), err, t)
+				if ret_val {
+					// Add other mons
+					t.UpdateStatus("Adding mons")
+					if len(mons) > 1 {
+						for _, mon := range mons[1:] {
+							if ret_val, err := salt_backend.AddMon(request.Name, []backend.Mon{mon}); err != nil || !ret_val {
+								utils.FailTask(fmt.Sprintf("Error adding mons while create cluster %s", request.Name), err, t)
+								return
+							}
+						}
+					}
+					sessionCopy := db.GetDatastore().Copy()
+					defer sessionCopy.Close()
+
+					t.UpdateStatus("Updating node details for cluster")
+					// Update nodes details
+					for _, node := range nodes {
+						coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
+						if err := coll.Update(
+							bson.M{"nodeid": node.NodeId},
+							bson.M{"$set": bson.M{
+								"clusterid":  *cluster_uuid,
+								"clusterip4": node_ips[node.NodeId]["cluster"],
+								"publicip4":  node_ips[node.NodeId]["public"]}}); err != nil {
+							utils.FailTask(fmt.Sprintf("Failed to update nodes details post create cluster %s", request.Name), err, t)
+							return
+						}
+					}
+
+					// Start and persist the mons
+					t.UpdateStatus("Starting and creating mons")
+					ret_val, err = startAndPersistMons(*cluster_uuid, mons)
+					if !ret_val {
+						utils.FailTask(fmt.Sprintf("Error start/persist mons while create cluster %s", request.Name), err, t)
 						return
 					}
-				}
-			}
-			sessionCopy := db.GetDatastore().Copy()
-			defer sessionCopy.Close()
 
-			t.UpdateStatus("Updating node details for cluster")
-			// Update nodes details
-			for _, node := range nodes {
-				coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
-				if err := coll.Update(
-					bson.M{"nodeid": node.NodeId},
-					bson.M{"$set": bson.M{
-						"clusterid":  *cluster_uuid,
-						"clusterip4": node_ips[node.NodeId]["cluster"],
-						"publicip4":  node_ips[node.NodeId]["public"]}}); err != nil {
-					utils.FailTask(fmt.Sprintf("Failed to update nodes details post create cluster %s", request.Name), err, t)
+					// Add cluster to DB
+					t.UpdateStatus("Persisting cluster details")
+					var cluster models.Cluster
+					cluster.ClusterId = *cluster_uuid
+					cluster.Name = request.Name
+					cluster.CompatVersion = request.CompatVersion
+					cluster.Type = request.Type
+					cluster.Status = models.CLUSTER_STATUS_UNKNOWN
+					cluster.WorkLoad = request.WorkLoad
+					cluster.Tags = request.Tags
+					cluster.Options = request.Options
+					cluster.Networks = request.Networks
+					cluster.OpenStackServices = request.OpenStackServices
+					cluster.Enabled = true
+
+					cluster.MonitoringInterval = request.MonitoringInterval
+					if cluster.MonitoringInterval == 0 {
+						cluster.MonitoringInterval = monitoring.DefaultClusterMonitoringInterval
+					}
+
+					coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+					if err := coll.Insert(cluster); err != nil {
+						utils.FailTask(fmt.Sprintf("Error persisting the cluster %s", request.Name), err, t)
+						return
+					}
+
+					// Add OSDs
+					t.UpdateStatus("Getting updated nodes list for OSD creation")
+					updated_nodes, err := getNodes(request.Nodes)
+					if err != nil {
+						utils.FailTask(fmt.Sprintf("Error getting updated nodes list post create cluster %s", request.Name), err, t)
+						return
+					}
+					t.UpdateStatus("Adding OSDs")
+					failedOSDs, err := addOSDs(*cluster_uuid, request.Name, updated_nodes, request.Nodes, t)
+					if err != nil {
+						utils.FailTask(fmt.Sprintf("Error adding OSDs while create cluster %s", request.Name), err, t)
+						return
+					}
+					if len(failedOSDs) != 0 {
+						var osds []string
+						for _, osd := range failedOSDs {
+							osds = append(osds, fmt.Sprintf("%s:%s", osd.Node, osd.Device))
+						}
+						t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", osds))
+					}
+
+					// Update the cluster status at the last
+					status, err := cluster_status(*cluster_uuid, request.Name)
+					clusterStatus := models.CLUSTER_STATUS_UNKNOWN
+					switch status {
+					case models.STATUS_OK:
+						clusterStatus = models.CLUSTER_STATUS_OK
+					case models.STATUS_WARN:
+						clusterStatus = models.CLUSTER_STATUS_WARN
+					case models.STATUS_ERR:
+						clusterStatus = models.CLUSTER_STATUS_ERROR
+					}
+					if err := coll.Update(bson.M{"clusterid": *cluster_uuid}, bson.M{"$set": bson.M{"status": clusterStatus}}); err != nil {
+						t.UpdateStatus("Error updating the cluster status")
+						return
+					}
+					t.UpdateStatus("Success")
+					t.Done(models.TASK_STATUS_SUCCESS)
 					return
 				}
 			}
-
-			// Start and persist the mons
-			t.UpdateStatus("Starting and creating mons")
-			ret_val, err = startAndPersistMons(*cluster_uuid, mons)
-			if !ret_val {
-				utils.FailTask(fmt.Sprintf("Error start/persist mons while create cluster %s", request.Name), err, t)
-				return
-			}
-
-			// Add cluster to DB
-			t.UpdateStatus("Persisting cluster details")
-			var cluster models.Cluster
-			cluster.ClusterId = *cluster_uuid
-			cluster.Name = request.Name
-			cluster.CompatVersion = request.CompatVersion
-			cluster.Type = request.Type
-			cluster.WorkLoad = request.WorkLoad
-			cluster.Status = models.CLUSTER_STATUS_UNKNOWN
-			cluster.Tags = request.Tags
-			cluster.Options = request.Options
-			cluster.Networks = request.Networks
-			cluster.OpenStackServices = request.OpenStackServices
-			cluster.Enabled = true
-
-			cluster.MonitoringInterval = request.MonitoringInterval
-			if cluster.MonitoringInterval == 0 {
-				cluster.MonitoringInterval = monitoring.DefaultClusterMonitoringInterval
-			}
-
-			coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
-			if err := coll.Insert(cluster); err != nil {
-				utils.FailTask(fmt.Sprintf("Error persisting the cluster %s", request.Name), err, t)
-				return
-			}
-
-			// Add OSDs
-			t.UpdateStatus("Getting updated nodes list for OSD creation")
-			updated_nodes, err := getNodes(request.Nodes)
-			if err != nil {
-				utils.FailTask(fmt.Sprintf("Error getting updated nodes list post create cluster %s", request.Name), err, t)
-				return
-			}
-			t.UpdateStatus("Adding OSDs")
-			failedOSDs, err := addOSDs(*cluster_uuid, request.Name, updated_nodes, request.Nodes, t)
-			if err != nil {
-				utils.FailTask(fmt.Sprintf("Error adding OSDs while create cluster %s", request.Name), err, t)
-				return
-			}
-			if len(failedOSDs) != 0 {
-				var osds []string
-				for _, osd := range failedOSDs {
-					osds = append(osds, fmt.Sprintf("%s:%s", osd.Node, osd.Device))
-				}
-				t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", osds))
-			}
-
-			// Update the cluster status at the last
-			status, err := cluster_status(*cluster_uuid, request.Name)
-			clusterStatus := models.CLUSTER_STATUS_UNKNOWN
-			switch status {
-			case models.STATUS_OK:
-				clusterStatus = models.CLUSTER_STATUS_OK
-			case models.STATUS_WARN:
-				clusterStatus = models.CLUSTER_STATUS_WARN
-			case models.STATUS_ERR:
-				clusterStatus = models.CLUSTER_STATUS_ERROR
-			}
-			if err := coll.Update(bson.M{"clusterid": *cluster_uuid}, bson.M{"$set": bson.M{"status": clusterStatus}}); err != nil {
-				t.UpdateStatus("Error updating the cluster status")
-				return
-			}
-			t.UpdateStatus("Success")
-			t.Done(models.TASK_STATUS_SUCCESS)
 		}
 	}
-	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-CreateCluster", asyncTask, nil, nil, nil); err != nil {
+	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-CreateCluster", asyncTask, 300*time.Second, nil, nil, nil); err != nil {
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Task creation failed for create cluster %s", request.Name))
 		return err
 	} else {
 		*resp = utils.WriteAsyncResponse(taskId, fmt.Sprintf("Task Created for create cluster: %s", request.Name), []byte{})
 	}
-
 	return nil
 }
 
@@ -439,69 +447,77 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 	}
 
 	asyncTask := func(t *task.Task) {
-		t.UpdateStatus("Started ceph provider task for cluster expansion: %v", t.ID)
-		// Update nodes details
-		sessionCopy := db.GetDatastore().Copy()
-		defer sessionCopy.Close()
-		coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
-		for _, node := range nodes {
-			if err := coll.Update(
-				bson.M{"nodeid": node.NodeId},
-				bson.M{"$set": bson.M{
-					"clusterid":  *cluster_id,
-					"clusterip4": node_ips[node.NodeId]["cluster"],
-					"publicip4":  node_ips[node.NodeId]["public"]}}); err != nil {
-				utils.FailTask(fmt.Sprintf("Error updating node %v post cluster exoansion for cluster: %v", node.NodeId, *cluster_id), err, t)
+		for {
+			select {
+			case <-t.StopCh:
 				return
-			}
-		}
+			default:
+				t.UpdateStatus("Started ceph provider task for cluster expansion: %v", t.ID)
+				// Update nodes details
+				sessionCopy := db.GetDatastore().Copy()
+				defer sessionCopy.Close()
+				coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
+				for _, node := range nodes {
+					if err := coll.Update(
+						bson.M{"nodeid": node.NodeId},
+						bson.M{"$set": bson.M{
+							"clusterid":  *cluster_id,
+							"clusterip4": node_ips[node.NodeId]["cluster"],
+							"publicip4":  node_ips[node.NodeId]["public"]}}); err != nil {
+						utils.FailTask(fmt.Sprintf("Error updating node %v post cluster exoansion for cluster: %v", node.NodeId, *cluster_id), err, t)
+						return
+					}
+				}
 
-		if len(mons) > 0 {
-			t.UpdateStatus("Adding mons")
-			for _, mon := range mons {
-				if ret_val, err := salt_backend.AddMon(cluster.Name, []backend.Mon{mon}); err != nil || !ret_val {
-					utils.FailTask(fmt.Sprintf("Error adding mons while expand cluster: %v", *cluster_id), err, t)
+				if len(mons) > 0 {
+					t.UpdateStatus("Adding mons")
+					for _, mon := range mons {
+						if ret_val, err := salt_backend.AddMon(cluster.Name, []backend.Mon{mon}); err != nil || !ret_val {
+							utils.FailTask(fmt.Sprintf("Error adding mons while expand cluster: %v", *cluster_id), err, t)
+							return
+						}
+					}
+				}
+				t.UpdateStatus("Starting and persisting the mons")
+				// Start and persist the mons
+				ret_val, err := startAndPersistMons(*cluster_id, mons)
+				if err != nil || !ret_val {
+					utils.FailTask(fmt.Sprintf("Error start/persist mons while expand cluster: %v", *cluster_id), err, t)
 					return
 				}
-			}
-			t.UpdateStatus("Starting and persisting the mons")
-			// Start and persist the mons
-			ret_val, err := startAndPersistMons(*cluster_id, mons)
-			if err != nil || !ret_val {
-				utils.FailTask(fmt.Sprintf("Error start/persist mons while expand cluster: %v", *cluster_id), err, t)
+
+				// Add OSDs
+				t.UpdateStatus("Getting updated nodes for OSD creation")
+				updated_nodes, err := getNodes(new_nodes)
+				if err != nil {
+					utils.FailTask(fmt.Sprintf("Error getting updated nodes while expand cluster: %v", *cluster_id), err, t)
+					return
+				}
+				t.UpdateStatus("Adding OSDs")
+				failedOSDs, err := addOSDs(*cluster_id, cluster.Name, updated_nodes, new_nodes, t)
+				if err != nil {
+					utils.FailTask(fmt.Sprintf("Error adding OSDs while expand cluster: %v", *cluster_id), err, t)
+					return
+				}
+				if len(failedOSDs) != 0 {
+					var osds []string
+					for _, osd := range failedOSDs {
+						osds = append(osds, fmt.Sprintf("%s:%s", osd.Node, osd.Device))
+					}
+					t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", osds))
+				}
+				t.UpdateStatus("Recalculating pgnum/pgpnum")
+				if ok := RecalculatePgnum(*cluster_id, t); !ok {
+					logger.Get().Warning("Could not re-calculate pgnum/pgpnum for cluster: %v", *cluster_id)
+				}
+				t.UpdateStatus("Success")
+				t.Done(models.TASK_STATUS_SUCCESS)
 				return
 			}
 		}
-
-		// Add OSDs
-		t.UpdateStatus("Getting updated nodes for OSD creation")
-		updated_nodes, err := getNodes(new_nodes)
-		if err != nil {
-			utils.FailTask(fmt.Sprintf("Error getting updated nodes while expand cluster: %v", *cluster_id), err, t)
-			return
-		}
-		t.UpdateStatus("Adding OSDs")
-		failedOSDs, err := addOSDs(*cluster_id, cluster.Name, updated_nodes, new_nodes, t)
-		if err != nil {
-			utils.FailTask(fmt.Sprintf("Error adding OSDs while expand cluster: %v", *cluster_id), err, t)
-			return
-		}
-		if len(failedOSDs) != 0 {
-			var osds []string
-			for _, osd := range failedOSDs {
-				osds = append(osds, fmt.Sprintf("%s:%s", osd.Node, osd.Device))
-			}
-			t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", osds))
-		}
-		t.UpdateStatus("Recalculating pgnum/pgpnum")
-		if ok := RecalculatePgnum(*cluster_id, t); !ok {
-			logger.Get().Warning("Could not re-calculate pgnum/pgpnum for cluster: %v", *cluster_id)
-		}
-		t.UpdateStatus("Success")
-		t.Done(models.TASK_STATUS_SUCCESS)
 	}
 
-	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-ExpandCluster", asyncTask, nil, nil, nil); err != nil {
+	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-ExpandCluster", asyncTask, 300*time.Second, nil, nil, nil); err != nil {
 		logger.Get().Error("Task creation failed for exoand cluster: %v. error: %v", *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for cluster expansion")
 		return err
