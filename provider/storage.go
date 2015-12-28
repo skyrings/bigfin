@@ -26,6 +26,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"strconv"
+	"time"
 
 	bigfin_task "github.com/skyrings/bigfin/tools/task"
 )
@@ -38,7 +39,6 @@ const (
 
 func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResponse) error {
 	var request models.AddStorageRequest
-
 	if err := json.Unmarshal(req.RpcRequestData, &request); err != nil {
 		logger.Get().Error("Unbale to parse the request %v", err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unbale to parse the request %v", err))
@@ -94,8 +94,9 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 		}
 		t.UpdateStatus("Success")
 		t.Done(models.TASK_STATUS_SUCCESS)
+		return
 	}
-	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-CreateStorage", asyncTask, nil, nil, nil); err != nil {
+	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-CreateStorage", asyncTask, 120*time.Second, nil, nil, nil); err != nil {
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for storage creation")
 		return err
 	} else {
