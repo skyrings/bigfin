@@ -26,6 +26,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"strconv"
+	"time"
 
 	bigfin_task "github.com/skyrings/bigfin/tools/task"
 )
@@ -55,47 +56,55 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 	}
 
 	asyncTask := func(t *task.Task) {
-		t.UpdateStatus("Statrted ceph provider pool creation: %v", t.ID)
-		ok, err := createPool(*cluster_id, request, t)
-		if err != nil || !ok {
-			utils.FailTask("Create Pool failed", err, t)
-			return
-		}
+		for {
+			select {
+			case <-t.StopCh:
+				return
+			default:
+				t.UpdateStatus("Statrted ceph provider pool creation: %v", t.ID)
+				ok, err := createPool(*cluster_id, request, t)
+				if err != nil || !ok {
+					utils.FailTask("Create Pool failed", err, t)
+					return
+				}
 
-		t.UpdateStatus("Perisisting the storage entity")
-		// Add storage entity to DB
-		var storage models.Storage
-		storage_id, err := uuid.New()
-		if err != nil {
-			utils.FailTask("Error creating id for node", err, t)
-			return
+				t.UpdateStatus("Perisisting the storage entity")
+				// Add storage entity to DB
+				var storage models.Storage
+				storage_id, err := uuid.New()
+				if err != nil {
+					utils.FailTask("Error creating id for node", err, t)
+					return
+				}
+				storage.StorageId = *storage_id
+				storage.Name = request.Name
+				storage.Type = request.Type
+				storage.Tags = request.Tags
+				storage.ClusterId = *cluster_id
+				storage.Size = request.Size
+				storage.Status = models.STATUS_UP
+				storage.Replicas = request.Replicas
+				storage.Profile = request.Profile
+				storage.SnapshotsEnabled = request.SnapshotsEnabled
+				// TODO: Populate the schedule ids once schedule created
+				// storage.SnapshotScheduleIds = <created schedule ids>
+				storage.QuotaEnabled = request.QuotaEnabled
+				storage.QuotaParams = request.QuotaParams
+				storage.Options = request.Options
+				sessionCopy := db.GetDatastore().Copy()
+				defer sessionCopy.Close()
+				coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+				if err := coll.Insert(storage); err != nil {
+					utils.FailTask("Error persisting pool", err, t)
+					return
+				}
+				t.UpdateStatus("Success")
+				t.Done(models.TASK_STATUS_SUCCESS)
+				return
+			}
 		}
-		storage.StorageId = *storage_id
-		storage.Name = request.Name
-		storage.Type = request.Type
-		storage.Tags = request.Tags
-		storage.ClusterId = *cluster_id
-		storage.Size = request.Size
-		storage.Status = models.STATUS_UP
-		storage.Replicas = request.Replicas
-		storage.Profile = request.Profile
-		storage.SnapshotsEnabled = request.SnapshotsEnabled
-		// TODO: Populate the schedule ids once schedule created
-		// storage.SnapshotScheduleIds = <created schedule ids>
-		storage.QuotaEnabled = request.QuotaEnabled
-		storage.QuotaParams = request.QuotaParams
-		storage.Options = request.Options
-		sessionCopy := db.GetDatastore().Copy()
-		defer sessionCopy.Close()
-		coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
-		if err := coll.Insert(storage); err != nil {
-			utils.FailTask("Error persisting pool", err, t)
-			return
-		}
-		t.UpdateStatus("Success")
-		t.Done(models.TASK_STATUS_SUCCESS)
 	}
-	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-CreateStorage", asyncTask, nil, nil, nil); err != nil {
+	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-CreateStorage", asyncTask, 120*time.Second, nil, nil, nil); err != nil {
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for storage creation")
 		return err
 	} else {
