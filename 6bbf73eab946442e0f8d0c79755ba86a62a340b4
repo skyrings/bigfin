@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a961159_d51c6e6d",
+        "filename": "backend/salt/salt.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 93,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-29T07:07:48Z",
+      "side": 1,
+      "message": "What if loc_err !\u003d nil?",
+      "range": {
+        "startLine": 91,
+        "startChar": 1,
+        "endLine": 93,
+        "endChar": 2
+      },
+      "revId": "6bbf73eab946442e0f8d0c79755ba86a62a340b4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a961159_f5196a7a",
+        "filename": "backend/salt/salt.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2015-12-29T07:07:48Z",
+      "side": 1,
+      "message": "What if loc_err !\u003d nil?",
+      "range": {
+        "startLine": 99,
+        "startChar": 3,
+        "endLine": 101,
+        "endChar": 2
+      },
+      "revId": "6bbf73eab946442e0f8d0c79755ba86a62a340b4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
