@@ -18,6 +18,7 @@ import (
 	"github.com/skyrings/bigfin/backend"
 	"github.com/skyrings/skyring/tools/gopy"
 	"github.com/skyrings/skyring/tools/uuid"
+	"sync"
 )
 
 var funcNames = [...]string{
@@ -32,6 +33,8 @@ var funcNames = [...]string{
 
 var pyFuncs map[string]*gopy.PyFunction
 
+var mutex sync.Mutex
+
 func init() {
 	var err error
 	if pyFuncs, err = gopy.Import("bigfin.saltwrapper", funcNames[:]...); err != nil {
@@ -43,6 +46,8 @@ type Salt struct {
 }
 
 func (s Salt) CreateCluster(clusterName string, fsid uuid.UUID, mons []backend.Mon) (status bool, err error) {
+	mutex.Lock()
+	defer mutex.Unlock()
 	if pyobj, err := pyFuncs["CreateCluster"].Call(clusterName, fsid.String(), mons); err == nil {
 		status = gopy.Bool(pyobj)
 	}
@@ -51,6 +56,8 @@ func (s Salt) CreateCluster(clusterName string, fsid uuid.UUID, mons []backend.M
 }
 
 func (s Salt) AddMon(clusterName string, mons []backend.Mon) (status bool, err error) {
+	mutex.Lock()
+	defer mutex.Unlock()
 	if pyobj, err := pyFuncs["AddMon"].Call(clusterName, mons); err == nil {
 		status = gopy.Bool(pyobj)
 	}
@@ -59,6 +66,8 @@ func (s Salt) AddMon(clusterName string, mons []backend.Mon) (status bool, err e
 }
 
 func (s Salt) StartMon(nodes []string) (status bool, err error) {
+	mutex.Lock()
+	defer mutex.Unlock()
 	if pyobj, err := pyFuncs["StartMon"].Call(nodes); err == nil {
 		status = gopy.Bool(pyobj)
 	}
@@ -67,6 +76,8 @@ func (s Salt) StartMon(nodes []string) (status bool, err error) {
 }
 
 func (s Salt) AddOSD(clusterName string, osd backend.OSD) (status bool, err error) {
+	mutex.Lock()
+	defer mutex.Unlock()
 	if pyobj, err := pyFuncs["AddOSD"].Call(clusterName, osd); err == nil {
 		status = gopy.Bool(pyobj)
 	}
@@ -75,6 +86,8 @@ func (s Salt) AddOSD(clusterName string, osd backend.OSD) (status bool, err erro
 }
 
 func (s Salt) CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64) (status bool, err error) {
+	mutex.Lock()
+	defer mutex.Unlock()
 	if pyobj, err := pyFuncs["CreatePool"].Call(name, mon, clusterName, pgnum); err == nil {
 		status = gopy.Bool(pyobj)
 	}
@@ -83,6 +96,8 @@ func (s Salt) CreatePool(name string, mon string, clusterName string, pgnum uint
 }
 
 func (s Salt) ListPoolNames(mon string, clusterName string) (names []string, err error) {
+	mutex.Lock()
+	defer mutex.Unlock()
 	if pyobj, err := pyFuncs["ListPool"].Call(mon, clusterName); err == nil {
 		err = gopy.Convert(pyobj, &names)
 	}
@@ -91,6 +106,8 @@ func (s Salt) ListPoolNames(mon string, clusterName string) (names []string, err
 }
 
 func (s Salt) GetClusterStatus(mon string, clusterName string) (status string, err error) {
+	mutex.Lock()
+	defer mutex.Unlock()
 	if pyobj, err := pyFuncs["GetClusterStatus"].Call(mon, clusterName); err == nil {
 		err = gopy.Convert(pyobj, &status)
 	}
