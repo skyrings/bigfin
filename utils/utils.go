@@ -13,10 +13,10 @@ limitations under the License.
 package utils
 
 import (
-	"github.com/skyrings/bigfin/tools/logger"
-	"github.com/skyrings/skyring/models"
-	"github.com/skyrings/skyring/tools/task"
-	"github.com/skyrings/skyring/tools/uuid"
+	"github.com/skyrings/skyring-common/models"
+	"github.com/skyrings/skyring-common/tools/logger"
+	"github.com/skyrings/skyring-common/tools/task"
+	"github.com/skyrings/skyring-common/tools/uuid"
 	"math"
 	"math/rand"
 	"net"

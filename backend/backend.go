@@ -15,7 +15,7 @@
 package backend
 
 import (
-	"github.com/skyrings/skyring/tools/uuid"
+	"github.com/skyrings/skyring-common/tools/uuid"
 )
 
 type Mon struct {

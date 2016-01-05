@@ -22,9 +22,9 @@ import (
 	"github.com/skyrings/bigfin/backend"
 	"github.com/skyrings/bigfin/backend/cephapi/handler"
 	"github.com/skyrings/bigfin/backend/cephapi/models"
-	"github.com/skyrings/skyring/conf"
-	"github.com/skyrings/skyring/db"
-	"github.com/skyrings/skyring/tools/uuid"
+	"github.com/skyrings/skyring-common/conf"
+	"github.com/skyrings/skyring-common/db"
+	"github.com/skyrings/skyring-common/tools/uuid"
 	"gopkg.in/mgo.v2/bson"
 	"io"
 	"io/ioutil"
@@ -32,7 +32,7 @@ import (
 	"strings"
 	"time"
 
-	skyringmodels "github.com/skyrings/skyring/models"
+	skyringmodels "github.com/skyrings/skyring-common/models"
 )
 
 type CephApi struct {

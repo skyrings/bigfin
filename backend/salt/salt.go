@@ -16,8 +16,8 @@ package salt
 
 import (
 	"github.com/skyrings/bigfin/backend"
-	"github.com/skyrings/skyring/tools/gopy"
-	"github.com/skyrings/skyring/tools/uuid"
+	"github.com/skyrings/skyring-common/tools/gopy"
+	"github.com/skyrings/skyring-common/tools/uuid"
 	"sync"
 )
 

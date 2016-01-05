@@ -17,18 +17,17 @@ import (
 	"errors"
 	"fmt"
 	"github.com/skyrings/bigfin/backend"
-	"github.com/skyrings/bigfin/tools/logger"
 	"github.com/skyrings/bigfin/utils"
-	"github.com/skyrings/skyring/conf"
-	"github.com/skyrings/skyring/db"
-	"github.com/skyrings/skyring/models"
-	"github.com/skyrings/skyring/tools/task"
-	"github.com/skyrings/skyring/tools/uuid"
+	"github.com/skyrings/skyring-common/conf"
+	"github.com/skyrings/skyring-common/db"
+	"github.com/skyrings/skyring-common/models"
+	"github.com/skyrings/skyring-common/tools/logger"
+	"github.com/skyrings/skyring-common/tools/task"
+	"github.com/skyrings/skyring-common/tools/uuid"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 
 	bigfin_task "github.com/skyrings/bigfin/tools/task"
-	skyring_backend "github.com/skyrings/skyring/backend"
 )
 
 var (
@@ -225,10 +224,10 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 
-	updatedStorageDisksMap := make(map[uuid.UUID][]skyring_backend.Disk)
+	updatedStorageDisksMap := make(map[uuid.UUID][]models.Disk)
 	for _, requestNode := range requestNodes {
 		if utils.StringInSlice("OSD", requestNode.NodeType) {
-			var updatedStorageDisks []skyring_backend.Disk
+			var updatedStorageDisks []models.Disk
 			uuid, err := uuid.Parse(requestNode.NodeId)
 			if err != nil {
 				logger.Get().Error("Error parsing node id: %s", requestNode.NodeId)
