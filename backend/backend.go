@@ -47,13 +47,30 @@ type CephPool struct {
 	CrushRuleSet        int    `json:"crush_ruleset"`
 }
 
+type CephOSD struct {
+	Uuid                 uuid.UUID `json:"uuid"`
+	Up                   bool      `json:"up"`
+	In                   bool      `json:"in"`
+	Id                   int       `json:"id"`
+	Reweight             float32   `json:"reweight"`
+	Server               string    `json:"server"`
+	Pools                []int     `json:"pools"`
+	ValidCommand         []string  `json:"valid_commands"`
+	PublicAddr           string    `json:"public_addr"`
+	ClusterAddr          string    `json:"cluster_addr"`
+	CrushNodeAncestry    [][]int   `json:"crush_node_ancestry"`
+	BackendPartitionPath string    `json:"backend_partition_path"`
+	BackendDeviceNode    string    `json:"backend_device_node"`
+}
+
 type Backend interface {
 	CreateCluster(clusterName string, fsid uuid.UUID, mons []Mon) (bool, error)
 	AddMon(clusterName string, mons []Mon) (bool, error)
 	StartMon(nodes []string) (bool, error)
-	AddOSD(clusterName string, osd OSD) (bool, error)
+	AddOSD(clusterName string, osd OSD) (map[string][]string, error)
 	CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64) (bool, error)
 	ListPoolNames(mon string, clusterName string) ([]string, error)
 	GetClusterStatus(mon string, clusterName string) (string, error)
-	GetPools(mon string, clusterName string) ([]CephPool, error)
+	GetPools(mon string, clusterId uuid.UUID) ([]CephPool, error)
+	GetOSDs(mon string, clusterId uuid.UUID) ([]CephOSD, error)
 }

@@ -50,8 +50,27 @@ func (c CephApi) StartMon(nodes []string) (bool, error) {
 	return true, nil
 }
 
-func (c CephApi) AddOSD(clusterName string, osd backend.OSD) (bool, error) {
-	return true, nil
+func (c CephApi) AddOSD(clusterName string, osd backend.OSD) (map[string][]string, error) {
+	return map[string][]string{}, nil
+}
+
+func (c CephApi) GetOSDs(mon string, clusterId uuid.UUID) ([]backend.CephOSD, error) {
+	// Replace cluster id in route pattern
+	getOsdsRoute := CEPH_API_ROUTES["GetOSDs"]
+	getOsdsRoute.Pattern = strings.Replace(getOsdsRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+	resp, err := route_request(getOsdsRoute, mon, bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return []backend.CephOSD{}, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return []backend.CephOSD{}, err
+	}
+	var osds []backend.CephOSD
+	if err := json.Unmarshal(respBody, &osds); err != nil {
+		return []backend.CephOSD{}, err
+	}
+	return osds, nil
 }
 
 func (c CephApi) CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64) (bool, error) {
@@ -155,16 +174,10 @@ func route_request(route CephApiRoute, mon string, body io.Reader) (*http.Respon
 	return nil, errors.New("Invalid method type")
 }
 
-func (c CephApi) GetPools(mon string, clusterName string) ([]backend.CephPool, error) {
-	// Get the cluster id
-	cluster_id, err := cluster_id(clusterName)
-	if err != nil {
-		return []backend.CephPool{}, errors.New(fmt.Sprintf("Could not get id for cluster: %v", err))
-	}
-
+func (c CephApi) GetPools(mon string, clusterId uuid.UUID) ([]backend.CephPool, error) {
 	// Replace cluster id in route pattern
 	getPoolsRoute := CEPH_API_ROUTES["GetPools"]
-	getPoolsRoute.Pattern = strings.Replace(getPoolsRoute.Pattern, "{cluster-fsid}", cluster_id, 1)
+	getPoolsRoute.Pattern = strings.Replace(getPoolsRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
 	resp, err := route_request(getPoolsRoute, mon, bytes.NewBuffer([]byte{}))
 	if err != nil {
 		return []backend.CephPool{}, err

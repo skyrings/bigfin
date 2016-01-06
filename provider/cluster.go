@@ -26,6 +26,9 @@ import (
 	"github.com/skyrings/skyring/tools/uuid"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
+	"strconv"
+	"strings"
+	"time"
 
 	bigfin_task "github.com/skyrings/bigfin/tools/task"
 	skyring_backend "github.com/skyrings/skyring/backend"
@@ -236,6 +239,14 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 
+	// Get a random mon node
+	monnode, err := GetRandomMon(clusterId)
+	if err != nil {
+		logger.Get().Error("Error getting a mon node in cluster: %s. error: %v", clusterName, err)
+		return false, err
+	}
+
+	var slus []models.StorageLogicalUnit
 	updatedStorageDisksMap := make(map[uuid.UUID][]skyring_backend.Disk)
 	for _, requestNode := range requestNodes {
 		if utils.StringInSlice("OSD", requestNode.NodeType) {
@@ -259,26 +270,58 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 							Device:     device.Name,
 							FSType:     device.FSType,
 						}
-						if ret_val, err := salt_backend.AddOSD(clusterName, osd); err != nil || !ret_val {
+						osds, err := salt_backend.AddOSD(clusterName, osd)
+						if err != nil {
 							logger.Get().Error("Error adding OSD: %v. error: %v", osd, err)
-							return ret_val, err
+							return false, err
 						}
-						if ret_val, err := persistOSD(
-							clusterId,
-							storageNode.NodeId,
-							storageDisk.FSUUID,
-							storageDisk.Size,
-							storageDisk.StorageProfile,
-							osd); err != nil || !ret_val {
-							logger.Get().Error("Error persisting OSD: %v. error: %v", osd, err)
-							return ret_val, err
+						osdName := osds[storageNode.Hostname][0]
+						var options = make(map[string]string)
+						options["node"] = osd.Node
+						options["publicip4"] = osd.PublicIP4
+						options["clusterip4"] = osd.ClusterIP4
+						options["device"] = osd.Device
+						options["fstype"] = osd.FSType
+						slu := models.StorageLogicalUnit{
+							Name:              osdName,
+							Type:              models.CEPH_OSD,
+							ClusterId:         clusterId,
+							NodeId:            storageNode.NodeId,
+							StorageDeviceId:   storageDisk.FSUUID,
+							StorageDeviceSize: storageDisk.Size,
+							Options:           options,
 						}
+						slus = append(slus, slu)
 						storageDisk.Used = true
 					}
 					updatedStorageDisks = append(updatedStorageDisks, storageDisk)
 				}
 			}
 			updatedStorageDisksMap[storageNode.NodeId] = updatedStorageDisks
+		}
+	}
+
+	// Fetch the OSD details from calamari
+	time.Sleep(5 * time.Second) // Calamari takes some time to sync with ceph cluster
+	fetchedOSDs, err := cephapi_backend.GetOSDs(monnode.Hostname, clusterId)
+	if err != nil {
+		logger.Get().Error("Error getting OSD details for cluster: %v. error: %v", clusterId, err)
+		return false, err
+	}
+	for _, slu := range slus {
+		for _, fetchedOSD := range fetchedOSDs {
+			id, err := strconv.Atoi(strings.Split(slu.Name, ".")[1])
+			if err != nil {
+				logger.Get().Error("Error getting OSD id from name: %s. error: %v", slu.Name, err)
+				return false, err
+			}
+			if fetchedOSD.Id == id {
+				slu.SluId = fetchedOSD.Uuid
+				if ok, err := persistOSD(slu); err != nil || !ok {
+					logger.Get().Error("Error persisting OSD: %v. error: %v", slu, err)
+					return false, err
+				}
+			}
 		}
 	}
 
@@ -296,36 +339,14 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 	return true, nil
 }
 
-func persistOSD(clusterId uuid.UUID, nodeId uuid.UUID, diskId uuid.UUID, diskSize uint64, storageProfile string, osd backend.OSD) (bool, error) {
+func persistOSD(slu models.StorageLogicalUnit) (bool, error) {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
-
-	id, err := uuid.New()
-	if err != nil {
-		return false, errors.New("Error creating SLU id")
-	}
-	var slu models.StorageLogicalUnit
-	slu.SluId = *id
-	slu.Name = fmt.Sprintf("osd-%v", *id)
-	slu.Type = models.CEPH_OSD
-	slu.ClusterId = clusterId
-	slu.NodeId = nodeId
-	slu.StorageDeviceId = diskId
-	slu.StorageDeviceSize = diskSize
-	slu.StorageProfile = storageProfile
-	var options = make(map[string]string)
-	options["node"] = osd.Node
-	options["publicip4"] = osd.PublicIP4
-	options["clusterip4"] = osd.ClusterIP4
-	options["device"] = osd.Device
-	options["fstype"] = osd.FSType
-	slu.Options = options
-
 	if err := coll.Insert(slu); err != nil {
 		return false, err
 	}
-	logger.Get().Info(fmt.Sprintf("OSD added %s %s", osd.Node, osd.Device))
+	logger.Get().Info(fmt.Sprintf("OSD added %s %s", slu.Options["node"], slu.Options["device"]))
 
 	return true, nil
 }
