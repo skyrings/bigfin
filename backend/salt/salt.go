@@ -78,15 +78,18 @@ func (s Salt) StartMon(nodes []string) (bool, error) {
 	return false, err
 }
 
-func (s Salt) AddOSD(clusterName string, osd backend.OSD) (bool, error) {
+func (s Salt) AddOSD(clusterName string, osd backend.OSD) (osds map[string][]string, err error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	pyobj, err := pyFuncs["AddOSD"].Call(clusterName, osd)
-	if err == nil {
-		return gopy.Bool(pyobj), nil
+	osdMap := make(map[string][]string)
+	if pyobj, loc_err := pyFuncs["AddOSD"].Call(clusterName, osd); loc_err == nil {
+		err = gopy.Convert(pyobj, &osdMap)
+		osds = osdMap
+	} else {
+		err = loc_err
 	}
 
-	return false, err
+	return
 }
 
 func (s Salt) CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64) (bool, error) {
@@ -124,7 +127,7 @@ func (s Salt) GetClusterStatus(mon string, clusterName string) (status string, e
 	return
 }
 
-func (s Salt) GetPools(mon string, clusterName string) ([]backend.CephPool, error) {
+func (s Salt) GetPools(mon string, clusterId uuid.UUID) ([]backend.CephPool, error) {
 	return []backend.CephPool{}, nil
 }
 

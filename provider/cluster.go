@@ -107,11 +107,11 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 					}
 				}
 			}
+			sessionCopy := db.GetDatastore().Copy()
+			defer sessionCopy.Close()
 
 			t.UpdateStatus("Updating node details for cluster")
 			// Update nodes details
-			sessionCopy := db.GetDatastore().Copy()
-			defer sessionCopy.Close()
 			for _, node := range nodes {
 				coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 				if err := coll.Update(
@@ -131,27 +131,6 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 			if !ret_val {
 				utils.FailTask(fmt.Sprintf("Error start/persist mons while create cluster %s", request.Name), err, t)
 				return
-			}
-
-			// Add OSDs
-			t.UpdateStatus("Getting updated nodes list for OSD creation")
-			updated_nodes, err := getNodes(request.Nodes)
-			if err != nil {
-				utils.FailTask(fmt.Sprintf("Error getting updated nodes list post create cluster %s", request.Name), err, t)
-				return
-			}
-			t.UpdateStatus("Adding OSDs")
-			failedOSDs, err := addOSDs(*cluster_uuid, request.Name, updated_nodes, request.Nodes, t)
-			if err != nil {
-				utils.FailTask(fmt.Sprintf("Error adding OSDs while create cluster %s", request.Name), err, t)
-				return
-			}
-			if len(failedOSDs) != 0 {
-				var osds []string
-				for _, osd := range failedOSDs {
-					osds = append(osds, fmt.Sprintf("%s:%s", osd.Node, osd.Device))
-				}
-				t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", osds))
 			}
 
 			// Add cluster to DB
@@ -183,6 +162,28 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 				utils.FailTask(fmt.Sprintf("Error persisting the cluster %s", request.Name), err, t)
 				return
 			}
+
+			// Add OSDs
+			t.UpdateStatus("Getting updated nodes list for OSD creation")
+			updated_nodes, err := getNodes(request.Nodes)
+			if err != nil {
+				utils.FailTask(fmt.Sprintf("Error getting updated nodes list post create cluster %s", request.Name), err, t)
+				return
+			}
+			t.UpdateStatus("Adding OSDs")
+			failedOSDs, err := addOSDs(*cluster_uuid, request.Name, updated_nodes, request.Nodes, t)
+			if err != nil {
+				utils.FailTask(fmt.Sprintf("Error adding OSDs while create cluster %s", request.Name), err, t)
+				return
+			}
+			if len(failedOSDs) != 0 {
+				var osds []string
+				for _, osd := range failedOSDs {
+					osds = append(osds, fmt.Sprintf("%s:%s", osd.Node, osd.Device))
+				}
+				t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", osds))
+			}
+
 			t.UpdateStatus("Success")
 			t.Done(models.TASK_STATUS_SUCCESS)
 		}
@@ -267,21 +268,29 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 							Device:     device.Name,
 							FSType:     device.FSType,
 						}
-						t.UpdateStatus("Adding OSD: %s %s", storageNode.Hostname, device.Name)
-						if ret_val, err := salt_backend.AddOSD(clusterName, osd); err != nil || !ret_val {
-							logger.Get().Error("Error adding OSD: %v for cluster: %s. error: %v", osd, clusterName, err)
+						osds, err := salt_backend.AddOSD(clusterName, osd)
+						if err != nil {
 							failedOSDs = append(failedOSDs, osd)
 							break
 						}
-						if ret_val, err := persistOSD(
-							clusterId,
-							storageNode.NodeId,
-							storageDisk.FSUUID,
-							storageDisk.Size,
-							storageDisk.StorageProfile,
-							osd,
-							t); err != nil || !ret_val {
-							logger.Get().Error("Error persisting OSD: %v for cluster: %s. error: %v", osd, clusterName, err)
+						osdName := osds[storageNode.Hostname][0]
+						var options = make(map[string]string)
+						options["node"] = osd.Node
+						options["publicip4"] = osd.PublicIP4
+						options["clusterip4"] = osd.ClusterIP4
+						options["device"] = osd.Device
+						options["fstype"] = osd.FSType
+						slu := models.StorageLogicalUnit{
+							Name:              osdName,
+							Type:              models.CEPH_OSD,
+							ClusterId:         clusterId,
+							NodeId:            storageNode.NodeId,
+							StorageDeviceId:   storageDisk.FSUUID,
+							StorageDeviceSize: storageDisk.Size,
+							Options:           options,
+						}
+						if ok, err := persistOSD(slu, t); err != nil || !ok {
+							logger.Get().Error("Error persisting OSD: %s %s for cluster: %s. error: %v", slu.Options["node"], slu.Options["device"], clusterName, err)
 							failedOSDs = append(failedOSDs, osd)
 							break
 						}
@@ -308,37 +317,15 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 	return failedOSDs, nil
 }
 
-func persistOSD(clusterId uuid.UUID, nodeId uuid.UUID, diskId uuid.UUID, diskSize uint64, storageProfile string, osd backend.OSD, t *task.Task) (bool, error) {
+func persistOSD(slu models.StorageLogicalUnit, t *task.Task) (bool, error) {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
-
-	id, err := uuid.New()
-	if err != nil {
-		return false, errors.New("Error creating SLU id")
-	}
-	var slu models.StorageLogicalUnit
-	slu.SluId = *id
-	slu.Name = fmt.Sprintf("osd-%v", *id)
-	slu.Type = models.CEPH_OSD
-	slu.ClusterId = clusterId
-	slu.NodeId = nodeId
-	slu.StorageDeviceId = diskId
-	slu.StorageDeviceSize = diskSize
-	slu.StorageProfile = storageProfile
-	var options = make(map[string]string)
-	options["node"] = osd.Node
-	options["publicip4"] = osd.PublicIP4
-	options["clusterip4"] = osd.ClusterIP4
-	options["device"] = osd.Device
-	options["fstype"] = osd.FSType
-	slu.Options = options
-
 	if err := coll.Insert(slu); err != nil {
 		return false, err
 	}
-	logger.Get().Info(fmt.Sprintf("OSD added %s %s for cluster: %v", osd.Node, osd.Device, clusterId))
-	t.UpdateStatus("Added OSD: %s %s", osd.Node, osd.Device)
+	logger.Get().Info(fmt.Sprintf("OSD added %s %s for cluster: %v", slu.Options["node"], slu.Options["device"], slu.ClusterId))
+	t.UpdateStatus("Added OSD: %s %s", slu.Options["node"], slu.Options["device"])
 
 	return true, nil
 }

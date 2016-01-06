@@ -240,7 +240,7 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 	}
 
 	// Get the pools for the cluster
-	pools, err := cephapi_backend.GetPools(monnode.Hostname, cluster.Name)
+	pools, err := cephapi_backend.GetPools(monnode.Hostname, *cluster_id)
 	if err != nil {
 		logger.Get().Error("Error getting storages for cluster: %s. error: %v", cluster.Name, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting storages. error: %v", err))

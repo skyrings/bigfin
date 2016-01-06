@@ -32,19 +32,3 @@ type CephRequestStatus struct {
 	Error        bool   `json:"error"`
 	ErrorMessage string `json:"error_message"`
 }
-
-type CephOSD struct {
-	UUID               string   `json:"uuid"`
-	Id                 int      `json:"id"`
-	ReWeight           float32  `json:"reweight"`
-	Up                 bool     `json:"up"`
-	Server             string   `json:"server"`
-	PublicAddr         string   `json:"public_addr"`
-	In                 bool     `json:"in"`
-	Pools              []int    `json:"pools"`
-	ValidCommands      []string `json:"valid_commands"`
-	ClusterAddr        string   `json:"cluster_addr"`
-	BackendPartionPath string   `json:"backend_partition_path"`
-	BackendDevieMode   string   `json:"backend_device_mode"`
-	CrushNodeAncestry  [][]int  `json:"crush_node_ancestry"`
-}
