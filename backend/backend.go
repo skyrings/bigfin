@@ -51,9 +51,9 @@ type Backend interface {
 	CreateCluster(clusterName string, fsid uuid.UUID, mons []Mon) (bool, error)
 	AddMon(clusterName string, mons []Mon) (bool, error)
 	StartMon(nodes []string) (bool, error)
-	AddOSD(clusterName string, osd OSD) (bool, error)
+	AddOSD(clusterName string, osd OSD) (map[string][]string, error)
 	CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64) (bool, error)
 	ListPoolNames(mon string, clusterName string) ([]string, error)
 	GetClusterStatus(mon string, clusterName string) (string, error)
-	GetPools(mon string, clusterName string) ([]CephPool, error)
+	GetPools(mon string, clusterId uuid.UUID) ([]CephPool, error)
 }

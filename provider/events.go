@@ -14,6 +14,7 @@ package provider
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/skyrings/bigfin/tools/logger"
 	"github.com/skyrings/bigfin/utils"
@@ -21,10 +22,13 @@ import (
 	"github.com/skyrings/skyring/db"
 	"github.com/skyrings/skyring/event"
 	"github.com/skyrings/skyring/models"
+	"github.com/skyrings/skyring/tools/uuid"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"path/filepath"
 	"strings"
+	"time"
 )
 
 var (
@@ -81,6 +85,41 @@ func ceph_cluster_contact_regained_handler(event models.Event) error {
 }
 
 func ceph_osd_property_changed_handler(event models.Event) error {
+	if strings.HasPrefix(event.Message, "OSD") && strings.HasSuffix(event.Message, "added to the cluster map") {
+		sessionCopy := db.GetDatastore().Copy()
+		defer sessionCopy.Close()
+		coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
+		osdname := fmt.Sprintf("osd.%s", event.Tags["service_id"])
+		osduuid, err := uuid.Parse(event.Tags["osd_uuid"])
+		if err != nil {
+			logger.Get().Error("Error parsing the uuid for slu: %s. error: %v", osdname, err)
+			return errors.New(fmt.Sprintf("Error parsing the uuid for slu: %s. error: %v", osdname, err))
+		}
+		clusteruuid, err := uuid.Parse(event.Tags["fsid"])
+		if err != nil {
+			logger.Get().Error("Error parsing the cluster uuid for slu: %s. error: %v", osdname, err)
+			return errors.New(fmt.Sprintf("Error parsing the cluster uuid for slu: %s. error: %v", osdname, err))
+		}
+		var updated bool
+		for count := 0; count < 12; count++ {
+			if err := coll.Update(bson.M{"name": osdname, "clusterid": *clusteruuid}, bson.M{"$set": bson.M{"sluid": *osduuid}}); err != nil {
+				if err.Error() == mgo.ErrNotFound.Error() {
+					time.Sleep(5 * time.Second)
+					continue
+				}
+				logger.Get().Error("Error updating the uuid for slu: %s. error: %v", osdname, err)
+				return errors.New(fmt.Sprintf("Error updating the uuid for slu: %s. error: %v", osdname, err))
+			} else {
+				updated = true
+				break
+			}
+		}
+		if !updated {
+			logger.Get().Error("Sluid update failed for: %s", osdname)
+		} else {
+			logger.Get().Info("Updated sluid for: %s", osdname)
+		}
+	}
 	return nil
 }
 

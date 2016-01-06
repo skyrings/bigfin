@@ -471,7 +471,7 @@ def AddOSD(cluster_name, minions):
         log.error('add_osd failed. error=%s' % failed_minions)
         raise Exception('add_osd failed. error=%s' % failed_minions)
 
-    return True
+    return osd_map
 
 
 def CreatePool(pool_name, monitor, cluster_name, pg_num=0):
