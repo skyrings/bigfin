@@ -90,13 +90,24 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 
 	asyncTask := func(t *task.Task) {
 		t.UpdateStatus("Started ceph provider task for cluster creation: %v", t.ID)
-		ret_val, err := salt_backend.CreateCluster(request.Name, *cluster_uuid, mons)
+		ret_val, err := salt_backend.CreateCluster(request.Name, *cluster_uuid, []backend.Mon{mons[0]})
 		if err != nil {
 			utils.FailTask("Cluster creation failed", err, t)
 			return
 		}
 
 		if ret_val {
+			// Add other mons
+			t.UpdateStatus("Adding mons")
+			if len(mons) > 1 {
+				for _, mon := range mons[1:] {
+					if ret_val, err := salt_backend.AddMon(request.Name, []backend.Mon{mon}); err != nil || !ret_val {
+						utils.FailTask("Error adding mons", err, t)
+						return
+					}
+				}
+			}
+
 			t.UpdateStatus("Updating node details for cluster")
 			// Update nodes details
 			sessionCopy := db.GetDatastore().Copy()
@@ -116,7 +127,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 
 			// Start and persist the mons
 			t.UpdateStatus("Starting and creating mons")
-			ret_val, err := startAndPersistMons(*cluster_uuid, mons)
+			ret_val, err = startAndPersistMons(*cluster_uuid, mons)
 			if !ret_val {
 				utils.FailTask("Error start/persist mons", err, t)
 				return
@@ -430,20 +441,18 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 
 		if len(mons) > 0 {
 			t.UpdateStatus("Adding mons")
-			// Add mon
-			ret_val, err := salt_backend.AddMon(cluster.Name, mons)
-			if err != nil {
-				utils.FailTask("Error adding mons", err, t)
-				return
-			}
-			if ret_val {
-				t.UpdateStatus("Starting and persisting the mons")
-				// Start and persist the mons
-				ret_val, err := startAndPersistMons(*cluster_id, mons)
-				if err != nil || !ret_val {
-					utils.FailTask("Error start/persist mons", err, t)
+			for _, mon := range mons {
+				if ret_val, err := salt_backend.AddMon(cluster.Name, []backend.Mon{mon}); err != nil || !ret_val {
+					utils.FailTask("Error adding mons", err, t)
 					return
 				}
+			}
+			t.UpdateStatus("Starting and persisting the mons")
+			// Start and persist the mons
+			ret_val, err := startAndPersistMons(*cluster_id, mons)
+			if err != nil || !ret_val {
+				utils.FailTask("Error start/persist mons", err, t)
+				return
 			}
 		}
 
