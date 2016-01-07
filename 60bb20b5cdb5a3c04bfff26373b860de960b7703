@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_9fa676c0",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-01-07T15:42:09Z",
+      "side": 1,
+      "message": "%s/chenge/change/g",
+      "revId": "60bb20b5cdb5a3c04bfff26373b860de960b7703",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_dfb0eef6",
+        "filename": "provider/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 97,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-01-07T15:42:09Z",
+      "side": 1,
+      "message": "There is map defined cluster_status_map which has keys as HEALTH_OK, HEALTH_WARN and HEALTH_ERR. You can get the corresponding status from the map as below and update in single line only\n\nupdate_cluster_status(cluster_status_map[status])",
+      "revId": "60bb20b5cdb5a3c04bfff26373b860de960b7703",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
