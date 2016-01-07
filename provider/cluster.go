@@ -257,6 +257,7 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 							storageNode.NodeId,
 							storageDisk.FSUUID,
 							storageDisk.Size,
+							storageDisk.StorageProfile,
 							osd); err != nil || !ret_val {
 							logger.Get().Error("Error persisting OSD: %v. error: %v", osd, err)
 							return ret_val, err
@@ -284,7 +285,7 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 	return true, nil
 }
 
-func persistOSD(clusterId uuid.UUID, nodeId uuid.UUID, diskId uuid.UUID, diskSize uint64, osd backend.OSD) (bool, error) {
+func persistOSD(clusterId uuid.UUID, nodeId uuid.UUID, diskId uuid.UUID, diskSize uint64, storageProfile string, osd backend.OSD) (bool, error) {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
@@ -301,6 +302,7 @@ func persistOSD(clusterId uuid.UUID, nodeId uuid.UUID, diskId uuid.UUID, diskSiz
 	slu.NodeId = nodeId
 	slu.StorageDeviceId = diskId
 	slu.StorageDeviceSize = diskSize
+	slu.StorageProfile = storageProfile
 	var options = make(map[string]string)
 	options["node"] = osd.Node
 	options["publicip4"] = osd.PublicIP4
