@@ -17,10 +17,14 @@ import (
 	"fmt"
 	"github.com/skyrings/bigfin/tools/logger"
 	"github.com/skyrings/bigfin/utils"
+	"github.com/skyrings/skyring/conf"
+	"github.com/skyrings/skyring/db"
 	"github.com/skyrings/skyring/event"
 	"github.com/skyrings/skyring/models"
+	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"path/filepath"
+	"strings"
 )
 
 var handlermap = map[string]interface{}{
@@ -77,7 +81,26 @@ func ceph_mon_property_changed_handler(event models.Event) error {
 	return nil
 }
 
+func update_cluster_status(clusterStatus int, event models.Event) error {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	if err := coll.Update(bson.M{"clusterid": event.ClusterId}, bson.M{"$set": bson.M{"status": clusterStatus}}); err != nil {
+		logger.Get().Error("Error updating the cluster status: %s", err)
+		return err
+	}
+	return nil
+}
+
 func ceph_cluster_health_changed(event models.Event) error {
+	status := strings.SplitAfter(event.Message, " ")[len(strings.SplitAfter(event.Message, " "))-1]
+	if status == "HEALTH_OK" {
+		update_cluster_status(models.CLUSTER_STATUS_OK, event)
+	} else if status == "HEALTH_WARN" {
+		update_cluster_status(models.CLUSTER_STATUS_WARN, event)
+	} else {
+		update_cluster_status(models.CLUSTER_STATUS_ERROR, event)
+	}
 	return nil
 }
 
