@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_cd404738",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-01-07T02:13:30Z",
+      "side": 1,
+      "message": "Does this work? I have seen probs in the past if you add multiple mons at a time",
+      "range": {
+        "startLine": 103,
+        "startChar": 33,
+        "endLine": 103,
+        "endChar": 60
+      },
+      "revId": "2247d5f659c1d582f11ed55ee09a320a84e9a58b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
