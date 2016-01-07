@@ -22,6 +22,24 @@
       "revId": "2247d5f659c1d582f11ed55ee09a320a84e9a58b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_8d6e4fc8",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-01-07T03:28:58Z",
+      "side": 1,
+      "message": "If cluster is created adding multiple mons works fine at a time.\nTo be safer side may be we can run a loop and add mons.\nAlso there is size check required for more than 1.\nWill update the patchset.",
+      "parentUuid": "fa81d914_cd404738",
+      "revId": "2247d5f659c1d582f11ed55ee09a320a84e9a58b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
