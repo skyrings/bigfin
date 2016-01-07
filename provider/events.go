@@ -17,25 +17,36 @@ import (
 	"fmt"
 	"github.com/skyrings/bigfin/tools/logger"
 	"github.com/skyrings/bigfin/utils"
+	"github.com/skyrings/skyring/conf"
+	"github.com/skyrings/skyring/db"
 	"github.com/skyrings/skyring/event"
 	"github.com/skyrings/skyring/models"
+	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"path/filepath"
+	"strings"
 )
 
-var handlermap = map[string]interface{}{
-	"skyring/calamari/ceph/calamari/started":        calamari_server_start_handler,
-	"skyring/calamari/ceph/server/added":            ceph_server_add_handler,
-	"skyring/calamari/ceph/server/reboot":           ceph_server_reboot_handler,
-	"skyring/calamari/ceph/server/package/changed":  ceph_server_package_change_handler,
-	"skyring/calamari/ceph/server/lateReporting":    ceph_server_late_reporting_handler,
-	"skyring/calamari/ceph/server/regainedContact":  ceph_server_contact_regained_handler,
-	"skyring/calamari/ceph/cluster/lateReporting":   ceph_cluster_late_reporting_handler,
-	"skyring/calamari/ceph/cluster/regainedContact": ceph_cluster_contact_regained_handler,
-	"skyring/calamari/ceph/osd/propertyChanged":     ceph_osd_property_changed_handler,
-	"skyring/calamari/ceph/mon/propertyChanged":     ceph_mon_property_changed_handler,
-	"skyring/calamari/ceph/cluster/health/changed":  ceph_cluster_health_changed,
-}
+var (
+	handlermap = map[string]interface{}{
+		"skyring/calamari/ceph/calamari/started":        calamari_server_start_handler,
+		"skyring/calamari/ceph/server/added":            ceph_server_add_handler,
+		"skyring/calamari/ceph/server/reboot":           ceph_server_reboot_handler,
+		"skyring/calamari/ceph/server/package/changed":  ceph_server_package_change_handler,
+		"skyring/calamari/ceph/server/lateReporting":    ceph_server_late_reporting_handler,
+		"skyring/calamari/ceph/server/regainedContact":  ceph_server_contact_regained_handler,
+		"skyring/calamari/ceph/cluster/lateReporting":   ceph_cluster_late_reporting_handler,
+		"skyring/calamari/ceph/cluster/regainedContact": ceph_cluster_contact_regained_handler,
+		"skyring/calamari/ceph/osd/propertyChanged":     ceph_osd_property_changed_handler,
+		"skyring/calamari/ceph/mon/propertyChanged":     ceph_mon_property_changed_handler,
+		"skyring/calamari/ceph/cluster/health/changed":  ceph_cluster_health_changed,
+	}
+	cluster_status_in_enum = map[string]int{
+		"HEALTH_OK":   models.CLUSTER_STATUS_OK,
+		"HEALTH_WARN": models.CLUSTER_STATUS_WARN,
+		"HEALTH_ERR":  models.CLUSTER_STATUS_ERROR,
+	}
+)
 
 func calamari_server_start_handler(event models.Event) error {
 	return nil
@@ -77,7 +88,22 @@ func ceph_mon_property_changed_handler(event models.Event) error {
 	return nil
 }
 
+func update_cluster_status(clusterStatus int, event models.Event) error {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	if err := coll.Update(bson.M{"clusterid": event.ClusterId}, bson.M{"$set": bson.M{"status": clusterStatus}}); err != nil {
+		logger.Get().Error("Error updating the cluster status: %s", err)
+		return err
+	}
+	return nil
+}
+
 func ceph_cluster_health_changed(event models.Event) error {
+	status := strings.SplitAfter(event.Message, " ")[len(strings.SplitAfter(event.Message, " "))-1]
+	if err := update_cluster_status(cluster_status_in_enum[status], event); err != nil {
+		return err
+	}
 	return nil
 }
 
