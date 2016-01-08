@@ -28,7 +28,7 @@ func HttpGet(url string) (*http.Response, error) {
 	return http.Get(url)
 }
 
-func HttpPost(mon string, url string, contentType string, body io.Reader) (*http.Response, error) {
+func postPatch(method string, mon string, url string, contentType string, body io.Reader) (*http.Response, error) {
 	// Get the csrf token details
 	dummyUrl := fmt.Sprintf(
 		"http://%s:%d/%s/v%d/auth/login",
@@ -44,7 +44,7 @@ func HttpPost(mon string, url string, contentType string, body io.Reader) (*http
 	token := csrf_token(resp)
 
 	// Create the request
-	req, err := http.NewRequest("POST", url, body)
+	req, err := http.NewRequest(method, url, body)
 	if err != nil {
 		return nil, errors.New(fmt.Sprintf("Error forming the request: %v", err))
 	}
@@ -60,6 +60,14 @@ func HttpPost(mon string, url string, contentType string, body io.Reader) (*http
 		return nil, errors.New("Failed")
 	}
 	return resp, nil
+}
+
+func HttpPost(mon string, url string, contentType string, body io.Reader) (*http.Response, error) {
+	return postPatch("POST", mon, url, contentType, body)
+}
+
+func HttpPatch(mon string, url string, contentType string, body io.Reader) (*http.Response, error) {
+	return postPatch("PATCH", mon, url, contentType, body)
 }
 
 func csrf_token(resp *http.Response) (token string) {

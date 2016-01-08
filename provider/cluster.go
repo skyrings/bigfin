@@ -26,6 +26,7 @@ import (
 	"github.com/skyrings/skyring/tools/uuid"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
+	"strconv"
 
 	bigfin_task "github.com/skyrings/bigfin/tools/task"
 	skyring_backend "github.com/skyrings/skyring/backend"
@@ -480,6 +481,10 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 			}
 			t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", osds))
 		}
+		t.UpdateStatus("Recalculating pgnum/pgpnum")
+		if ok := RecalculatePgnum(*cluster_id, t); !ok {
+			return
+		}
 		t.UpdateStatus("Success")
 		t.Done(models.TASK_STATUS_SUCCESS)
 	}
@@ -537,4 +542,47 @@ func cluster_status(clusterId uuid.UUID, clusterName string) (status string, err
 		return "", err
 	}
 	return cluster_status_map[status], nil
+}
+
+func RecalculatePgnum(clusterId uuid.UUID, t *task.Task) bool {
+	// Get storage pools
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	var storages []models.Storage
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+	if err := coll.Find(bson.M{"clusterid": clusterId}).All(&storages); err != nil {
+		utils.FailTask(fmt.Sprintf("Error getting storage pools for cluster: %v", clusterId), err, t)
+		return false
+	}
+
+	t.UpdateStatus("Getting a mon from cluster")
+	monnode, err := GetRandomMon(clusterId)
+	if err != nil {
+		utils.FailTask(fmt.Sprintf("Error getting mon node for cluster: %v", clusterId), err, t)
+		return false
+	}
+
+	for _, storage := range storages {
+		if storage.Name == "rbd" {
+			continue
+		}
+		pgNum := DerivePgNum(clusterId, storage.Size, storage.Replicas)
+		id, err := strconv.Atoi(storage.Options["id"])
+		if err != nil {
+			utils.FailTask(fmt.Sprintf("Error getting details of pool: %s for cluster: %v", storage.Name, clusterId), err, t)
+			return false
+		}
+		// Update the PG Num for the cluster
+		t.UpdateStatus(fmt.Sprintf("Updating the pgnum and pgpnum for pool %s", storage.Name))
+		poolData := map[string]interface{}{
+			"pg_num":  int(pgNum),
+			"pgp_num": int(pgNum),
+		}
+		ok, err := cephapi_backend.UpdatePool(monnode.Hostname, clusterId, id, poolData)
+		if err != nil || !ok {
+			utils.FailTask(fmt.Sprintf("Error updating pgnum/pgnum for pool: %s of cluster: %v", storage.Name, clusterId), err, t)
+			return false
+		}
+	}
+	return true
 }
