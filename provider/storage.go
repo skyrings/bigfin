@@ -14,7 +14,6 @@ package provider
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"github.com/skyrings/bigfin/tools/logger"
 	"github.com/skyrings/bigfin/utils"
@@ -55,43 +54,11 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 	}
 
 	asyncTask := func(t *task.Task) {
-		t.UpdateStatus("Statrted ceph provider pool creation: %v", t.ID)
-		ok, err := createPool(*cluster_id, request, t)
-		if err != nil || !ok {
-			utils.FailTask("Create Pool failed", err, t)
+		t.UpdateStatus("Started ceph provider pool creation: %v", t.ID)
+		if ok := createPool(*cluster_id, request, t); !ok {
 			return
 		}
 
-		t.UpdateStatus("Perisisting the storage entity")
-		// Add storage entity to DB
-		var storage models.Storage
-		storage_id, err := uuid.New()
-		if err != nil {
-			utils.FailTask("Error creating id for node", err, t)
-			return
-		}
-		storage.StorageId = *storage_id
-		storage.Name = request.Name
-		storage.Type = request.Type
-		storage.Tags = request.Tags
-		storage.ClusterId = *cluster_id
-		storage.Size = request.Size
-		storage.Status = models.STATUS_UP
-		storage.Replicas = request.Replicas
-		storage.Profile = request.Profile
-		storage.SnapshotsEnabled = request.SnapshotsEnabled
-		// TODO: Populate the schedule ids once schedule created
-		// storage.SnapshotScheduleIds = <created schedule ids>
-		storage.QuotaEnabled = request.QuotaEnabled
-		storage.QuotaParams = request.QuotaParams
-		storage.Options = request.Options
-		sessionCopy := db.GetDatastore().Copy()
-		defer sessionCopy.Close()
-		coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
-		if err := coll.Insert(storage); err != nil {
-			utils.FailTask("Error persisting pool", err, t)
-			return
-		}
 		t.UpdateStatus("Success")
 		t.Done(models.TASK_STATUS_SUCCESS)
 	}
@@ -104,7 +71,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 	return nil
 }
 
-func createPool(clusterId uuid.UUID, request models.AddStorageRequest, t *task.Task) (bool, error) {
+func createPool(clusterId uuid.UUID, request models.AddStorageRequest, t *task.Task) bool {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 
@@ -113,15 +80,15 @@ func createPool(clusterId uuid.UUID, request models.AddStorageRequest, t *task.T
 	var cluster models.Cluster
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
 	if err := coll.Find(bson.M{"clusterid": clusterId}).One(&cluster); err != nil {
-		t.UpdateStatus("Error getting the cluster details")
-		return false, err
+		utils.FailTask("Error getting the cluster details", err, t)
+		return false
 	}
 
 	t.UpdateStatus("Getting a mon from cluster")
 	monnode, err := GetRandomMon(clusterId)
 	if err != nil {
-		t.UpdateStatus("Error getting mon node details")
-		return false, err
+		utils.FailTask("Error getting mon node details", err, t)
+		return false
 	}
 
 	t.UpdateStatus("Creating pool")
@@ -131,7 +98,7 @@ func createPool(clusterId uuid.UUID, request models.AddStorageRequest, t *task.T
 		val, _ := strconv.ParseUint(request.Options["pgnum"], 10, 32)
 		pgNum = uint(val)
 	} else {
-		pgNum = derive_pgnum(clusterId, request.Size, request.Replicas)
+		pgNum = DerivePgNum(clusterId, request.Size, request.Replicas)
 	}
 
 	// Get quota related details if quota enabled
@@ -142,22 +109,72 @@ func createPool(clusterId uuid.UUID, request models.AddStorageRequest, t *task.T
 		var err error
 		if request.QuotaParams["quota_max_objects"] != "" {
 			if quotaMaxObjects, err = strconv.Atoi(request.QuotaParams["quota_max_objects"]); err != nil {
-				return false, errors.New(fmt.Sprintf("Error parsing quota config value for quota_max_objects"))
+				utils.FailTask("Error parsing quota config value for quota_max_objects", err, t)
+				return false
 			}
 		}
 		if request.QuotaParams["quota_max_bytes"] != "" {
 			if quotaMaxBytes, err = strconv.ParseUint(request.QuotaParams["quota_max_bytes"], 10, 64); err != nil {
-				return false, errors.New(fmt.Sprintf("Error parsing quota config value for quota_max_bytes"))
+				utils.FailTask("Error parsing quota config value for quota_max_bytes", err, t)
+				return false
 			}
 		}
 	}
 
 	ok, err := cephapi_backend.CreatePool(request.Name, monnode.Hostname, cluster.Name, uint(pgNum), request.Replicas, quotaMaxObjects, quotaMaxBytes)
 	if err != nil || !ok {
-		return false, err
+		utils.FailTask("Create pool failed", err, t)
+		return false
 	} else {
-		return true, nil
+		pools, err := cephapi_backend.GetPools(monnode.Hostname, clusterId)
+		if err != nil {
+			utils.FailTask("Error getting created pools", err, t)
+			return false
+		}
+		for _, pool := range pools {
+			if request.Name == pool.Name {
+				t.UpdateStatus("Perisisting the storage entity")
+				var storage models.Storage
+				storage_id, err := uuid.New()
+				if err != nil {
+					utils.FailTask("Error creating id for node", err, t)
+					return false
+				}
+				storage.StorageId = *storage_id
+				storage.Name = request.Name
+				storage.Type = request.Type
+				storage.Tags = request.Tags
+				storage.ClusterId = clusterId
+				storage.Size = request.Size
+				storage.Status = models.STATUS_UP
+				storage.Replicas = request.Replicas
+				storage.Profile = request.Profile
+				storage.SnapshotsEnabled = request.SnapshotsEnabled
+				// TODO: Populate the schedule ids once schedule created
+				// storage.SnapshotScheduleIds = <created schedule ids>
+				storage.QuotaEnabled = request.QuotaEnabled
+				storage.QuotaParams = request.QuotaParams
+				options := make(map[string]string)
+				options["id"] = strconv.Itoa(pool.Id)
+				options["pgnum"] = strconv.Itoa(pool.PgNum)
+				options["pgp_num"] = strconv.Itoa(pool.PgpNum)
+				options["full"] = strconv.FormatBool(pool.Full)
+				options["hashpspool"] = strconv.FormatBool(pool.HashPsPool)
+				options["min_size"] = strconv.FormatUint(pool.MinSize, 10)
+				options["crash_replay_interval"] = strconv.Itoa(pool.CrashReplayInterval)
+				options["crush_ruleset"] = strconv.Itoa(pool.CrushRuleSet)
+				storage.Options = options
+
+				coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+				if err := coll.Insert(storage); err != nil {
+					utils.FailTask("Error persisting pool", err, t)
+					return false
+				}
+				break
+			}
+		}
 	}
+	return true
 }
 
 // RULES FOR DERIVING THE PG NUM
@@ -176,7 +193,7 @@ func createPool(clusterId uuid.UUID, request models.AddStorageRequest, t *task.T
 //         Max Allocation Size = ((Average OSD Size * No of OSDs) / Replica Count) * Max Utilization Factor
 //         -- where Max Utilization Factor is set as 0.8
 //  Finally round this value of next 2's power
-func derive_pgnum(clusterId uuid.UUID, size string, replicaCount int) uint {
+func DerivePgNum(clusterId uuid.UUID, size string, replicaCount int) uint {
 	// Get the no of OSDs in the cluster
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()

@@ -135,6 +135,10 @@ func (s Salt) GetPools(mon string, clusterId uuid.UUID) ([]backend.CephPool, err
 	return []backend.CephPool{}, nil
 }
 
+func (s Salt) UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool map[string]interface{}) (bool, error) {
+	return true, nil
+}
+
 func New() backend.Backend {
 	return new(Salt)
 }

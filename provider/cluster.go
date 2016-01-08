@@ -492,6 +492,10 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 			utils.FailTask("Error adding OSDs", err, t)
 			return
 		}
+		t.UpdateStatus("Recalculating pgnum/pgpnum")
+		if ok := RecalculatePgnum(*cluster_id, t); !ok {
+			return
+		}
 		t.UpdateStatus("Success")
 		t.Done(models.TASK_STATUS_SUCCESS)
 	}
@@ -548,4 +552,81 @@ func cluster_status(clusterId uuid.UUID, clusterName string) (status string, err
 		return "", err
 	}
 	return cluster_status_map[status], nil
+}
+
+func RecalculatePgnum(clusterId uuid.UUID, t *task.Task) bool {
+	// Get storage pools
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	var storages []models.Storage
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+	if err := coll.Find(bson.M{"clusterid": clusterId}).All(&storages); err != nil {
+		utils.FailTask("Error getting storage pools", err, t)
+		return false
+	}
+
+	t.UpdateStatus("Getting a mon from cluster")
+	monnode, err := GetRandomMon(clusterId)
+	if err != nil {
+		utils.FailTask("Error getting mon node", err, t)
+		return false
+	}
+
+	t.UpdateStatus("Updating the pool pgnum and pgpnum")
+	for _, storage := range storages {
+		pgNum := DerivePgNum(clusterId, storage.Size, storage.Replicas)
+		id, err := strconv.Atoi(storage.Options["id"])
+		if err != nil {
+			utils.FailTask(fmt.Sprintf("Error getting details of pool: %s", storage.Name), err, t)
+			return false
+		}
+		// Update the PG Num for the cluster
+		poolData := map[string]interface{}{
+			"pg_num": int(pgNum),
+		}
+		ok, err := cephapi_backend.UpdatePool(monnode.Hostname, clusterId, id, poolData)
+		if err != nil || !ok {
+			utils.FailTask(fmt.Sprintf("Error updating pgnum for pool: %s", storage.Name), err, t)
+			return false
+		}
+		// Wait for sometime
+		time.Sleep(120 * time.Second)
+		// Update the PGP Num for the cluster
+		poolData = map[string]interface{}{
+			"pgp_num": int(pgNum),
+		}
+		ok, err = cephapi_backend.UpdatePool(monnode.Hostname, clusterId, id, poolData)
+		if err != nil || !ok {
+			utils.FailTask(fmt.Sprintf("Error updating pgpnum for pool: %s", storage.Name), err, t)
+			return false
+		}
+		t.UpdateStatus("Updated pgnum and pgpnum for pool: %s", storage.Name)
+	}
+	return true
+}
+
+func (s *CephProvider) RedistributeCluster(req models.RpcRequest, resp *models.RpcResponse) error {
+	cluster_id_str := req.RpcRequestVars["cluster-id"]
+	cluster_id, err := uuid.Parse(cluster_id_str)
+	if err != nil {
+		logger.Get().Error("Error parsing the cluster id: %s", cluster_id_str)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
+		return err
+	}
+	asyncTask := func(t *task.Task) {
+		t.UpdateStatus("Started ceph provider task for cluster redistribute: %v", t.ID)
+		if ok := RecalculatePgnum(*cluster_id, t); !ok {
+			return
+		}
+		t.UpdateStatus("Success")
+		t.Done(models.TASK_STATUS_SUCCESS)
+	}
+	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-RedistributeCluster", asyncTask, nil, nil, nil); err != nil {
+		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for cluster redistribute")
+		return err
+	} else {
+		*resp = utils.WriteAsyncResponse(taskId, "Task Created", []byte{})
+	}
+
+	return nil
 }
