@@ -34,6 +34,7 @@ const (
 	DEFAULT_PG_NUM       = 128
 	TARGET_PGS_PER_OSD   = 200
 	MAX_UTILIZATION_PCNT = 80
+	INVALID_POOL_ID      = -1
 )
 
 func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResponse) error {
@@ -56,8 +57,8 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 
 	asyncTask := func(t *task.Task) {
 		t.UpdateStatus("Statrted ceph provider pool creation: %v", t.ID)
-		ok, err := createPool(*cluster_id, request, t)
-		if err != nil || !ok {
+		id, err := createPool(*cluster_id, request, t)
+		if err != nil || id == INVALID_POOL_ID {
 			utils.FailTask("Create Pool failed", err, t)
 			return
 		}
@@ -85,6 +86,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 		storage.QuotaEnabled = request.QuotaEnabled
 		storage.QuotaParams = request.QuotaParams
 		storage.Options = request.Options
+		storage.Options["id"] = strconv.Itoa(id)
 		sessionCopy := db.GetDatastore().Copy()
 		defer sessionCopy.Close()
 		coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
@@ -104,7 +106,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 	return nil
 }
 
-func createPool(clusterId uuid.UUID, request models.AddStorageRequest, t *task.Task) (bool, error) {
+func createPool(clusterId uuid.UUID, request models.AddStorageRequest, t *task.Task) (int, error) {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 
@@ -114,14 +116,14 @@ func createPool(clusterId uuid.UUID, request models.AddStorageRequest, t *task.T
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
 	if err := coll.Find(bson.M{"clusterid": clusterId}).One(&cluster); err != nil {
 		t.UpdateStatus("Error getting the cluster details")
-		return false, err
+		return INVALID_POOL_ID, err
 	}
 
 	t.UpdateStatus("Getting a mon from cluster")
 	monnode, err := GetRandomMon(clusterId)
 	if err != nil {
 		t.UpdateStatus("Error getting mon node details")
-		return false, err
+		return INVALID_POOL_ID, err
 	}
 
 	t.UpdateStatus("Creating pool")
@@ -131,7 +133,7 @@ func createPool(clusterId uuid.UUID, request models.AddStorageRequest, t *task.T
 		val, _ := strconv.ParseUint(request.Options["pgnum"], 10, 32)
 		pgNum = uint(val)
 	} else {
-		pgNum = derive_pgnum(clusterId, request.Size, request.Replicas)
+		pgNum = DerivePgNum(clusterId, request.Size, request.Replicas)
 	}
 
 	// Get quota related details if quota enabled
@@ -142,22 +144,31 @@ func createPool(clusterId uuid.UUID, request models.AddStorageRequest, t *task.T
 		var err error
 		if request.QuotaParams["quota_max_objects"] != "" {
 			if quotaMaxObjects, err = strconv.Atoi(request.QuotaParams["quota_max_objects"]); err != nil {
-				return false, errors.New(fmt.Sprintf("Error parsing quota config value for quota_max_objects"))
+				return INVALID_POOL_ID, errors.New(fmt.Sprintf("Error parsing quota config value for quota_max_objects"))
 			}
 		}
 		if request.QuotaParams["quota_max_bytes"] != "" {
 			if quotaMaxBytes, err = strconv.ParseUint(request.QuotaParams["quota_max_bytes"], 10, 64); err != nil {
-				return false, errors.New(fmt.Sprintf("Error parsing quota config value for quota_max_bytes"))
+				return INVALID_POOL_ID, errors.New(fmt.Sprintf("Error parsing quota config value for quota_max_bytes"))
 			}
 		}
 	}
 
 	ok, err := cephapi_backend.CreatePool(request.Name, monnode.Hostname, cluster.Name, uint(pgNum), request.Replicas, quotaMaxObjects, quotaMaxBytes)
 	if err != nil || !ok {
-		return false, err
+		return INVALID_POOL_ID, err
 	} else {
-		return true, nil
+		pools, err := cephapi_backend.GetPools(monnode.Hostname, clusterId)
+		if err != nil {
+			return INVALID_POOL_ID, err
+		}
+		for _, pool := range pools {
+			if request.Name == pool.Name {
+				return pool.Id, nil
+			}
+		}
 	}
+	return INVALID_POOL_ID, errors.New("Couldnt get details of created pool from calamari")
 }
 
 // RULES FOR DERIVING THE PG NUM
@@ -176,7 +187,7 @@ func createPool(clusterId uuid.UUID, request models.AddStorageRequest, t *task.T
 //         Max Allocation Size = ((Average OSD Size * No of OSDs) / Replica Count) * Max Utilization Factor
 //         -- where Max Utilization Factor is set as 0.8
 //  Finally round this value of next 2's power
-func derive_pgnum(clusterId uuid.UUID, size string, replicaCount int) uint {
+func DerivePgNum(clusterId uuid.UUID, size string, replicaCount int) uint {
 	// Get the no of OSDs in the cluster
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
