@@ -15,6 +15,7 @@
 package salt
 
 import (
+	"errors"
 	"github.com/skyrings/bigfin/backend"
 	"github.com/skyrings/skyring/tools/gopy"
 	"github.com/skyrings/skyring/tools/uuid"
@@ -117,6 +118,9 @@ func (s Salt) GetClusterStatus(mon string, clusterName string) (status string, e
 	defer mutex.Unlock()
 	if pyobj, loc_err := pyFuncs["GetClusterStatus"].Call(mon, clusterName); loc_err == nil {
 		err = gopy.Convert(pyobj, &status)
+		if status == "" {
+			err = errors.New("Unable to get cluster status")
+		}
 	} else {
 		err = loc_err
 	}

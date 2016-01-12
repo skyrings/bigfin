@@ -260,133 +260,145 @@ def CreateCluster(cluster_name, fsid, minions):
     # convert list of minions to below dict
     # {MINION_ID: {'public_ip': IP_ADDRESS,
     #              'cluster_ip': IP_ADDRESS}, ...}
-    d = {}
-    for m in minions:
-        d.update({m['Node']: {'public_ip': m['PublicIP4'],
-                              'cluster_ip': m['ClusterIP4']}})
-    _minions = minions
-    minions = d
+    try:
+        d = {}
+        for m in minions:
+            d.update({m['Node']: {'public_ip': m['PublicIP4'],
+                                  'cluster_ip': m['ClusterIP4']}})
+        _minions = minions
+        minions = d
 
-    public_network, cluster_network = _check_minion_networks(minions)
-    mon_id_map, monitors = _get_mon_id_map(_MON_ID_LIST, minions)
+        public_network, cluster_network = _check_minion_networks(minions)
+        mon_id_map, monitors = _get_mon_id_map(_MON_ID_LIST, minions)
 
-    cluster_dir = _CEPH_CLUSTER_CONF_DIR + '/' + cluster_name
-    if not os.path.exists(cluster_dir):
-        os.makedirs(cluster_dir)
+        cluster_dir = _CEPH_CLUSTER_CONF_DIR + '/' + cluster_name
+        if not os.path.exists(cluster_dir):
+            os.makedirs(cluster_dir)
 
-    conf_file = cluster_dir + '/' + cluster_name + '.conf'
-    _gen_ceph_cluster_conf(conf_file, cluster_name, fsid, monitors,
-                           public_network)
+        conf_file = cluster_dir + '/' + cluster_name + '.conf'
+        _gen_ceph_cluster_conf(conf_file, cluster_name, fsid, monitors,
+                               public_network)
 
-    _gen_keys(cluster_name, fsid, monitors, cluster_dir)
+        _gen_keys(cluster_name, fsid, monitors, cluster_dir)
 
-    pillar_data = _add_ceph_mon_pillar_data(mon_id_map, cluster_name, monitors)
-    pillar = {'skyring': pillar_data}
+        pillar_data = _add_ceph_mon_pillar_data(mon_id_map, cluster_name, monitors)
+        pillar = {'skyring': pillar_data}
 
-    bootstrapped_minion = None
-    for id, minion in mon_id_map.iteritems():
-        out = run_state(local, minion, 'add_ceph_mon',
-                        kwarg={'pillar':
-                               {'skyring': {'mon_bootstrap': True,
-                                            minion: pillar_data[minion]}}})
-        if out:
-            log.error("mon_bootstrap failed. %s" % out)
-        else:
-            bootstrapped_minion = minion
-            break
+        bootstrapped_minion = None
+        for id, minion in mon_id_map.iteritems():
+            out = run_state(local, minion, 'add_ceph_mon',
+                            kwarg={'pillar':
+                                   {'skyring': {'mon_bootstrap': True,
+                                                minion: pillar_data[minion]}}})
+            if out:
+                log.error("mon_bootstrap failed. %s" % out)
+            else:
+                bootstrapped_minion = minion
+                break
 
-    if not bootstrapped_minion:
-        log.error("mon_bootstrap failed")
-        raise Exception("mon_bootstrap failed")
+        if not bootstrapped_minion:
+            log.error("mon_bootstrap failed")
+            raise Exception("mon_bootstrap failed")
 
-    cluster_key_file = cluster_name + '.keyring'
-    bootstrap_osd_key_file = '/var/lib/ceph/bootstrap-osd/' + cluster_key_file
-    cluster_key_path = cluster_dir + '/' + cluster_key_file
+        cluster_key_file = cluster_name + '.keyring'
+        bootstrap_osd_key_file = '/var/lib/ceph/bootstrap-osd/' + cluster_key_file
+        cluster_key_path = cluster_dir + '/' + cluster_key_file
 
-    if not pull_minion_file(local, bootstrapped_minion, bootstrap_osd_key_file,
-                            cluster_key_path):
-        log.error("failed to pull %s file from %s" %
-                  (bootstrap_osd_key_file, bootstrapped_minion))
-        raise Exception("failed to pull %s file from %s" %
-                        (bootstrap_osd_key_file, bootstrapped_minion))
+        if not pull_minion_file(local, bootstrapped_minion, bootstrap_osd_key_file,
+                                cluster_key_path):
+            log.error("failed to pull %s file from %s" %
+                      (bootstrap_osd_key_file, bootstrapped_minion))
+            raise Exception("failed to pull %s file from %s" %
+                            (bootstrap_osd_key_file, bootstrapped_minion))
 
-    minion_set = set(minions)
-    minion_set.remove(bootstrapped_minion)
-    if minion_set:
-        rv = run_state(local, minion_set, 'add_ceph_mon', expr_form='list',
-                       kwarg={'pillar': pillar})
-        if rv:
-            log.error('add_mon failed for %s. error=%s' %
-                      (minion_set, rv))
-            raise Exception('add_mon failed for %s. error=%s' %
-                            (minion_set, rv))
-    return True
+        minion_set = set(minions)
+        minion_set.remove(bootstrapped_minion)
+        if minion_set:
+            rv = run_state(local, minion_set, 'add_ceph_mon', expr_form='list',
+                           kwarg={'pillar': pillar})
+            if rv:
+                log.error('add_mon failed for %s. error=%s' %
+                          (minion_set, rv))
+                raise Exception('add_mon failed for %s. error=%s' %
+                                (minion_set, rv))
+        return True
+    except Exception as e:
+        log.error("exception during create cluster: %s", str(e))
+        return False
 
 
 def AddMon(cluster_name, minions):
     # convert list of minions to below dict
     # {MINION_ID: {'public_ip': IP_ADDRESS,
     #              'cluster_ip': IP_ADDRESS}, ...}
-    d = {}
-    for m in minions:
-        d.update({m['Node']: {'public_ip': m['PublicIP4'],
-                              'cluster_ip': m['ClusterIP4']}})
-    _minions = minions
-    minions = d
+    try:
+        d = {}
+        for m in minions:
+            d.update({m['Node']: {'public_ip': m['PublicIP4'],
+                                  'cluster_ip': m['ClusterIP4']}})
+        _minions = minions
+        minions = d
 
-    conf_file = (_CEPH_CLUSTER_CONF_DIR + '/' + cluster_name + '/' +
-                 cluster_name + '.conf')
-    config = ConfigParser.RawConfigParser()
-    config.read(conf_file)
+        conf_file = (_CEPH_CLUSTER_CONF_DIR + '/' + cluster_name + '/' +
+                     cluster_name + '.conf')
+        config = ConfigParser.RawConfigParser()
+        config.read(conf_file)
 
-    public_network = IPNetwork(config.get('global', 'public network'))
-    _check_minion_networks(minions, public_network)
+        public_network = IPNetwork(config.get('global', 'public network'))
+        _check_minion_networks(minions, public_network)
 
-    used_mon_ids = set([id.strip() for id in config.get(
-        'mon', 'mon initial members').split(',')])
-    unused_mon_ids = list(set(_MON_ID_LIST) - used_mon_ids)
-    unused_mon_ids.sort()
+        used_mon_ids = set([id.strip() for id in config.get(
+            'mon', 'mon initial members').split(',')])
+        unused_mon_ids = list(set(_MON_ID_LIST) - used_mon_ids)
+        unused_mon_ids.sort()
 
-    mon_id_map, monitors = _get_mon_id_map(unused_mon_ids, minions)
+        mon_id_map, monitors = _get_mon_id_map(unused_mon_ids, minions)
 
-    mon_initial_members = list(used_mon_ids) + list(monitors)
-    mon_initial_members.sort()
-    config.set('mon', 'mon initial members', ', '.join(mon_initial_members))
+        mon_initial_members = list(used_mon_ids) + list(monitors)
+        mon_initial_members.sort()
+        config.set('mon', 'mon initial members', ', '.join(mon_initial_members))
 
-    _config_add_monitors(config, monitors)
+        _config_add_monitors(config, monitors)
 
-    with open(conf_file, 'wb') as f:
-        config.write(f)
+        with open(conf_file, 'wb') as f:
+            config.write(f)
 
-    pillar_data = _add_ceph_mon_pillar_data(mon_id_map, cluster_name, monitors)
-    pillar = {'skyring': pillar_data}
+        pillar_data = _add_ceph_mon_pillar_data(mon_id_map, cluster_name, monitors)
+        pillar = {'skyring': pillar_data}
 
-    out = run_state(local, minions, 'add_ceph_mon', expr_form='list',
-                    kwarg={'pillar': pillar})
-    if out:
-        log.error('add_mon failed for %s. error=%s' %
-                  (minion_set, out))
-        raise Exception('add_mon failed for %s. error=%s' %
-                        (minion_set, out))
+        out = run_state(local, minions, 'add_ceph_mon', expr_form='list',
+                        kwarg={'pillar': pillar})
+        if out:
+            log.error('add_mon failed for %s. error=%s' %
+                      (minion_set, out))
+            raise Exception('add_mon failed for %s. error=%s' %
+                            (minion_set, out))
 
-    out = sync_ceph_conf(cluster_name, minions)
-    if out:
-        log.error("sync_ceph_conf failed to %s. error=%s" %
-                  (minions, out))
-        raise Exception("sync_ceph_conf failed to %s. error=%s" %
-                        (minions, out))
+        out = sync_ceph_conf(cluster_name, minions)
+        if out:
+            log.error("sync_ceph_conf failed to %s. error=%s" %
+                      (minions, out))
+            raise Exception("sync_ceph_conf failed to %s. error=%s" %
+                            (minions, out))
 
-    return True
+        return True
+    except Exception as e:
+        log.error("exception during add mon: %s", str(e))
+        return False
 
 
 def StartMon(monitors):
-    out = run_state(local, monitors, 'start_ceph_mon', expr_form='list')
-    if out:
-        log.error("start_mon failed to %s. error=%s" %
-                  (monitors, out))
-        raise Exception("start_mon failed to %s. error=%s" %
-                        (monitors, out))
-    return True
+    try:
+        out = run_state(local, monitors, 'start_ceph_mon', expr_form='list')
+        if out:
+            log.error("start_mon failed to %s. error=%s" %
+                      (monitors, out))
+            raise Exception("start_mon failed to %s. error=%s" %
+                            (monitors, out))
+        return True
+    except Exception as e:
+        log.error("exception during start mon: %s", str(e))
+        return False
 
 
 def AddOSD(cluster_name, minions):
@@ -394,126 +406,142 @@ def AddOSD(cluster_name, minions):
     # {MINION_ID: {'public_ip': IP_ADDRESS,
     #              'cluster_ip': IP_ADDRESS,
     #              'devices': {DEVICE: FSTYPE, ...}}, ...}
-    d = {minions['Node']: {'public_ip': minions['PublicIP4'],
-                           'cluster_ip': minions['ClusterIP4'],
-                           'devices': {
-                               minions['Device']: minions['FSType'],
-                           }}}
-    _minions = minions
-    minions = d
+    try:
+        d = {minions['Node']: {'public_ip': minions['PublicIP4'],
+                               'cluster_ip': minions['ClusterIP4'],
+                               'devices': {
+                                   minions['Device']: minions['FSType'],
+                               }}}
+        _minions = minions
+        minions = d
 
-    conf_file = (_CEPH_CLUSTER_CONF_DIR + '/' + cluster_name + '/' +
-                 cluster_name + '.conf')
-    config = ConfigParser.RawConfigParser()
-    config.read(conf_file)
+        conf_file = (_CEPH_CLUSTER_CONF_DIR + '/' + cluster_name + '/' +
+                     cluster_name + '.conf')
+        config = ConfigParser.RawConfigParser()
+        config.read(conf_file)
 
-    public_network = IPNetwork(config.get('global', 'public network'))
-    if config.has_option('global', 'cluster network'):
-        cluster_network = IPNetwork(config.get('global', 'cluster network'))
-    else:
-        cluster_network = None
-    public_network, cluster_network = _check_minion_networks(
-        minions, public_network, cluster_network, check_cluster_network=True)
+        public_network = IPNetwork(config.get('global', 'public network'))
+        if config.has_option('global', 'cluster network'):
+            cluster_network = IPNetwork(config.get('global', 'cluster network'))
+        else:
+            cluster_network = None
+        public_network, cluster_network = _check_minion_networks(
+            minions, public_network, cluster_network, check_cluster_network=True)
 
-    pillar_data = {}
-    for minion, v in minions.iteritems():
-        pillar_data[minion] = {'cluster_name': cluster_name,
-                               'cluster_id': config.get('global', 'fsid'),
-                               'devices': v['devices']}
-    pillar = {'skyring': pillar_data}
+        pillar_data = {}
+        for minion, v in minions.iteritems():
+            pillar_data[minion] = {'cluster_name': cluster_name,
+                                   'cluster_id': config.get('global', 'fsid'),
+                                   'devices': v['devices']}
+        pillar = {'skyring': pillar_data}
 
-    out = run_state(local, minions, 'prepare_ceph_osd', expr_form='list',
-                    kwarg={'pillar': pillar})
-    if out:
-        log.error("prepare_osd failed for %s. error=%s" %
-                  (minions, out))
-        raise Exception("prepare_osd failed for %s. error=%s" %
-                        (minions, out))
+        out = run_state(local, minions, 'prepare_ceph_osd', expr_form='list',
+                        kwarg={'pillar': pillar})
+        if out:
+            log.error("prepare_osd failed for %s. error=%s" %
+                      (minions, out))
+            raise Exception("prepare_osd failed for %s. error=%s" %
+                            (minions, out))
 
-    out = local.cmd(minions, 'cmd.run_all', ['ceph-disk activate-all'],
-                    expr_form='list')
+        out = local.cmd(minions, 'cmd.run_all', ['ceph-disk activate-all'],
+                        expr_form='list')
 
-    osd_map = {}
-    failed_minions = {}
-    for minion, v in out.iteritems():
-        osds = []
+        osd_map = {}
+        failed_minions = {}
+        for minion, v in out.iteritems():
+            osds = []
 
-        if v.get('retcode') != 0:
-            failed_minions[minion] = v
-            continue
+            if v.get('retcode') != 0:
+                failed_minions[minion] = v
+                continue
 
-        for line in v['stdout'].splitlines():
-            if line.startswith('=== '):
-                osds.append(line.split('=== ')[1].strip())
-                break
-        osd_map[minion] = osds
+            for line in v['stdout'].splitlines():
+                if line.startswith('=== '):
+                    osds.append(line.split('=== ')[1].strip())
+                    break
+            osd_map[minion] = osds
 
-    config.set('global', 'cluster network', cluster_network)
-    for minion, osds in osd_map.iteritems():
-        name = _get_short_hostname(minion)
-        for osd in osds:
-            config.add_section(osd)
-            config.set(osd, 'host', name)
-            config.set(osd, 'public addr', minions[minion]['public_ip'])
-            config.set(osd, 'cluster addr', minions[minion]['cluster_ip'])
+        config.set('global', 'cluster network', cluster_network)
+        for minion, osds in osd_map.iteritems():
+            name = _get_short_hostname(minion)
+            for osd in osds:
+                config.add_section(osd)
+                config.set(osd, 'host', name)
+                config.set(osd, 'public addr', minions[minion]['public_ip'])
+                config.set(osd, 'cluster addr', minions[minion]['cluster_ip'])
 
-    with open(conf_file, 'wb') as f:
-        config.write(f)
+        with open(conf_file, 'wb') as f:
+            config.write(f)
 
-    out = sync_ceph_conf(cluster_name, minions)
-    if out:
-        log.error("sync_cepH-conf failed for %s. error=%s" %
-                  (minions, out))
-        #raise Exception("sync_ceph_conf failed for %s. error=%s" %
-        #                (minions, out))
+        out = sync_ceph_conf(cluster_name, minions)
+        if out:
+            log.error("sync_cepH-conf failed for %s. error=%s" %
+                      (minions, out))
+            #raise Exception("sync_ceph_conf failed for %s. error=%s" %
+            #                (minions, out))
 
-    if failed_minions:
-        log.error('add_osd failed. error=%s' % failed_minions)
-        raise Exception('add_osd failed. error=%s' % failed_minions)
+        if failed_minions:
+            log.error('add_osd failed. error=%s' % failed_minions)
+            raise Exception('add_osd failed. error=%s' % failed_minions)
 
-    return True
+        return True
+    except Exception as e:
+        log.error("exception during add OSD: %s", str(e))
+        return False
 
 
 def CreatePool(pool_name, monitor, cluster_name, pg_num=0):
-    cmd = "ceph --cluster %s osd pool create %s" % (cluster_name, pool_name)
-    if pg_num:
-        cmd += " %s" % pg_num
-    else:
-        cmd += " 128"
+    try:
+        cmd = "ceph --cluster %s osd pool create %s" % (cluster_name, pool_name)
+        if pg_num:
+            cmd += " %s" % pg_num
+        else:
+            cmd += " 128"
 
-    out = local.cmd(monitor, 'cmd.run_all', [cmd])
+        out = local.cmd(monitor, 'cmd.run_all', [cmd])
 
-    if out.get(monitor, {}).get('retcode') == 0:
-        return True
+        if out.get(monitor, {}).get('retcode') == 0:
+            return True
 
-    log.error("create_pool failed. error=%s" % out)
-    raise Exception("create_pool failed. error=%s" % out)
+        log.error("create_pool failed. error=%s" % out)
+        raise Exception("create_pool failed. error=%s" % out)
+    except Exception as e:
+        log.error("exception during create pool: %s", str(e))
+        return False
 
 
 def ListPool(monitor, cluster_name):
-    cmd = "ceph --cluster %s -f json osd lspools" % cluster_name
+    try:
+        cmd = "ceph --cluster %s -f json osd lspools" % cluster_name
 
-    out = local.cmd(monitor, 'cmd.run_all', [cmd])
+        out = local.cmd(monitor, 'cmd.run_all', [cmd])
 
-    if out.get(monitor, {}).get('retcode') == 0:
-        stdout = out.get(monitor, {}).get('stdout')
-        return [pool['poolname'] for pool in json.loads(stdout)]
+        if out.get(monitor, {}).get('retcode') == 0:
+            stdout = out.get(monitor, {}).get('stdout')
+            return [pool['poolname'] for pool in json.loads(stdout)]
 
-    log.error("list_pool failed. error=%s" % out)
-    raise Exception("list_pool failed. error=%s" % out)
+        log.error("list_pool failed. error=%s" % out)
+        raise Exception("list_pool failed. error=%s" % out)
+    except Exception as e:
+        log.error("exception during listing pool: %s", str(e))
+        return []
 
 
 def GetClusterStatus(monitor, cluster_name):
-    cmd = "ceph -s --cluster %s" % cluster_name
+    try:
+        cmd = "ceph -s --cluster %s" % cluster_name
 
-    out = local.cmd(monitor, 'cmd.run_all', [cmd])
+        out = local.cmd(monitor, 'cmd.run_all', [cmd])
 
-    if out.get(monitor, {}).get('retcode') == 0:
-        stdout = out.get(monitor, {}).get('stdout')
-        arr = stdout.rstrip().split('\n')
-        for entry in arr:
-            if entry.strip().startswith('health'):
-                return entry.strip().split(' ')[1]
+        if out.get(monitor, {}).get('retcode') == 0:
+            stdout = out.get(monitor, {}).get('stdout')
+            arr = stdout.rstrip().split('\n')
+            for entry in arr:
+                if entry.strip().startswith('health'):
+                    return entry.strip().split(' ')[1]
 
-    log.error("ceph cluster status failed. error=%s", out)
-    raise Exception("ceph cluster status failed. error=%s" % out)
+        log.error("ceph cluster status failed. error=%s", out)
+        raise Exception("ceph cluster status failed. error=%s" % out)
+    except Exception as e:
+        log.error("exception during getting cluster status: %s", str(e))
+        return ""
