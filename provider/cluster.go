@@ -91,7 +91,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 	asyncTask := func(t *task.Task) {
 		t.UpdateStatus("Started ceph provider task for cluster creation: %v", t.ID)
 		ret_val, err := salt_backend.CreateCluster(request.Name, *cluster_uuid, []backend.Mon{mons[0]})
-		if err != nil {
+		if err != nil || !ret_val {
 			utils.FailTask("Cluster creation failed", err, t)
 			return
 		}
