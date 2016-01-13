@@ -141,10 +141,17 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 				return
 			}
 			t.UpdateStatus("Adding OSDs")
-			ret_val, err = addOSDs(*cluster_uuid, request.Name, updated_nodes, request.Nodes)
-			if err != nil || !ret_val {
+			failedOSDs, err := addOSDs(*cluster_uuid, request.Name, updated_nodes, request.Nodes, t)
+			if err != nil {
 				utils.FailTask(fmt.Sprintf("Error adding OSDs while create cluster %s", request.Name), err, t)
 				return
+			}
+			if len(failedOSDs) != 0 {
+				var osds []string
+				for _, osd := range failedOSDs {
+					osds = append(osds, fmt.Sprintf("%s:%s", osd.Node, osd.Device))
+				}
+				t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", osds))
 			}
 
 			// Add cluster to DB
@@ -232,18 +239,19 @@ func startAndPersistMons(clusterId uuid.UUID, mons []backend.Mon) (bool, error) 
 	return true, nil
 }
 
-func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models.Node, requestNodes []models.ClusterNode) (bool, error) {
+func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models.Node, requestNodes []models.ClusterNode, t *task.Task) ([]backend.OSD, error) {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 
 	updatedStorageDisksMap := make(map[uuid.UUID][]skyring_backend.Disk)
+	var failedOSDs []backend.OSD
 	for _, requestNode := range requestNodes {
 		if utils.StringInSlice("OSD", requestNode.NodeType) {
 			var updatedStorageDisks []skyring_backend.Disk
 			uuid, err := uuid.Parse(requestNode.NodeId)
 			if err != nil {
 				logger.Get().Error("Error parsing node id: %s while add OSD for cluster: %s. error: %v", requestNode.NodeId, clusterName, err)
-				return false, errors.New(fmt.Sprintf("Error parsing node id: %s while add OSD for cluster: %s. error: %v", requestNode.NodeId, clusterName, err))
+				continue
 			}
 			storageNode := nodes[*uuid]
 			for _, storageDisk := range storageNode.StorageDisks {
@@ -259,9 +267,11 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 							Device:     device.Name,
 							FSType:     device.FSType,
 						}
+						t.UpdateStatus("Adding OSD: %s %s", storageNode.Hostname, device.Name)
 						if ret_val, err := salt_backend.AddOSD(clusterName, osd); err != nil || !ret_val {
 							logger.Get().Error("Error adding OSD: %v for cluster: %s. error: %v", osd, clusterName, err)
-							return ret_val, err
+							failedOSDs = append(failedOSDs, osd)
+							break
 						}
 						if ret_val, err := persistOSD(
 							clusterId,
@@ -269,9 +279,11 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 							storageDisk.FSUUID,
 							storageDisk.Size,
 							storageDisk.StorageProfile,
-							osd); err != nil || !ret_val {
+							osd,
+							t); err != nil || !ret_val {
 							logger.Get().Error("Error persisting OSD: %v for cluster: %s. error: %v", osd, clusterName, err)
-							return ret_val, err
+							failedOSDs = append(failedOSDs, osd)
+							break
 						}
 						storageDisk.Used = true
 					}
@@ -289,14 +301,14 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 			bson.M{"nodeid": nodeid},
 			bson.M{"$set": bson.M{"storagedisks": updatedStorageDisks}}); err != nil {
 			logger.Get().Error("Error updating disks for node: %v post add OSDs for cluster: %s. error: %v", nodeid, clusterName, err)
-			return false, err
+			return failedOSDs, err
 		}
 	}
 
-	return true, nil
+	return failedOSDs, nil
 }
 
-func persistOSD(clusterId uuid.UUID, nodeId uuid.UUID, diskId uuid.UUID, diskSize uint64, storageProfile string, osd backend.OSD) (bool, error) {
+func persistOSD(clusterId uuid.UUID, nodeId uuid.UUID, diskId uuid.UUID, diskSize uint64, storageProfile string, osd backend.OSD, t *task.Task) (bool, error) {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
@@ -326,6 +338,7 @@ func persistOSD(clusterId uuid.UUID, nodeId uuid.UUID, diskId uuid.UUID, diskSiz
 		return false, err
 	}
 	logger.Get().Info(fmt.Sprintf("OSD added %s %s for cluster: %v", osd.Node, osd.Device, clusterId))
+	t.UpdateStatus("Added OSD: %s %s", osd.Node, osd.Device)
 
 	return true, nil
 }
@@ -405,21 +418,23 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 
 	// If mon node already exists for the cluster, error out
 	for _, new_node := range new_nodes {
-		coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
-		nodeid, err := uuid.Parse(new_node.NodeId)
-		if err != nil {
-			logger.Get().Error("Error parsing the node id: %s while expand cluster: %v. error: %v", new_node.NodeId, *cluster_id, err)
-			*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the node id: %s", new_node.NodeId))
-			return err
-		}
-		var monNode models.Node
-		// No need to check for error here as in case of error, slu instance would not be populated
-		// and the same already eing checked below
-		_ = coll.Find(bson.M{"clusterid": *cluster_id, "nodeid": *nodeid}).One(&monNode)
-		if monNode.Hostname != "" {
-			logger.Get().Error("Mon %v already exists for cluster: %v", *nodeid, *cluster_id)
-			*resp = utils.WriteResponse(http.StatusInternalServerError, "The mon node already available")
-			return errors.New(fmt.Sprintf("Mon %v already exists for cluster: %v", *nodeid, *cluster_id))
+		if utils.StringInSlice("MON", new_node.NodeType) {
+			coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
+			nodeid, err := uuid.Parse(new_node.NodeId)
+			if err != nil {
+				logger.Get().Error("Error parsing the node id: %s while expand cluster: %v. error: %v", new_node.NodeId, *cluster_id, err)
+				*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the node id: %s", new_node.NodeId))
+				return err
+			}
+			var monNode models.Node
+			// No need to check for error here as in case of error, node instance would not be populated
+			// and the same already being checked below
+			_ = coll.Find(bson.M{"clusterid": *cluster_id, "nodeid": *nodeid}).One(&monNode)
+			if monNode.Hostname != "" {
+				logger.Get().Error("Mon %v already exists for cluster: %v", *nodeid, *cluster_id)
+				*resp = utils.WriteResponse(http.StatusInternalServerError, "The mon node already available")
+				return errors.New(fmt.Sprintf("Mon %v already exists for cluster: %v", *nodeid, *cluster_id))
+			}
 		}
 	}
 
@@ -466,10 +481,17 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 			return
 		}
 		t.UpdateStatus("Adding OSDs")
-		ret_val, err := addOSDs(*cluster_id, cluster.Name, updated_nodes, new_nodes)
-		if err != nil || !ret_val {
+		failedOSDs, err := addOSDs(*cluster_id, cluster.Name, updated_nodes, new_nodes, t)
+		if err != nil {
 			utils.FailTask(fmt.Sprintf("Error adding OSDs while expand cluster: %v", *cluster_id), err, t)
 			return
+		}
+		if len(failedOSDs) != 0 {
+			var osds []string
+			for _, osd := range failedOSDs {
+				osds = append(osds, fmt.Sprintf("%s:%s", osd.Node, osd.Device))
+			}
+			t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", osds))
 		}
 		t.UpdateStatus("Success")
 		t.Done(models.TASK_STATUS_SUCCESS)
