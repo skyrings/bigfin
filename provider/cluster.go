@@ -141,7 +141,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 				return
 			}
 			t.UpdateStatus("Adding OSDs")
-			ret_val, err = addOSDs(*cluster_uuid, request.Name, updated_nodes, request.Nodes)
+			ret_val, err = addOSDs(*cluster_uuid, request.Name, updated_nodes, request.Nodes, t)
 			if err != nil || !ret_val {
 				utils.FailTask("Error adding OSDs", err, t)
 				return
@@ -232,7 +232,7 @@ func startAndPersistMons(clusterId uuid.UUID, mons []backend.Mon) (bool, error) 
 	return true, nil
 }
 
-func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models.Node, requestNodes []models.ClusterNode) (bool, error) {
+func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models.Node, requestNodes []models.ClusterNode, t *task.Task) (bool, error) {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 
@@ -259,9 +259,11 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 							Device:     device.Name,
 							FSType:     device.FSType,
 						}
+						t.UpdateStatus("Adding OSD: %s %s", storageNode.Hostname, device.Name)
 						if ret_val, err := salt_backend.AddOSD(clusterName, osd); err != nil || !ret_val {
 							logger.Get().Error("Error adding OSD: %v. error: %v", osd, err)
-							return ret_val, err
+							t.UpdateStatus("Failed to add OSD: %s %s", storageNode.Hostname, device.Name)
+							break
 						}
 						if ret_val, err := persistOSD(
 							clusterId,
@@ -269,9 +271,11 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 							storageDisk.FSUUID,
 							storageDisk.Size,
 							storageDisk.StorageProfile,
-							osd); err != nil || !ret_val {
+							osd,
+							t); err != nil || !ret_val {
 							logger.Get().Error("Error persisting OSD: %v. error: %v", osd, err)
-							return ret_val, err
+							t.UpdateStatus("Failed to persist OSD: %s %s", storageNode.Hostname, device.Name)
+							break
 						}
 						storageDisk.Used = true
 					}
@@ -296,7 +300,7 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 	return true, nil
 }
 
-func persistOSD(clusterId uuid.UUID, nodeId uuid.UUID, diskId uuid.UUID, diskSize uint64, storageProfile string, osd backend.OSD) (bool, error) {
+func persistOSD(clusterId uuid.UUID, nodeId uuid.UUID, diskId uuid.UUID, diskSize uint64, storageProfile string, osd backend.OSD, t *task.Task) (bool, error) {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
@@ -326,6 +330,7 @@ func persistOSD(clusterId uuid.UUID, nodeId uuid.UUID, diskId uuid.UUID, diskSiz
 		return false, err
 	}
 	logger.Get().Info(fmt.Sprintf("OSD added %s %s", osd.Node, osd.Device))
+	t.UpdateStatus("Added OSD: %s %s", osd.Node, osd.Device)
 
 	return true, nil
 }
@@ -466,7 +471,7 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 			return
 		}
 		t.UpdateStatus("Adding OSDs")
-		ret_val, err := addOSDs(*cluster_id, cluster.Name, updated_nodes, new_nodes)
+		ret_val, err := addOSDs(*cluster_id, cluster.Name, updated_nodes, new_nodes, t)
 		if err != nil || !ret_val {
 			utils.FailTask("Error adding OSDs", err, t)
 			return
