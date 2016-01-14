@@ -152,3 +152,14 @@ func (s Salt) UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool map[s
 func New() backend.Backend {
 	return new(Salt)
 }
+
+func (s Salt) GetOSDDetails(mon string, clusterName string) (osds []backend.OSDDetails, err error) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	if pyobj, loc_err := pyFuncs["GetOSDDetails"].Call(mon, clusterName); loc_err == nil {
+		err = gopy.Convert(pyobj, &osds)
+	} else {
+		err = loc_err
+	}
+	return
+}

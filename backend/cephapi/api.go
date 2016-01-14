@@ -213,3 +213,7 @@ func (c CephApi) UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool ma
 		return ok, err
 	}
 }
+
+func (c CephApi) GetOSDDetails(mon string, clusterName string) (osds []backend.OSDDetails, err error) {
+	return []backend.OSDDetails{}, nil
+}
