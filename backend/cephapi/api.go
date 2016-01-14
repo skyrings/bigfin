@@ -179,3 +179,7 @@ func (c CephApi) GetPools(mon string, clusterName string) ([]backend.CephPool, e
 	}
 	return pools, nil
 }
+
+func (c CephApi) GetOSDDetails(node string) (osds backend.OSDDetails, err error) {
+	return osds, nil
+}

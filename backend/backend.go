@@ -56,4 +56,23 @@ type Backend interface {
 	ListPoolNames(mon string, clusterName string) ([]string, error)
 	GetClusterStatus(mon string, clusterName string) (string, error)
 	GetPools(mon string, clusterName string) ([]CephPool, error)
+	GetOSDDetails(node string) (OSDDetails, error)
+}
+
+type OSDDetails struct {
+	Available     string
+	Blocks        string
+	Cluster       string
+	Device        string
+	IFree         string
+	IUsePer       string
+	IUsed         string
+	Inodes        string
+	JournalDevice string
+	MountPoint    string
+	OSDName       string
+	Status        string
+	Type          string
+	UsePer        string
+	Used          string
 }

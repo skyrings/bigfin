@@ -128,6 +128,17 @@ func (s Salt) GetPools(mon string, clusterName string) ([]backend.CephPool, erro
 	return []backend.CephPool{}, nil
 }
 
+func (s Salt) GetOSDDetails(node string) (osds backend.OSDDetails, err error) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	if pyobj, loc_err := pyFuncs["GetOSDDetails"].Call(node); loc_err == nil {
+		err = gopy.Convert(pyobj, &osds)
+	} else {
+		err = loc_err
+	}
+	return
+}
+
 func New() backend.Backend {
 	return new(Salt)
 }
