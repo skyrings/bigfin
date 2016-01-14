@@ -526,3 +526,33 @@ def GetClusterStats(monitor, cluster_name):
         raise Exception("Failed to get cluster statistics from %s" % monitor)
     return ast.literal_eval(out[monitor])["stats"]
 
+
+def GetOSDDetails(monitor, cluster_name):
+    '''
+    returns a list of osd details in a dictonary
+    [{'Name' : 'Name of the osd device',
+      'Id': 'OSD id',
+      'Available': 'available space in GB',
+      'Used': 'used data in kb',
+      'UsagePercent': 'usage percentage'}, ...]
+    '''
+
+    rv = []
+    cmd = 'ceph osd df --cluster %s -f json' % cluster_name
+    out = local.cmd('%s' % monitor, 'cmd.run', [cmd])
+    if not out:
+        log.error("Failed to get cluster statistics from %s" % monitor)
+        raise Exception("Failed to get cluster statistics from %s" % monitor)
+    try:
+        dist = ast.literal_eval(out[monitor])
+    except SyntaxError as err:
+        log.error("Failed to get OSD utilization details from mon %s, error=%s" % (monitor, out[monitor]))
+        raise Exception("Failed to get OSD utilization details from mon %s, error:%s" % (monitor, err))
+
+    for osd in dist['nodes']:
+        rv.append({'Name': osd['name'],
+                   'Id': int(osd['id']),
+                   'UsagePercent': osd['utilization'],
+                   'Available': osd['kb_avail'],
+                   'Used': osd['kb_used']})
+    return rv
