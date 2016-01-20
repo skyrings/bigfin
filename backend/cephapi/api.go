@@ -124,6 +124,9 @@ func (c CephApi) GetClusterStatus(mon string, clusterName string) (status string
 	return "", nil
 }
 
+func (c CephApi) GetClusterStats(mon string, clusterName string) (map[string]int64, error) {
+	return nil, nil
+}
 func New() backend.Backend {
 	api := new(CephApi)
 	api.LoadRoutes()
