@@ -57,6 +57,8 @@ func main() {
 		logger.Get().Fatalf("Failed to initialize task manager. error: %v", err)
 	}
 
+	provider.InitMonitoringManager()
+
 	// Initialize ceph http client
 	client.InitCephApiSession()
 
