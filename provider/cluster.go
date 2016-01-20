@@ -22,6 +22,7 @@ import (
 	"github.com/skyrings/skyring/conf"
 	"github.com/skyrings/skyring/db"
 	"github.com/skyrings/skyring/models"
+	"github.com/skyrings/skyring/monitoring"
 	"github.com/skyrings/skyring/tools/task"
 	"github.com/skyrings/skyring/tools/uuid"
 	"gopkg.in/mgo.v2/bson"
@@ -158,6 +159,12 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 			cluster.Networks = request.Networks
 			cluster.OpenStackServices = request.OpenStackServices
 			cluster.Enabled = true
+
+			cluster.MonitoringInterval = request.MonitoringInterval
+			if cluster.MonitoringInterval == 0 {
+				cluster.MonitoringInterval = monitoring.DefaultClusterMonitoringInterval
+			}
+
 			coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
 			if err := coll.Insert(cluster); err != nil {
 				utils.FailTask(fmt.Sprintf("Error persisting the cluster %s", request.Name), err, t)

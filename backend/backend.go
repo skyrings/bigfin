@@ -57,4 +57,5 @@ type Backend interface {
 	GetClusterStatus(mon string, clusterName string) (string, error)
 	GetPools(mon string, clusterId uuid.UUID) ([]CephPool, error)
 	UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool map[string]interface{}) (bool, error)
+	GetClusterStats(mon string, clusterName string) (map[string]int64, error)
 }
