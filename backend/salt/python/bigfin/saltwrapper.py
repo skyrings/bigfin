@@ -20,7 +20,7 @@ import logging
 from functools import wraps
 import ConfigParser
 import string
-
+import ast
 import salt
 import salt.client
 import salt.config
@@ -517,3 +517,12 @@ def GetClusterStatus(monitor, cluster_name):
 
     log.error("ceph cluster status failed. error=%s", out)
     raise Exception("ceph cluster status failed. error=%s" % out)
+
+
+def GetClusterStats(monitor, cluster_name):
+    out = local.cmd(monitor, "cmd.run", ['ceph df --cluster=' + cluster_name + ' --format=json'])
+    if not out:
+        log.error("Failed to get cluster statistics from %s", monitor)
+        raise Exception("Failed to get cluster statistics from %s" % monitor)
+    return ast.literal_eval(out[monitor])["stats"]
+

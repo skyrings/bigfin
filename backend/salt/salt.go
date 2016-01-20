@@ -29,6 +29,7 @@ var funcNames = [...]string{
 	"CreatePool",
 	"ListPool",
 	"GetClusterStatus",
+	"GetClusterStats",
 }
 
 var pyFuncs map[string]*gopy.PyFunction
@@ -117,6 +118,19 @@ func (s Salt) GetClusterStatus(mon string, clusterName string) (status string, e
 	defer mutex.Unlock()
 	if pyobj, loc_err := pyFuncs["GetClusterStatus"].Call(mon, clusterName); loc_err == nil {
 		err = gopy.Convert(pyobj, &status)
+	} else {
+		err = loc_err
+	}
+
+	return
+}
+
+func (s Salt) GetClusterStats(mon string, clusterName string) (stats map[string]int64, err error) {
+	stats = make(map[string]int64)
+	mutex.Lock()
+	defer mutex.Unlock()
+	if pyobj, loc_err := pyFuncs["GetClusterStats"].Call(mon, clusterName); loc_err == nil {
+		err = gopy.Convert(pyobj, &stats)
 	} else {
 		err = loc_err
 	}
