@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_6fbb9ee5",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-01-21T19:37:45Z",
+      "side": 1,
+      "message": "Why to return from here? we can skip this node and proceed with next right?",
+      "range": {
+        "startLine": 254,
+        "startChar": 5,
+        "endLine": 254,
+        "endChar": 21
+      },
+      "revId": "846e26fdb8f4a974898411b3609bc4766d09f96f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
