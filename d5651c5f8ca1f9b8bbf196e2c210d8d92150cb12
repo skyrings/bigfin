@@ -40,6 +40,24 @@
       "revId": "d5651c5f8ca1f9b8bbf196e2c210d8d92150cb12",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_7c327e11",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-01-21T17:41:00Z",
+      "side": 1,
+      "message": "Regarding task marked as failed if all OSD additions failed, actually I feel a cluster is valid if mons are added successfully. Even if all the OSD additions failed, we can mark the task completed successfully with ADD OSD step marked a partially failed with list of failed OSDs. \n\nThis way we can make sure, user cleans the OSDs again and expand the cluster using these OSDs later.\n\nWhat you say??",
+      "parentUuid": "fa81d914_dc87ead5",
+      "revId": "d5651c5f8ca1f9b8bbf196e2c210d8d92150cb12",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
