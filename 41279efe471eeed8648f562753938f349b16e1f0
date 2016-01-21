@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_e7ced882",
+        "filename": "backend/cephapi/models/models.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-01-21T04:03:08Z",
+      "side": 0,
+      "message": "Why this is defined at two places?",
+      "range": {
+        "startLine": 36,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 1
+      },
+      "revId": "41279efe471eeed8648f562753938f349b16e1f0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}

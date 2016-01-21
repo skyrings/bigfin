@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_67890826",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-01-21T04:03:08Z",
+      "side": 1,
+      "message": "Are we storing osd ids?",
+      "range": {
+        "startLine": 285,
+        "startChar": 6,
+        "endLine": 285,
+        "endChar": 10
+      },
+      "revId": "44106dc43d928fef81e0a8475dbae8a40a31fe49",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_07912c52",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-01-21T04:03:08Z",
+      "side": 1,
+      "message": "Do we get an event on AddOSD? In that case we can do this when we get the event. sleeping 5 sec maynot be successful always or need to retry couple of times",
+      "range": {
+        "startLine": 305,
+        "startChar": 1,
+        "endLine": 305,
+        "endChar": 22
+      },
+      "revId": "44106dc43d928fef81e0a8475dbae8a40a31fe49",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
