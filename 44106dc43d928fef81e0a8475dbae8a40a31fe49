@@ -25,6 +25,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_07784c2a",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 285,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-01-21T08:46:24Z",
+      "side": 1,
+      "message": "During OSD addition we get the OSD name which is in form \"osd.\u003cnumber\u003e\". Later below using this number part from name, I am getting the OSD uuid from ceph and populating as SluId (line 319)",
+      "parentUuid": "fa81d914_67890826",
+      "revId": "44106dc43d928fef81e0a8475dbae8a40a31fe49",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_07912c52",
         "filename": "provider/cluster.go",
         "patchSetId": 2
@@ -42,6 +60,24 @@
         "endLine": 305,
         "endChar": 22
       },
+      "revId": "44106dc43d928fef81e0a8475dbae8a40a31fe49",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_2777103c",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 305,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-01-21T08:46:24Z",
+      "side": 1,
+      "message": "I feel we get OSD add event. We can look for the event and then populate the SluId field. Will check with @Darshan and do the required changes.",
+      "parentUuid": "fa81d914_07912c52",
       "revId": "44106dc43d928fef81e0a8475dbae8a40a31fe49",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false

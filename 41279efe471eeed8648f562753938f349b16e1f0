@@ -22,6 +22,24 @@
       "revId": "41279efe471eeed8648f562753938f349b16e1f0",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_e77c1823",
+        "filename": "backend/cephapi/models/models.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-01-21T08:46:24Z",
+      "side": 0,
+      "message": "Its removed from here and defined in backend.go. I felt thats the right place.",
+      "parentUuid": "fa81d914_e7ced882",
+      "revId": "41279efe471eeed8648f562753938f349b16e1f0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
