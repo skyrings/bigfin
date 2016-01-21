@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_fc4bce28",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 278,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-01-21T15:19:08Z",
+      "side": 1,
+      "message": "We need to keep track of the failed OSDs and after the completion update the task with failed list and say its a partial failure. Also if all the OSDs failed then it is a failure and mark the task as failed",
+      "range": {
+        "startLine": 277,
+        "startChar": 7,
+        "endLine": 278,
+        "endChar": 12
+      },
+      "revId": "d5651c5f8ca1f9b8bbf196e2c210d8d92150cb12",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
