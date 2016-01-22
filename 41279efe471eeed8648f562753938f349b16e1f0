@@ -58,6 +58,24 @@
       "revId": "41279efe471eeed8648f562753938f349b16e1f0",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_7290e543",
+        "filename": "backend/cephapi/models/models.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-01-22T09:54:50Z",
+      "side": 0,
+      "message": "Anyway if we modify the OSD id using events, then the API to get list of OSDs itself is not required.",
+      "parentUuid": "fa81d914_72eaa510",
+      "revId": "41279efe471eeed8648f562753938f349b16e1f0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
