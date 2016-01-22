@@ -40,6 +40,24 @@
       "revId": "41279efe471eeed8648f562753938f349b16e1f0",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_72eaa510",
+        "filename": "backend/cephapi/models/models.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-01-22T03:15:03Z",
+      "side": 0,
+      "message": "ok, its my mistake .. I thought its defined at both places",
+      "parentUuid": "fa81d914_e77c1823",
+      "revId": "41279efe471eeed8648f562753938f349b16e1f0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
