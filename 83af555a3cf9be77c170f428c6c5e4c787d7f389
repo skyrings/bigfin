@@ -189,6 +189,29 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_8d137ab7",
+        "filename": "backend/salt/python/bigfin/saltwrapper.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 567,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-01-22T12:53:51Z",
+      "side": 1,
+      "message": "Why you want to get the utilization this way(using df)? Ceph has a cli to get OSD utilization. Use the command \u0027ceph osd df\u0027 to get the OSD utilization",
+      "range": {
+        "startLine": 542,
+        "startChar": 3,
+        "endLine": 567,
+        "endChar": 13
+      },
+      "revId": "83af555a3cf9be77c170f428c6c5e4c787d7f389",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_58d14d56",
         "filename": "backend/salt/salt.go",
         "patchSetId": 1
