@@ -84,6 +84,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_deafda92",
+        "filename": "backend/cephapi/api.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-01-22T21:19:18Z",
+      "side": 1,
+      "message": "Its not possible to use template here as for template the string with place holders should be something like\n\n\"/api/v2/cluster/{{.cluster-fsid}}\"\n\nBut in our route entries we have values like \n\n\"/api/v2/cluster/{cluster-fsid}\"",
+      "parentUuid": "fa81d914_4da0a29f",
+      "revId": "849f3d7337ec28ccd94866f60403b9a0792ee288",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_922f19f6",
         "filename": "backend/cephapi/api.go",
         "patchSetId": 2
