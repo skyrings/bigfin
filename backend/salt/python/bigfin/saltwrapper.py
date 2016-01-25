@@ -20,6 +20,7 @@ import logging
 from functools import wraps
 import ConfigParser
 import string
+import time
 
 import salt
 import salt.client
@@ -429,6 +430,32 @@ def AddOSD(cluster_name, minions):
                   (minions, out))
         raise Exception("prepare_osd failed for %s. error=%s" %
                         (minions, out))
+
+    for minion, v in minions.iteritems():
+        count = 0
+        found = False
+        failed_devices = []
+        while count < 3:
+            out = local.cmd(minion, 'cmd.run_all', ['ls -l /dev/disk/by-parttypeuuid'])
+            for key, value in v['devices'].iteritems():
+                arr = [x for x in key.split('/') if x]
+                val_to_check = arr[len(arr) - 1]
+                found = False
+                for line in out[minion]["stdout"].splitlines():
+                    if val_to_check in line:
+                        found = True
+                        break
+                if not found:
+                    if not failed_devices.contains(key):
+                        failed_devices.append(key)
+                    time.sleep(5)
+                    break
+            if found:
+                break
+            count += 1
+        if len(failed_devices) != 0:
+            log.error("prepare_osd failed for %s" % failed_devices)
+            raise Exception("prepare_osd failed for %s" % failed_devices)
 
     out = local.cmd(minions, 'cmd.run_all', ['ceph-disk activate-all'],
                     expr_form='list')
