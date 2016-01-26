@@ -76,6 +76,24 @@
       "revId": "41279efe471eeed8648f562753938f349b16e1f0",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_5a6f6fc5",
+        "filename": "backend/cephapi/models/models.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-01-26T11:36:56Z",
+      "side": 0,
+      "message": "Let it be there. May it is useful later",
+      "parentUuid": "fa81d914_7290e543",
+      "revId": "41279efe471eeed8648f562753938f349b16e1f0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
