@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_5d084691",
+        "filename": "backend/salt/python/bigfin/saltwrapper.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 442,
+      "author": {
+        "id": 1006236
+      },
+      "writtenOn": "2016-01-26T15:05:56Z",
+      "side": 1,
+      "message": "val_to_check \u003d key.split(\u0027/\u0027)[-1]\nshould be sufficient I guess",
+      "range": {
+        "startLine": 441,
+        "startChar": 1,
+        "endLine": 442,
+        "endChar": 48
+      },
+      "revId": "b27ec0b862d7b5e8e7ea9b2efb5c3ca8ba746777",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_7dd26ad3",
+        "filename": "backend/salt/python/bigfin/saltwrapper.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 452,
+      "author": {
+        "id": 1006236
+      },
+      "writtenOn": "2016-01-26T15:05:56Z",
+      "side": 1,
+      "message": "should the count be incremented before break ?",
+      "range": {
+        "startLine": 452,
+        "startChar": 20,
+        "endLine": 452,
+        "endChar": 25
+      },
+      "revId": "b27ec0b862d7b5e8e7ea9b2efb5c3ca8ba746777",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_fde57aa8",
+        "filename": "backend/salt/python/bigfin/saltwrapper.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 456,
+      "author": {
+        "id": 1006236
+      },
+      "writtenOn": "2016-01-26T15:05:56Z",
+      "side": 1,
+      "message": "since we check 3 times for a device to be available if the device is seen in 2nd attempt we are not removing it from the failed list, should we not consider it as a succeeded disk ?",
+      "range": {
+        "startLine": 456,
+        "startChar": 8,
+        "endLine": 456,
+        "endChar": 30
+      },
+      "revId": "b27ec0b862d7b5e8e7ea9b2efb5c3ca8ba746777",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
