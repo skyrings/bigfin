@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_aa5e5674",
+        "filename": "backend/cephapi/models/models.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 50,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-01-26T11:36:56Z",
+      "side": 0,
+      "message": "Removed? I am not seeing it defined in backend.go as well?",
+      "range": {
+        "startLine": 36,
+        "startChar": 0,
+        "endLine": 50,
+        "endChar": 1
+      },
+      "revId": "eb76a4fe92a3e1663960980ada2cb9c8ea34868f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
