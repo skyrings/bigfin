@@ -25,6 +25,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_117dd5b1",
+        "filename": "backend/salt/python/bigfin/saltwrapper.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 442,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-01-27T11:48:36Z",
+      "side": 1,
+      "message": "Will try",
+      "parentUuid": "fa81d914_5d084691",
+      "revId": "b27ec0b862d7b5e8e7ea9b2efb5c3ca8ba746777",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_7dd26ad3",
         "filename": "backend/salt/python/bigfin/saltwrapper.py",
         "patchSetId": 1
@@ -48,6 +66,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_2c27deb7",
+        "filename": "backend/salt/python/bigfin/saltwrapper.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 452,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-01-27T11:48:36Z",
+      "side": 1,
+      "message": "Doesnt matter as we are anyway breaking from the loop. This count is used only for looping purpose.",
+      "parentUuid": "fa81d914_7dd26ad3",
+      "revId": "b27ec0b862d7b5e8e7ea9b2efb5c3ca8ba746777",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_fde57aa8",
         "filename": "backend/salt/python/bigfin/saltwrapper.py",
         "patchSetId": 1
@@ -65,6 +101,24 @@
         "endLine": 456,
         "endChar": 30
       },
+      "revId": "b27ec0b862d7b5e8e7ea9b2efb5c3ca8ba746777",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_8c5b6a2d",
+        "filename": "backend/salt/python/bigfin/saltwrapper.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 456,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-01-27T11:48:36Z",
+      "side": 1,
+      "message": "Would add coe to check if there entry is present in list and remove if second time succedded.",
+      "parentUuid": "fa81d914_fde57aa8",
       "revId": "b27ec0b862d7b5e8e7ea9b2efb5c3ca8ba746777",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
