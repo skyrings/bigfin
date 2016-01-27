@@ -43,6 +43,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_912aa52a",
+        "filename": "backend/cephapi/api.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 117,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-01-27T10:28:25Z",
+      "side": 1,
+      "message": "if calamari timeout and set error status its fine otherwise this task will be running infinitely",
+      "parentUuid": "fa81d914_76836704",
+      "revId": "66741ae9d072c4c042015b52a39564d7799f3a18",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_ea63eeda",
         "filename": "backend/cephapi/api.go",
         "patchSetId": 3
