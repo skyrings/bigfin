@@ -47,7 +47,6 @@ func main() {
 		panic(fmt.Sprintf("log init failed. %s", err))
 	}
 
-	//conf.LoadAppConfiguration("/etc/skyring/skyring.conf")
 	if err := db.InitDBSession(config.DBConfig); err != nil {
 		logger.Get().Fatalf("Unable to initialize DB. error: %v", err)
 	}
@@ -57,7 +56,9 @@ func main() {
 		logger.Get().Fatalf("Failed to initialize task manager. error: %v", err)
 	}
 
-	provider.InitMonitoringManager()
+	if err := provider.InitMonitoringManager(); err != nil {
+		logger.Get().Fatalf("Error initializing the monitoring manager. error: %v", err)
+	}
 
 	// Initialize ceph http client
 	client.InitCephApiSession()
