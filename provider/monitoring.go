@@ -19,13 +19,14 @@ var (
 	MonitoringManager skyring_monitoring.MonitoringManagerInterface
 )
 
-func InitMonitoringManager() {
+func InitMonitoringManager() error {
 	config := conf.SystemConfig.TimeSeriesDBConfig
 	if manager, err := skyring_monitoring.InitMonitoringManager(config.ManagerName, config.ConfigFilePath); err != nil {
-		logger.Get().Error("Error initializing the monitoring manager: %v", err)
+		return err
 	} else {
 		MonitoringManager = manager
 	}
+	return nil
 }
 
 func (s *CephProvider) MonitorCluster(req models.RpcRequest, resp *models.RpcResponse) error {
