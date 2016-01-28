@@ -51,17 +51,20 @@ func (s *CephProvider) MonitorCluster(req models.RpcRequest, resp *models.RpcRes
 func FetchClusterStats(cluster_id uuid.UUID) {
 	cluster, clusterFetchErr := getCluster(cluster_id)
 	if clusterFetchErr != nil {
-		logger.Get().Error("Unbale to parse the request %v", clusterFetchErr.Error())
+		logger.Get().Error("Unable to parse the request %v", clusterFetchErr.Error())
+		return
 	}
 
 	monnode, monNodeFetchErr := GetRandomMon(cluster_id)
 	if monNodeFetchErr != nil {
-		logger.Get().Error("Unbale to pick a random mon from cluster %v.Error: %v", cluster.Name, monNodeFetchErr)
+		logger.Get().Error("Unable to pick a random mon from cluster %v.Error: %v", cluster.Name, monNodeFetchErr)
+		return
 	}
 
 	statistics, statsFetchErr := salt_backend.GetClusterStats(monnode.Hostname, cluster.Name)
 	if statsFetchErr != nil {
 		logger.Get().Error("Unable to fetch cluster stats from mon %v of cluster %v.Error: %v", monnode.Hostname, cluster.Name, statsFetchErr)
+		return
 	}
 
 	metrics := make(map[string]map[string]string)
@@ -72,8 +75,8 @@ func FetchClusterStats(cluster_id uuid.UUID) {
 		statMap[strconv.FormatInt(currentTimeStamp, 10)] = strconv.FormatInt(value, 10)
 		metrics[metric_name] = statMap
 	}
-
-	MonitoringManager.PushToDb(metrics)
+  	logger.Get().Info("The fetched metrics are %v", metrics)
+	//MonitoringManager.PushToDb(metrics)
 }
 
 func getCluster(cluster_id uuid.UUID) (cluster models.Cluster, err error) {
