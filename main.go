@@ -50,14 +50,19 @@ func main() {
 	//conf.LoadAppConfiguration("/etc/skyring/skyring.conf")
 	if err := db.InitDBSession(config.DBConfig); err != nil {
 		logger.Get().Fatalf("Unable to initialize DB. error: %v", err)
+		os.Exit(1)
 	}
 
 	// Initialize the task manager
 	if err := task.InitializeTaskManager(); err != nil {
 		logger.Get().Fatalf("Failed to initialize task manager. error: %v", err)
+		os.Exit(1)
 	}
 
-	provider.InitMonitoringManager()
+	if err := provider.InitMonitoringManager(); err != nil {
+		logger.Get().Error("Error initializing the monitoring manager: %v", err)
+		os.Exit(1)
+	}
 
 	// Initialize ceph http client
 	client.InitCephApiSession()
@@ -66,6 +71,7 @@ func main() {
 	p := pie.NewProvider()
 	if err := p.RegisterName("ceph", provd); err != nil {
 		logger.Get().Fatalf("Failed to register plugin. error: %v", err)
+		os.Exit(1)
 	}
 	p.ServeCodec(jsonrpc.NewServerCodec)
 }
