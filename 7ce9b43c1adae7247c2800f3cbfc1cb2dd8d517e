@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_89698e27",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-01-29T21:45:20Z",
+      "side": 1,
+      "message": "When this can happen bcoz at bigfin load itself it should be initialised from main.go. We had this issue only bcoz of config being incorrectly used earlier which was fixed by nishanth",
+      "revId": "7ce9b43c1adae7247c2800f3cbfc1cb2dd8d517e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
