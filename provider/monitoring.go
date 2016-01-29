@@ -76,6 +76,10 @@ func FetchClusterStats(cluster_id uuid.UUID) {
 		metrics[metric_name] = statMap
 	}
 
+	if MonitoringManager == nil {
+		logger.Get().Warning("Monitoring manager was not initialized successfully")
+		return
+	}
 	MonitoringManager.PushToDb(metrics)
 }
 
