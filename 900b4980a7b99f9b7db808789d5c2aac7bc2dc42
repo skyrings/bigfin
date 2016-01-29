@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_9891de9b",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 78,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-01-29T03:47:24Z",
+      "side": 1,
+      "message": "Shouldnt we check for error returned from PushToDb function and then log error rather than Info. Let the caller decide what he wants to do with this error.",
+      "revId": "900b4980a7b99f9b7db808789d5c2aac7bc2dc42",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
