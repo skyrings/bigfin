@@ -19,13 +19,13 @@ var (
 	MonitoringManager skyring_monitoring.MonitoringManagerInterface
 )
 
-func InitMonitoringManager() {
-	config := conf.SystemConfig.TimeSeriesDBConfig
+func InitMonitoringManager(config conf.MonitoringDBconfig) error {
 	if manager, err := skyring_monitoring.InitMonitoringManager(config.ManagerName, config.ConfigFilePath); err != nil {
-		logger.Get().Error("Error initializing the monitoring manager: %v", err)
+		return err
 	} else {
 		MonitoringManager = manager
 	}
+	return nil
 }
 
 func (s *CephProvider) MonitorCluster(req models.RpcRequest, resp *models.RpcResponse) error {
@@ -52,16 +52,19 @@ func FetchClusterStats(cluster_id uuid.UUID) {
 	cluster, clusterFetchErr := getCluster(cluster_id)
 	if clusterFetchErr != nil {
 		logger.Get().Error("Unbale to parse the request %v", clusterFetchErr.Error())
+		return
 	}
 
 	monnode, monNodeFetchErr := GetRandomMon(cluster_id)
 	if monNodeFetchErr != nil {
 		logger.Get().Error("Unbale to pick a random mon from cluster %v.Error: %v", cluster.Name, monNodeFetchErr)
+		return
 	}
 
 	statistics, statsFetchErr := salt_backend.GetClusterStats(monnode.Hostname, cluster.Name)
 	if statsFetchErr != nil {
 		logger.Get().Error("Unable to fetch cluster stats from mon %v of cluster %v.Error: %v", monnode.Hostname, cluster.Name, statsFetchErr)
+		return
 	}
 
 	metrics := make(map[string]map[string]string)
