@@ -78,6 +78,10 @@ func FetchClusterStats(cluster_id uuid.UUID) {
 		metrics[metric_name] = statMap
 	}
 
+	if MonitoringManager == nil {
+		logger.Get().Warning("Monitoring manager was not initialized successfully")
+		return
+	}
 	if err := MonitoringManager.PushToDb(metrics, monitoringConfig.Hostname, monitoringConfig.DataPushPort); err != nil {
 		logger.Get().Error("Failed to push statistics of cluster %v to db.Error: %v", cluster.Name, err)
 	}
