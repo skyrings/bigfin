@@ -57,7 +57,9 @@ func main() {
 		logger.Get().Fatalf("Failed to initialize task manager. error: %v", err)
 	}
 
-	provider.InitMonitoringManager()
+	if err := provider.InitMonitoringManager(config.TimeSeriesDBConfig); err != nil {
+		logger.Get().Error("Error initializing the monitoring manager: %v", err)
+	}
 
 	// Initialize ceph http client
 	client.InitCephApiSession()
