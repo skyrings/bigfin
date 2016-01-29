@@ -58,4 +58,13 @@ type Backend interface {
 	GetPools(mon string, clusterId uuid.UUID) ([]CephPool, error)
 	UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool map[string]interface{}) (bool, error)
 	GetClusterStats(mon string, clusterName string) (map[string]int64, error)
+	GetOSDDetails(mon string, clusterName string) ([]OSDDetails, error)
+}
+
+type OSDDetails struct {
+	Name         string
+	Id           uint
+	Available    uint
+	UsagePercent uint
+	Used         uint
 }
