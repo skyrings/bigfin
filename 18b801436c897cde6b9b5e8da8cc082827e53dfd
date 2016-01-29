@@ -16,6 +16,24 @@
       "revId": "18b801436c897cde6b9b5e8da8cc082827e53dfd",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_b84a22aa",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-01-29T07:07:23Z",
+      "side": 1,
+      "message": "Or may be we can\u0027t return if we do it that way please ignore my comment",
+      "parentUuid": "fa81d914_1885eecf",
+      "revId": "18b801436c897cde6b9b5e8da8cc082827e53dfd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
