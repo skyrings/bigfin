@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_1885eecf",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 95,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-01-29T07:05:56Z",
+      "side": 1,
+      "message": "Just a thought can we have this inside the framework itself with an optional field to choose to use it or not to use it.\n\nSomething like may be whatever is done in the default section is supplied as arguement to some function in the framework that executes this? With optionally even the section under shop channel messages?\n\nOr if we think the message on the channel cannot be generalised and need not be limited to a set of permitted messages then I think this is the only way to handle it.",
+      "revId": "18b801436c897cde6b9b5e8da8cc082827e53dfd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
