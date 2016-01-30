@@ -16,6 +16,24 @@
       "revId": "7ce9b43c1adae7247c2800f3cbfc1cb2dd8d517e",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_e475cf98",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 79,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-01-30T03:41:29Z",
+      "side": 1,
+      "message": "Its always better to have nil check like this event if you know its never going to happen.\n\nI faced this issue when my config file was not correct and was not having graphite details properly.",
+      "parentUuid": "fa81d914_89698e27",
+      "revId": "7ce9b43c1adae7247c2800f3cbfc1cb2dd8d517e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
