@@ -17,6 +17,7 @@ import (
 
 var (
 	MonitoringManager skyring_monitoring.MonitoringManagerInterface
+	MonitoringConfig  conf.MonitoringDBconfig
 )
 
 func InitMonitoringManager(config conf.MonitoringDBconfig) error {
@@ -24,6 +25,7 @@ func InitMonitoringManager(config conf.MonitoringDBconfig) error {
 		return err
 	} else {
 		MonitoringManager = manager
+		MonitoringConfig = config
 	}
 	return nil
 }
@@ -76,7 +78,9 @@ func FetchClusterStats(cluster_id uuid.UUID) {
 		metrics[metric_name] = statMap
 	}
 
-	MonitoringManager.PushToDb(metrics)
+	if err := MonitoringManager.PushToDb(metrics, MonitoringConfig.Hostname, MonitoringConfig.DataPushPort); err != nil {
+		logger.Get().Error("Failed to push statistics of cluster %v to db.Error: %v", cluster.Name, err)
+	}
 }
 
 func getCluster(cluster_id uuid.UUID) (cluster models.Cluster, err error) {
