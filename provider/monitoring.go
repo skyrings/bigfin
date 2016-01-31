@@ -2,9 +2,9 @@ package provider
 
 import (
 	"fmt"
+	"github.com/skyrings/bigfin/conf"
 	"github.com/skyrings/bigfin/tools/logger"
 	"github.com/skyrings/bigfin/utils"
-	"github.com/skyrings/skyring/conf"
 	"github.com/skyrings/skyring/db"
 	"github.com/skyrings/skyring/models"
 	skyring_monitoring "github.com/skyrings/skyring/monitoring"
@@ -19,8 +19,9 @@ var (
 	MonitoringManager skyring_monitoring.MonitoringManagerInterface
 )
 
-func InitMonitoringManager(config conf.MonitoringDBconfig) error {
-	if manager, err := skyring_monitoring.InitMonitoringManager(config.ManagerName, config.ConfigFilePath); err != nil {
+func InitMonitoringManager() error {
+	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
+	if manager, err := skyring_monitoring.InitMonitoringManager(monitoringConfig.ManagerName, monitoringConfig.ConfigFilePath); err != nil {
 		return err
 	} else {
 		MonitoringManager = manager
@@ -49,6 +50,7 @@ func (s *CephProvider) MonitorCluster(req models.RpcRequest, resp *models.RpcRes
 }
 
 func FetchClusterStats(cluster_id uuid.UUID) {
+	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
 	cluster, clusterFetchErr := getCluster(cluster_id)
 	if clusterFetchErr != nil {
 		logger.Get().Error("Unbale to parse the request %v", clusterFetchErr.Error())
@@ -76,7 +78,9 @@ func FetchClusterStats(cluster_id uuid.UUID) {
 		metrics[metric_name] = statMap
 	}
 
-	MonitoringManager.PushToDb(metrics)
+	if err := MonitoringManager.PushToDb(metrics, monitoringConfig.Hostname, monitoringConfig.DataPushPort); err != nil {
+		logger.Get().Error("Failed to push statistics of cluster %v to db.Error: %v", cluster.Name, err)
+	}
 }
 
 func getCluster(cluster_id uuid.UUID) (cluster models.Cluster, err error) {
