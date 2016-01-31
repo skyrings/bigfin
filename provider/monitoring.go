@@ -2,9 +2,9 @@ package provider
 
 import (
 	"fmt"
+	"github.com/skyrings/bigfin/conf"
 	"github.com/skyrings/bigfin/tools/logger"
 	"github.com/skyrings/bigfin/utils"
-	"github.com/skyrings/skyring/conf"
 	"github.com/skyrings/skyring/db"
 	"github.com/skyrings/skyring/models"
 	skyring_monitoring "github.com/skyrings/skyring/monitoring"
@@ -17,10 +17,12 @@ import (
 
 var (
 	MonitoringManager skyring_monitoring.MonitoringManagerInterface
+	MonitoringConfig  conf.MonitoringDBconfig
 )
 
-func InitMonitoringManager(config conf.MonitoringDBconfig) error {
-	if manager, err := skyring_monitoring.InitMonitoringManager(config.ManagerName, config.ConfigFilePath); err != nil {
+func InitMonitoringManager() error {
+	MonitoringConfig = conf.SystemConfig.TimeSeriesDBConfig
+	if manager, err := skyring_monitoring.InitMonitoringManager(MonitoringConfig.ManagerName, MonitoringConfig.ConfigFilePath); err != nil {
 		return err
 	} else {
 		MonitoringManager = manager
@@ -76,7 +78,9 @@ func FetchClusterStats(cluster_id uuid.UUID) {
 		metrics[metric_name] = statMap
 	}
 
-	MonitoringManager.PushToDb(metrics)
+	if err := MonitoringManager.PushToDb(metrics, MonitoringConfig.Hostname, MonitoringConfig.DataPushPort); err != nil {
+		logger.Get().Error("Failed to push statistics of cluster %v to db.Error: %v", cluster.Name, err)
+	}
 }
 
 func getCluster(cluster_id uuid.UUID) (cluster models.Cluster, err error) {

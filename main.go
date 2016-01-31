@@ -19,6 +19,7 @@ import (
 	"github.com/natefinch/pie"
 	"github.com/op/go-logging"
 	"github.com/skyrings/bigfin/backend/cephapi/client"
+	bigfin_conf "github.com/skyrings/bigfin/conf"
 	"github.com/skyrings/bigfin/provider"
 	"github.com/skyrings/bigfin/tools/logger"
 	"github.com/skyrings/bigfin/tools/task"
@@ -34,6 +35,8 @@ func main() {
 	if err := json.Unmarshal([]byte(os.Args[1]), &config); err != nil {
 		panic(fmt.Sprintf("Reading configurations failed. error: %v", err))
 	}
+
+	bigfin_conf.SystemConfig = config
 
 	// Initialize the logger
 	level, err := logging.LogLevel(config.Logging.Level.String())
@@ -57,7 +60,7 @@ func main() {
 		logger.Get().Fatalf("Failed to initialize task manager. error: %v", err)
 	}
 
-	if err := provider.InitMonitoringManager(config.TimeSeriesDBConfig); err != nil {
+	if err := provider.InitMonitoringManager(); err != nil {
 		logger.Get().Error("Error initializing the monitoring manager: %v", err)
 	}
 
