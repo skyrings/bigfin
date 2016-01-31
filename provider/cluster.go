@@ -143,17 +143,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 			cluster.CompatVersion = request.CompatVersion
 			cluster.Type = request.Type
 			cluster.WorkLoad = request.WorkLoad
-			status, err := cluster_status(*cluster_uuid, request.Name)
-			switch status {
-			case models.STATUS_OK:
-				cluster.Status = models.CLUSTER_STATUS_OK
-			case models.STATUS_WARN:
-				cluster.Status = models.CLUSTER_STATUS_WARN
-			case models.STATUS_ERR:
-				cluster.Status = models.CLUSTER_STATUS_ERROR
-			default:
-				cluster.Status = models.CLUSTER_STATUS_OK
-			}
+			cluster.Status = models.CLUSTER_STATUS_UNKNOWN
 			cluster.Tags = request.Tags
 			cluster.Options = request.Options
 			cluster.Networks = request.Networks
@@ -192,6 +182,21 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 				t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", osds))
 			}
 
+			// Update the cluster status at the last
+			status, err := cluster_status(*cluster_uuid, request.Name)
+			clusterStatus := models.CLUSTER_STATUS_UNKNOWN
+			switch status {
+			case models.STATUS_OK:
+				clusterStatus = models.CLUSTER_STATUS_OK
+			case models.STATUS_WARN:
+				clusterStatus = models.CLUSTER_STATUS_WARN
+			case models.STATUS_ERR:
+				clusterStatus = models.CLUSTER_STATUS_ERROR
+			}
+			if err := coll.Update(bson.M{"clusterid": *cluster_uuid}, bson.M{"$set": bson.M{"status": clusterStatus}}); err != nil {
+				t.UpdateStatus("Error updating the cluster status")
+				return
+			}
 			t.UpdateStatus("Success")
 			t.Done(models.TASK_STATUS_SUCCESS)
 		}
