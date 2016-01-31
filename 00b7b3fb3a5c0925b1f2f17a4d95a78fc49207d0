@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_ffed5c26",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-01-31T09:13:26Z",
+      "side": 1,
+      "message": "I think we need to set UNKNOWN by default. Setting OK by default may not be right?",
+      "range": {
+        "startLine": 187,
+        "startChar": 3,
+        "endLine": 187,
+        "endChar": 44
+      },
+      "revId": "00b7b3fb3a5c0925b1f2f17a4d95a78fc49207d0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
