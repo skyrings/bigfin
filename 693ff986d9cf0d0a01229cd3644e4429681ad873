@@ -25,6 +25,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_9ced4bf2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-01T09:08:30Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_dcd7c321",
+      "revId": "693ff986d9cf0d0a01229cd3644e4429681ad873",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_1c14fbf3",
         "filename": "provider/cluster.go",
         "patchSetId": 3
@@ -42,6 +60,24 @@
         "endLine": 196,
         "endChar": 9
       },
+      "revId": "693ff986d9cf0d0a01229cd3644e4429681ad873",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_bcbbefe3",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-01T09:08:30Z",
+      "side": 1,
+      "message": "I understand this. Once we have transactions framework, we should revert if any of the actions fails from the transaction.\n\nFor the time being sync job would be a solution..",
+      "parentUuid": "fa81d914_1c14fbf3",
       "revId": "693ff986d9cf0d0a01229cd3644e4429681ad873",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
