@@ -16,6 +16,29 @@
       "revId": "78fe93fac15d3257c68c53abb947cb47d62d0e0e",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_da7a66f0",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-02-01T05:22:53Z",
+      "side": 1,
+      "message": "Store the whole configuration, rather than just storing monitoring config, may be useful later. You can have config.go and store it something like systemCOnfig",
+      "range": {
+        "startLine": 20,
+        "startChar": 1,
+        "endLine": 20,
+        "endChar": 42
+      },
+      "revId": "78fe93fac15d3257c68c53abb947cb47d62d0e0e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
