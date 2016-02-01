@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_dcd7c321",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-02-01T09:02:31Z",
+      "side": 1,
+      "message": "ERROR or UNKNOWN?",
+      "range": {
+        "startLine": 11,
+        "startChar": 0,
+        "endLine": 11,
+        "endChar": 5
+      },
+      "revId": "693ff986d9cf0d0a01229cd3644e4429681ad873",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_1c14fbf3",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 196,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-02-01T09:02:31Z",
+      "side": 1,
+      "message": "Just a thought. And this would probably apply to all cases where a db error can potentially occur.\n\nWhat if everything succeeds and for some reason a failure to update the db occurs.\n\nWe should probably plan a recovery mechanism right. \n\nI mean something like a user triggered db refresh consistent with the actual state? But for that we might need to somehow show to the user that our db is inconsistent and he might need to use the force refresh option.\n\nThis is out of scope of this patch but probably a generic way of doing this would be extremely good right?",
+      "range": {
+        "startLine": 196,
+        "startChar": 5,
+        "endLine": 196,
+        "endChar": 9
+      },
+      "revId": "693ff986d9cf0d0a01229cd3644e4429681ad873",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
