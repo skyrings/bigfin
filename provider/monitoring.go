@@ -72,7 +72,7 @@ func FetchClusterStats(cluster_id uuid.UUID) {
 	metrics := make(map[string]map[string]string)
 	currentTimeStamp := time.Now().Unix()
 	for statType, value := range statistics {
-		metric_name := cluster.Name + "." + statType
+		metric_name := monitoringConfig.CollectionName + "." + "cluster_utilization" + "." + cluster.Name + "." + statType
 		statMap := make(map[string]string)
 		statMap[strconv.FormatInt(currentTimeStamp, 10)] = strconv.FormatInt(value, 10)
 		metrics[metric_name] = statMap
