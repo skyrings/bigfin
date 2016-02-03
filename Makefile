@@ -45,13 +45,17 @@ test:
 
 pybuild:
 	@echo "Doing $@"
-	@cd backend/salt/python; python setup.py build
+	if [ "$$USER" == "root" ]; then \
+                cd backend/salt/python; python setup.py --quiet install --root /; cd -; \
+        else \
+                cd backend/salt/python; python setup.py --quiet install --user; cd -; \
+        fi
 
 vendor-update:
 	@echo "Updating vendored packages"
 	@GO15VENDOREXPERIMENT=1 glide -q up 2> /dev/null
 
-build: getdeps verifiers vendor-update pybuild test
+build: getdeps verifiers pybuild test
 	@echo "Doing $@"
 	@GO15VENDOREXPERIMENT=1 go build -o ceph_provider
 
@@ -67,19 +71,14 @@ build-special:
 	go build
 	cp $(BIGFIN_BUILD_SRC)/bigfin $(CWD)
 
-pyinstall:
-	@echo "Doing $@"
-	@cd backend/salt/python; python setup.py --quiet install --user
-	@echo "INFO: You should set PYTHONPATH make it into effect"
-
 saltinstall:
 	@echo "Doing $@"
-	@if ! cp -f salt/* /srv/salt/ 2>/dev/null; then \
+	@if ! cp -f backend/salt/sls/*.* /srv/salt/ 2>/dev/null; then \
 		echo "ERROR: unable to install salt files. Install them manually by"; \
-		echo "sudo cp -f backend/salt/sls/* /srv/salt/"; \
+		echo "    sudo cp -f backend/salt/sls/* /srv/salt/"; \
 	fi
 
-install: build pyinstall saltinstall
+install: build saltinstall
 	@echo "Doing $@"
 	@GO15VENDOREXPERIMENT=1 go install
 
