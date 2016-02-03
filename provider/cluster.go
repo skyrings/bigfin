@@ -214,7 +214,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 func nodeIPs(networks models.ClusterNetworks, nodes map[uuid.UUID]models.Node) (map[uuid.UUID]map[string]string, error) {
 	var node_ips = make(map[uuid.UUID]map[string]string)
 	for nodeid, node := range nodes {
-		host_addrs := node.NetworkInfo.Ipv4
+		host_addrs := node.NetworkInfo.IPv4
 		var m = make(map[string]string)
 		for _, host_addr := range host_addrs {
 			if ok, _ := utils.IsIPInSubnet(host_addr, networks.Cluster); ok {
