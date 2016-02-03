@@ -30,7 +30,6 @@ import (
 	"strconv"
 
 	bigfin_task "github.com/skyrings/bigfin/tools/task"
-	skyring_backend "github.com/skyrings/skyring/backend"
 )
 
 var (
@@ -214,7 +213,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 func nodeIPs(networks models.ClusterNetworks, nodes map[uuid.UUID]models.Node) (map[uuid.UUID]map[string]string, error) {
 	var node_ips = make(map[uuid.UUID]map[string]string)
 	for nodeid, node := range nodes {
-		host_addrs := node.NetworkInfo.Ipv4
+		host_addrs := node.NetworkInfo.IPv4
 		var m = make(map[string]string)
 		for _, host_addr := range host_addrs {
 			if ok, _ := utils.IsIPInSubnet(host_addr, networks.Cluster); ok {
@@ -263,11 +262,11 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 
-	updatedStorageDisksMap := make(map[uuid.UUID][]skyring_backend.Disk)
+	updatedStorageDisksMap := make(map[uuid.UUID][]models.Disk)
 	var failedOSDs []backend.OSD
 	for _, requestNode := range requestNodes {
 		if utils.StringInSlice("OSD", requestNode.NodeType) {
-			var updatedStorageDisks []skyring_backend.Disk
+			var updatedStorageDisks []models.Disk
 			uuid, err := uuid.Parse(requestNode.NodeId)
 			if err != nil {
 				logger.Get().Error("Error parsing node id: %s while add OSD for cluster: %s. error: %v", requestNode.NodeId, clusterName, err)
