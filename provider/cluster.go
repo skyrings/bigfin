@@ -343,8 +343,8 @@ func persistOSD(slu models.StorageLogicalUnit, t *task.Task) (bool, error) {
 	if err := coll.Insert(slu); err != nil {
 		return false, err
 	}
-	logger.Get().Info(fmt.Sprintf("OSD added %s %s for cluster: %v", slu.Options["node"], slu.Options["device"], slu.ClusterId))
-	t.UpdateStatus("Added OSD: %s %s", slu.Options["node"], slu.Options["device"])
+	logger.Get().Info(fmt.Sprintf("OSD %s (%s %s) added for cluster: %v", slu.Name, slu.Options["node"], slu.Options["device"], slu.ClusterId))
+	t.UpdateStatus("Added OSD: %s (%s %s)", slu.Name, slu.Options["node"], slu.Options["device"])
 
 	return true, nil
 }
