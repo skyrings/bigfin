@@ -228,6 +228,12 @@ func nodeIPs(networks models.ClusterNetworks, nodes map[uuid.UUID]models.Node) (
 				break
 			}
 		}
+		if _, ok := node_ips[nodeid]; !ok {
+			node_ips[nodeid] = map[string]string{
+				"public":  node.ManagementIP4,
+				"cluster": node.ManagementIP4,
+			}
+		}
 	}
 	return node_ips, nil
 }
