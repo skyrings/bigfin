@@ -309,7 +309,7 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 							Options:           options,
 						}
 						if ok, err := persistOSD(slu, t); err != nil || !ok {
-							logger.Get().Error("Error persisting OSD: %s %s for cluster: %s. error: %v", slu.Options["node"], slu.Options["device"], clusterName, err)
+							logger.Get().Error("Error persisting %s for cluster: %s. error: %v", slu.Name, clusterName, err)
 							failedOSDs = append(failedOSDs, osd)
 							break
 						}
@@ -343,8 +343,8 @@ func persistOSD(slu models.StorageLogicalUnit, t *task.Task) (bool, error) {
 	if err := coll.Insert(slu); err != nil {
 		return false, err
 	}
-	logger.Get().Info(fmt.Sprintf("OSD added %s %s for cluster: %v", slu.Options["node"], slu.Options["device"], slu.ClusterId))
-	t.UpdateStatus("Added OSD: %s %s", slu.Options["node"], slu.Options["device"])
+	logger.Get().Info(fmt.Sprintf("Added %s (%s %s) for cluster: %v", slu.Name, slu.Options["node"], slu.Options["device"], slu.ClusterId))
+	t.UpdateStatus("Added %s (%s %s)", slu.Name, slu.Options["node"], slu.Options["device"])
 
 	return true, nil
 }
