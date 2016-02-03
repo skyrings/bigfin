@@ -45,13 +45,17 @@ test:
 
 pybuild:
 	@echo "Doing $@"
-	@cd backend/salt/python; python setup.py build
+	if [ "$$USER" == "root" ]; then \
+                cd backend/salt/python; python setup.py --quite install --root /; cd -; \
+        else \
+                cd backend/salt/python; python setup.py --quiet install --user; cd -; \
+        fi
 
 vendor-update:
 	@echo "Updating vendored packages"
 	@GO15VENDOREXPERIMENT=1 glide -q up 2> /dev/null
 
-build: getdeps verifiers vendor-update pybuild test
+build: getdeps verifiers pybuild test
 	@echo "Doing $@"
 	@GO15VENDOREXPERIMENT=1 go build -o ceph_provider
 
@@ -76,7 +80,7 @@ saltinstall:
 	@echo "Doing $@"
 	@if ! cp -f salt/* /srv/salt/ 2>/dev/null; then \
 		echo "ERROR: unable to install salt files. Install them manually by"; \
-		echo "sudo cp -f backend/salt/sls/* /srv/salt/"; \
+		echo "    sudo cp -f backend/salt/sls/* /srv/salt/"; \
 	fi
 
 install: build pyinstall saltinstall

@@ -26,4 +26,5 @@ setup(
     url='github.com/skyrings/bigfin',
     packages = find_packages(exclude=['test']),
     test_suite='nose.collector',
+    zip_safe=False,
 )
