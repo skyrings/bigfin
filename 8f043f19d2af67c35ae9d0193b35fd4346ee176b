@@ -16,6 +16,24 @@
       "revId": "8f043f19d2af67c35ae9d0193b35fd4346ee176b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_52772f3a",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 347,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-04T03:52:38Z",
+      "side": 1,
+      "message": "It would be like \"Added OSD: osd.0 (\u003cHost name\u003e \u003cDisk name\u003e)\"\n\nDo you feel we should change this?",
+      "parentUuid": "fa81d914_77ed05ef",
+      "revId": "8f043f19d2af67c35ae9d0193b35fd4346ee176b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
