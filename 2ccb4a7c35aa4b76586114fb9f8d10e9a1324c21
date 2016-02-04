@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_3278fb2a",
+        "filename": "Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-02-04T03:58:30Z",
+      "side": 1,
+      "message": "why @cd is removed? how does @cd and cd differs?",
+      "range": {
+        "startLine": 49,
+        "startChar": 15,
+        "endLine": 49,
+        "endChar": 17
+      },
+      "revId": "2ccb4a7c35aa4b76586114fb9f8d10e9a1324c21",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_f29d835a",
+        "filename": "Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-02-04T03:58:30Z",
+      "side": 1,
+      "message": "Do we need to update the spec file to do a vendor-update every time make a build?",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 54,
+        "endChar": 13
+      },
+      "revId": "2ccb4a7c35aa4b76586114fb9f8d10e9a1324c21",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
