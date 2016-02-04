@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_1296974c",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 231,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-02-04T03:48:18Z",
+      "side": 1,
+      "message": "The right way to check a key exists in a map is :\nif val, ok :\u003d node_ips[\"nodeid\"]; ok {\n    //do something here\n}",
+      "range": {
+        "startLine": 231,
+        "startChar": 2,
+        "endLine": 231,
+        "endChar": 29
+      },
+      "revId": "3cd8b784b97761ee1d4ffba5707c5819acdb30ab",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
