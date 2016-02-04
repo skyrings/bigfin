@@ -25,6 +25,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_52ae4f86",
+        "filename": "Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-04T04:02:32Z",
+      "side": 1,
+      "message": "Now its conditional and whole if-else put together is run as shell command.\nI not sure we can use @ in this scenario.",
+      "parentUuid": "fa81d914_3278fb2a",
+      "revId": "2ccb4a7c35aa4b76586114fb9f8d10e9a1324c21",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_f29d835a",
         "filename": "Makefile",
         "patchSetId": 1
@@ -42,6 +60,24 @@
         "endLine": 54,
         "endChar": 13
       },
+      "revId": "2ccb4a7c35aa4b76586114fb9f8d10e9a1324c21",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_72a9937a",
+        "filename": "Makefile",
+        "patchSetId": 1
+      },
+      "lineNbr": 54,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-04T04:02:32Z",
+      "side": 1,
+      "message": "You mean in distgit spec file?\nIn case of brew build we are not doing vendor update. Rather we package latest vendor in the tar file and upload.\n\nSo effectively before we push to brew using rhpkg, we should run \"make vendor-update\" and then \"make dist\" to create tar with latest vendor packages.\n\nHope this makes it clear.",
+      "parentUuid": "fa81d914_f29d835a",
       "revId": "2ccb4a7c35aa4b76586114fb9f8d10e9a1324c21",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
