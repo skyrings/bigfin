@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_63746036",
+        "filename": "glide.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-02-05T12:40:32Z",
+      "side": 1,
+      "message": "we should have an entry for skyring-common here right?",
+      "revId": "69206acd3b0fdf8c3bb8a33951875ba1ec308ce7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_c396ec3e",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-02-05T12:40:32Z",
+      "side": 1,
+      "message": "Let us see how we can remove this dependency. Probably only this part we will take out",
+      "range": {
+        "startLine": 24,
+        "startChar": 29,
+        "endLine": 24,
+        "endChar": 48
+      },
+      "revId": "69206acd3b0fdf8c3bb8a33951875ba1ec308ce7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
