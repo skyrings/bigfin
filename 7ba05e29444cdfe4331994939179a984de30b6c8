@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_6ea8c720",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-05T18:12:47Z",
+      "side": 1,
+      "message": "I dont think I understood the purpose of the patch. Can you please explain why this is needed.",
+      "revId": "7ba05e29444cdfe4331994939179a984de30b6c8",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
