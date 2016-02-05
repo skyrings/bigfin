@@ -13,7 +13,7 @@ limitations under the License.
 package task
 
 import (
-	skyringtask "github.com/skyrings/skyring/tools/task"
+	skyringtask "github.com/skyrings/skyring-common/tools/task"
 )
 
 var (

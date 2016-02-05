@@ -1,7 +1,7 @@
 package conf
 
 import (
-	"github.com/skyrings/skyring/conf"
+	"github.com/skyrings/skyring-common/conf"
 )
 
 var (
