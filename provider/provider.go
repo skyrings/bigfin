@@ -18,10 +18,10 @@ import (
 	"github.com/skyrings/bigfin/backend/cephapi"
 	"github.com/skyrings/bigfin/backend/salt"
 	"github.com/skyrings/bigfin/utils"
-	"github.com/skyrings/skyring/conf"
-	"github.com/skyrings/skyring/db"
-	"github.com/skyrings/skyring/models"
-	"github.com/skyrings/skyring/tools/uuid"
+	"github.com/skyrings/skyring-common/conf"
+	"github.com/skyrings/skyring-common/db"
+	"github.com/skyrings/skyring-common/models"
+	"github.com/skyrings/skyring-common/tools/uuid"
 	"gopkg.in/mgo.v2/bson"
 )
 

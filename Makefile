@@ -45,7 +45,7 @@ test:
 
 pybuild:
 	@echo "Doing $@"
-	if [ "$$USER" == "root" ]; then \
+	@if [ "$$USER" == "root" ]; then \
                 cd backend/salt/python; python setup.py --quiet install --root /; cd -; \
         else \
                 cd backend/salt/python; python setup.py --quiet install --user; cd -; \

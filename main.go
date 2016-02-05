@@ -21,10 +21,10 @@ import (
 	"github.com/skyrings/bigfin/backend/cephapi/client"
 	bigfin_conf "github.com/skyrings/bigfin/conf"
 	"github.com/skyrings/bigfin/provider"
-	"github.com/skyrings/bigfin/tools/logger"
 	"github.com/skyrings/bigfin/tools/task"
-	"github.com/skyrings/skyring/conf"
-	"github.com/skyrings/skyring/db"
+	"github.com/skyrings/skyring-common/conf"
+	"github.com/skyrings/skyring-common/db"
+	"github.com/skyrings/skyring-common/tools/logger"
 	"net/rpc/jsonrpc"
 	"os"
 	"path/filepath"
@@ -44,6 +44,7 @@ func main() {
 		level = logging.DEBUG
 	}
 	if err := logger.Init(
+		"bigfin",
 		fmt.Sprintf("%s/bigfin.log", filepath.Dir(config.Logging.Filename)),
 		true,
 		level); err != nil {
