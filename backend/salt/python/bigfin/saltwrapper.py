@@ -434,33 +434,21 @@ def AddOSD(cluster_name, minions):
 
     for minion, v in minions.iteritems():
         count = 0
-        found = False
-        failed_devices = []
         while count < 6:
-            out = local.cmd(minion, 'cmd.run_all', ['ls -l /dev/disk/by-parttypeuuid'])
+            out = local.cmd(minion, 'ceph.getDevicePartUuid',
+                            [" ".join(v['devices'].keys())])
             time.sleep(15)
-            for key, value in v['devices'].iteritems():
-                val_to_check = key.split('/')[-1]
-                found = False
-                for line in out[minion]["stdout"].splitlines():
-                    if val_to_check in line:
-                        found = True
-                        if key in failed_devices:
-                            failed_devices.remove(key)
-                        break
-                if not found:
-                    if key not in failed_devices:
-                        failed_devices.append(key)
-                    break
-            if found:
-                break
             count += 1
-        if len(failed_devices) != 0:
-            log.error("prepare_osd failed for %s" % failed_devices)
-            raise Exception("prepare_osd failed for %s" % failed_devices)
+            if out[minion]['error'] == '' and len(out[minion]['failedList']) == 0:
+                break
+        if out[minion]['error'] != '':
+            log.error("failed to prepare osd with error:%s" % out[minion]['error'])
+            raise Exception("failed to prepare osd with error:%s" % out[minion]['error'])
+        if len(out[minion]['failedList']) != 0:
+            log.error("prepare_osd failed for %s" % out[minion]['failedList'])
+            raise Exception("prepare_osd failed for %s" % out[minion]['failedList'])
 
-    out = local.cmd(minions, 'cmd.run_all', ['ceph-disk activate-all'],
-                    expr_form='list')
+    out = local.cmd(minions, 'ceph.activateAllDisk')
 
     osd_map = {}
     failed_minions = {}
@@ -504,13 +492,8 @@ def AddOSD(cluster_name, minions):
 
 
 def CreatePool(pool_name, monitor, cluster_name, pg_num=0):
-    cmd = "ceph --cluster %s osd pool create %s" % (cluster_name, pool_name)
-    if pg_num:
-        cmd += " %s" % pg_num
-    else:
-        cmd += " 128"
-
-    out = local.cmd(monitor, 'cmd.run_all', [cmd])
+    out = local.cmd(monitor, 'ceph.createPool',
+                    [cluster_name, pool_name, pg_num])
 
     if out.get(monitor, {}).get('retcode') == 0:
         return True
@@ -520,9 +503,7 @@ def CreatePool(pool_name, monitor, cluster_name, pg_num=0):
 
 
 def ListPool(monitor, cluster_name):
-    cmd = "ceph --cluster %s -f json osd lspools" % cluster_name
-
-    out = local.cmd(monitor, 'cmd.run_all', [cmd])
+    out = local.cmd(monitor, 'ceph.getPoolList', [cluster_name])
 
     if out.get(monitor, {}).get('retcode') == 0:
         stdout = out.get(monitor, {}).get('stdout')
@@ -533,23 +514,16 @@ def ListPool(monitor, cluster_name):
 
 
 def GetClusterStatus(monitor, cluster_name):
-    cmd = "ceph -s --cluster %s" % cluster_name
-
-    out = local.cmd(monitor, 'cmd.run_all', [cmd])
-
-    if out.get(monitor, {}).get('retcode') == 0:
-        stdout = out.get(monitor, {}).get('stdout')
-        arr = stdout.rstrip().split('\n')
-        for entry in arr:
-            if entry.strip().startswith('health'):
-                return entry.strip().split(' ')[1]
+    out = local.cmd(monitor, 'ceph.GetClusterStatus', [cluster_name])
+    if out[monitor] != '':
+        return out[monitor]
 
     log.error("ceph cluster status failed. error=%s", out)
     raise Exception("ceph cluster status failed. error=%s" % out)
 
 
 def GetClusterStats(monitor, cluster_name):
-    out = local.cmd(monitor, "cmd.run", ['ceph df --cluster=' + cluster_name + ' --format=json'])
+    out = local.cmd(monitor, "ceph.getClusterStats", [cluster_name])
     if not out:
         log.error("Failed to get cluster statistics from %s", monitor)
         raise Exception("Failed to get cluster statistics from %s" % monitor)
@@ -567,8 +541,7 @@ def GetOSDDetails(monitor, cluster_name):
     '''
 
     rv = []
-    cmd = 'ceph osd df --cluster %s -f json' % cluster_name
-    out = local.cmd('%s' % monitor, 'cmd.run', [cmd])
+    out = local.cmd('%s' % monitor, 'ceph.getOSDDetails', [cluster_name])
     if not out:
         log.error("Failed to get cluster statistics from %s" % monitor)
         raise Exception("Failed to get cluster statistics from %s" % monitor)
