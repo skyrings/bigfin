@@ -266,7 +266,7 @@ def CreateCluster(cluster_name, fsid, minions):
     for m in minions:
         d.update({m['Node']: {'public_ip': m['PublicIP4'],
                               'cluster_ip': m['ClusterIP4']}})
-    _minions = minions
+    minion_set = minions
     minions = d
 
     public_network, cluster_network = _check_minion_networks(minions)
@@ -333,7 +333,7 @@ def AddMon(cluster_name, minions):
     for m in minions:
         d.update({m['Node']: {'public_ip': m['PublicIP4'],
                               'cluster_ip': m['ClusterIP4']}})
-    _minions = minions
+    minion_set = minions
     minions = d
 
     conf_file = (_CEPH_CLUSTER_CONF_DIR + '/' + cluster_name + '/' +
@@ -401,7 +401,6 @@ def AddOSD(cluster_name, minions):
                            'devices': {
                                minions['Device']: minions['FSType'],
                            }}}
-    _minions = minions
     minions = d
 
     conf_file = (_CEPH_CLUSTER_CONF_DIR + '/' + cluster_name + '/' +
