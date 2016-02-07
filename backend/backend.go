@@ -64,7 +64,7 @@ type Backend interface {
 type OSDDetails struct {
 	Name         string
 	Id           uint
-	Available    uint
-	UsagePercent uint
-	Used         uint
+	Available    uint64
+	UsagePercent uint64
+	Used         uint64
 }
