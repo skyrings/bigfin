@@ -30,6 +30,7 @@ var funcNames = [...]string{
 	"ListPool",
 	"GetClusterStatus",
 	"GetClusterStats",
+	"GetOSDDetails",
 }
 
 var pyFuncs map[string]*gopy.PyFunction
