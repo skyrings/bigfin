@@ -551,10 +551,18 @@ def GetOSDDetails(monitor, cluster_name):
         log.error("Failed to get OSD utilization details from mon %s, error=%s" % (monitor, out[monitor]))
         raise Exception("Failed to get OSD utilization details from mon %s, error:%s" % (monitor, err))
 
-    for osd in dist['nodes']:
-        rv.append({'Name': osd['name'],
-                   'Id': int(osd['id']),
-                   'UsagePercent': osd['utilization'],
-                   'Available': osd['kb_avail'],
-                   'Used': osd['kb_used']})
+    if dist.has_key('nodes'):
+        for osd in dist['nodes']:
+            stat = {}
+	    if osd.has_key('name'):
+	        stat['Name'] = osd['name']
+            if osd.has_key('id'):
+                stat['Id'] = int(osd['id'])
+            if osd.has_key('utilization'):
+                stat['UsagePercent'] = int(osd['utilization'])
+            if osd.has_key('kb_avail'):
+                stat['Available'] = int(osd['kb_avail'])
+            if osd.has_key('kb_used'):
+                stat['Used'] = int(osd['kb_used'])
+            rv.append(stat)
     return rv
