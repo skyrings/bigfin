@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_2f432943",
+        "filename": "glide.yaml",
+        "patchSetId": 2
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-08T04:53:26Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_63746036",
+      "revId": "69206acd3b0fdf8c3bb8a33951875ba1ec308ce7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_c396ec3e",
         "filename": "provider/cluster.go",
         "patchSetId": 2
@@ -36,6 +54,24 @@
         "endLine": 24,
         "endChar": 48
       },
+      "revId": "69206acd3b0fdf8c3bb8a33951875ba1ec308ce7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_8f46d54d",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 24,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-08T04:53:26Z",
+      "side": 1,
+      "message": "Not sure. I tried last time and see lot of dependencies..\n\nThe PushToDb function is invoked from skyring core and bigfin both. Bigfin uses the same for cluster stats monitoring.",
+      "parentUuid": "fa81d914_c396ec3e",
       "revId": "69206acd3b0fdf8c3bb8a33951875ba1ec308ce7",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
