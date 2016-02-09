@@ -70,7 +70,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 			}
 		}
 	}
-	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-CreateStorage", asyncTask, 120*time.Second, nil, nil, nil); err != nil {
+	if taskId, err := bigfin_task.GetTaskManager().Run("ceph", "CEPH-CreateStorage", asyncTask, 120*time.Second, nil, nil, nil); err != nil {
 		logger.Get().Error("Task creation failed for create storage %s on cluster: %v. error: %v", request.Name, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for storage creation")
 		return err
