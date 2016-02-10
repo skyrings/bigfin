@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_4b020770",
+        "filename": "salt_module/ceph.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1006236
+      },
+      "writtenOn": "2016-02-10T05:43:31Z",
+      "side": 1,
+      "message": "I feel we need better error handling for below commands, so that we can figure out what and why the following command execution failed.",
+      "revId": "3ebeed453d96e8ff2ab07801c4db6341b7ddb151",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
