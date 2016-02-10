@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_8e3ecd26",
+        "filename": "salt_module/ceph.py",
+        "patchSetId": 7
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-10T11:24:46Z",
+      "side": 1,
+      "message": "%s/getDevicePartUuid/getDeviceMountStatus/g",
+      "revId": "ab4a3857a5b25db53a5447b999971c219c0955d5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_ae4711bb",
+        "filename": "salt_module/ceph.py",
+        "patchSetId": 7
+      },
+      "lineNbr": 60,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-10T11:24:46Z",
+      "side": 1,
+      "message": "I feel use camelCase in all the function names",
+      "revId": "ab4a3857a5b25db53a5447b999971c219c0955d5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
