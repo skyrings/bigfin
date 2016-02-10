@@ -16,6 +16,24 @@
       "revId": "3ebeed453d96e8ff2ab07801c4db6341b7ddb151",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_8ec96d5b",
+        "filename": "salt_module/ceph.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 21,
+      "author": {
+        "id": 1006269
+      },
+      "writtenOn": "2016-02-10T10:56:34Z",
+      "side": 1,
+      "message": "Actually salt minion logs for every errors and returns to master.",
+      "parentUuid": "fa81d914_4b020770",
+      "revId": "3ebeed453d96e8ff2ab07801c4db6341b7ddb151",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
