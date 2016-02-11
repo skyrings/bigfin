@@ -1,4 +1,3 @@
-#
 # Copyright 2015 Red Hat, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -542,6 +541,14 @@ def GetClusterStats(monitor, cluster_name):
     return ast.literal_eval(out[monitor])["stats"]
 
 
+def GetObjectCount(monitor, cluster_name):
+    out = local.cmd(monitor, "ceph.getObjectCount", [cluster_name]) 
+    if out[monitor] != '':
+        return out[monitor]
+    log.error("Object Count failed. error=%s", out)
+    raise Exception("Object Count failed. error=%s" % out)
+
+
 def GetOSDDetails(monitor, cluster_name):
     '''
     returns a list of osd details in a dictonary
@@ -578,3 +585,4 @@ def GetOSDDetails(monitor, cluster_name):
                 stat['Used'] = int(osd['kb_used'])
             rv.append(stat)
     return rv
+
