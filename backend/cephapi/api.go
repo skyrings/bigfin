@@ -217,3 +217,7 @@ func (c CephApi) UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool ma
 func (c CephApi) GetOSDDetails(mon string, clusterName string) (osds []backend.OSDDetails, err error) {
 	return []backend.OSDDetails{}, nil
 }
+
+func (c CephApi) GetObjectCount(mon string, clusterName string) (string, error) {
+	return "", nil
+}

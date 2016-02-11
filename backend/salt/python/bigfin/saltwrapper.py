@@ -1,4 +1,3 @@
-#
 # Copyright 2015 Red Hat, Inc.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
@@ -556,6 +555,24 @@ def GetClusterStats(monitor, cluster_name):
     return ast.literal_eval(out[monitor])["stats"]
 
 
+def GetObjectCount(monitor, cluster_name):
+    cmd = "ceph -s --cluster %s" % cluster_name
+
+    out = local.cmd(monitor, 'cmd.run_all', [cmd])
+
+    if out.get(monitor, {}).get('retcode') == 0:
+        stdout = out.get(monitor, {}).get('stdout')
+        arr = stdout.rstrip().split('\n')
+        for entry in arr:
+            if entry.strip().startswith('pgmap'):
+                return entry.strip().split(' ')[9]
+
+    log.error("PG Statistics failed. error=%s", out)
+    raise Exception("PG Statistics failed. error=%s" % out)
+
+
+
+
 def GetOSDDetails(monitor, cluster_name):
     '''
     returns a list of osd details in a dictonary
@@ -585,3 +602,4 @@ def GetOSDDetails(monitor, cluster_name):
                    'Available': osd['kb_avail'],
                    'Used': osd['kb_used']})
     return rv
+
