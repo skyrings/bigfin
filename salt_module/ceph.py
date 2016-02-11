@@ -73,6 +73,10 @@ def getClusterStats(clusterName):
     return cmdmod.run(cmd)
 
 
+def getObjectCount(clusterName):
+    cmd = 'ceph -s --cluster=' + cluster_name
+    return cmdmod.run(cmd)
+
 def getOSDDetails(clusterName):
     cmd = "ceph osd df --cluster %s -f json" % clusterName
     return cmdmod.run(cmd)
