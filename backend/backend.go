@@ -59,6 +59,7 @@ type Backend interface {
 	UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool map[string]interface{}) (bool, error)
 	GetClusterStats(mon string, clusterName string) (map[string]int64, error)
 	GetOSDDetails(mon string, clusterName string) ([]OSDDetails, error)
+	GetObjectCount(mon string, clusterName string) (string, error)
 }
 
 type OSDDetails struct {

@@ -28,6 +28,7 @@ var (
 var monitoringRoutines = []interface{}{
 	FetchOSDStats,
 	FetchClusterStats,
+	FetchObjectCount,
 }
 
 func InitMonitoringManager() error {
@@ -221,6 +222,20 @@ func FetchClusterStats() (map[string]map[string]string, error) {
 		statMap[strconv.FormatInt(currentTimeStamp, 10)] = strconv.FormatInt(value, 10)
 		metrics[metric_name] = statMap
 	}
+	return metrics, nil
+}
+
+func FetchObjectCount() (map[string]map[string]string, error) {
+	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
+	statistics, statsFetchErr := salt_backend.GetObjectCount(monName, cluster.Name)
+	if statsFetchErr != nil {
+		return nil, fmt.Errorf("Unable to fetch object count from mon %v of cluster %v.Error: %v", monName, cluster.Name, statsFetchErr)
+	}
+	metrics := make(map[string]map[string]string)
+	currentTimeStamp := time.Now().Unix()
+	timeStampStr := strconv.FormatInt(currentTimeStamp, 10)
+	metric_name := monitoringConfig.CollectionName + "." + cluster.Name + "." + skyring_monitoring.NO_OF_OBJECT
+	metrics[metric_name] = map[string]string{timeStampStr: statistics}
 	return metrics, nil
 }
 
