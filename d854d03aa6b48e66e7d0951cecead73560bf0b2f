@@ -16,6 +16,23 @@
       "revId": "d854d03aa6b48e66e7d0951cecead73560bf0b2f",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_6fafd094",
+        "filename": "backend/salt/python/bigfin/saltwrapper.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 563,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-02-11T15:44:35Z",
+      "side": 1,
+      "message": "The initial part of this check is checking if the key i.e, monitor is present. However, if its not present, I assume it returns an empty dict then how can you do get(\u0027retcode\u0027).\n\nI feel you need to do out.has_key(\u003ckey\u003e) check and then log error if it doesn\u0027t exist and we probably need to do this on almost all the py func here",
+      "revId": "d854d03aa6b48e66e7d0951cecead73560bf0b2f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
