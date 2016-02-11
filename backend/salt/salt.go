@@ -31,6 +31,7 @@ var funcNames = [...]string{
 	"GetClusterStatus",
 	"GetClusterStats",
 	"GetOSDDetails",
+	"GetObjectCount",
 }
 
 var pyFuncs map[string]*gopy.PyFunction
@@ -162,5 +163,17 @@ func (s Salt) GetOSDDetails(mon string, clusterName string) (osds []backend.OSDD
 	} else {
 		err = loc_err
 	}
+	return
+}
+
+func (s Salt) GetObjectCount(mon string, clusterName string) (obj string, err error) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	if pyobj, loc_err := pyFuncs["GetObjectCount"].Call(mon, clusterName); loc_err == nil {
+		err = gopy.Convert(pyobj, &obj)
+	} else {
+		err = loc_err
+	}
+
 	return
 }
