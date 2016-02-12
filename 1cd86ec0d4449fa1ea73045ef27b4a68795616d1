@@ -22,6 +22,24 @@
       "revId": "1cd86ec0d4449fa1ea73045ef27b4a68795616d1",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_a867fee7",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 212,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-12T04:14:25Z",
+      "side": 1,
+      "message": "I havent pushed the new patch yet. That would take care. We would not pass the provider name to each Run() call. Rather it would be used while creating the TaskManager only once.",
+      "parentUuid": "fa81d914_282eae92",
+      "revId": "1cd86ec0d4449fa1ea73045ef27b4a68795616d1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
