@@ -25,6 +25,24 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_28a30e02",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-12T04:21:18Z",
+      "side": 1,
+      "message": "Done.\nThe cluster record could be created event before calling the salt_backend.CreateCluster. Would change that accordingly.\n\nBefore this all that we are doing is few check. So as soon as we enter the task, we would create a record in DB for cluster.",
+      "parentUuid": "fa81d914_48568207",
+      "revId": "b79568f6c5fae446028c57d11cd8742f17ee2b05",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_e846564e",
         "filename": "provider/cluster.go",
         "patchSetId": 1
@@ -42,6 +60,24 @@
         "endLine": 187,
         "endChar": 12
       },
+      "revId": "b79568f6c5fae446028c57d11cd8742f17ee2b05",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_c8b7d238",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-12T04:21:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "fa81d914_e846564e",
       "revId": "b79568f6c5fae446028c57d11cd8742f17ee2b05",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
