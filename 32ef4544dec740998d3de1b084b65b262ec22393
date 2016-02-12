@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_85b22392",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-02-12T03:12:13Z",
+      "side": 1,
+      "message": "Suppose the request this mon node fails, what is our course of action? are we retrying with a different node?",
+      "range": {
+        "startLine": 100,
+        "startChar": 1,
+        "endLine": 100,
+        "endChar": 41
+      },
+      "revId": "32ef4544dec740998d3de1b084b65b262ec22393",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_e5a59f47",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-02-12T03:12:13Z",
+      "side": 1,
+      "message": "Did the issue with this API resolved? I dint see a patch for this?",
+      "range": {
+        "startLine": 125,
+        "startChar": 30,
+        "endLine": 125,
+        "endChar": 56
+      },
+      "revId": "32ef4544dec740998d3de1b084b65b262ec22393",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_054d539a",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-02-12T03:12:13Z",
+      "side": 1,
+      "message": "This func just all the osds belongs to a cluster. But how you are checking whether the OSD belongs to a storage profile and calculate the utilization based on that. I expect to get all the storage profiles, find out osds associated with that and then calculate the utilizations",
+      "range": {
+        "startLine": 153,
+        "startChar": 22,
+        "endLine": 153,
+        "endChar": 37
+      },
+      "revId": "32ef4544dec740998d3de1b084b65b262ec22393",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_857943ca",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-02-12T03:12:13Z",
+      "side": 1,
+      "message": "What is the logic here? I expect that you add up the capcity of all the osds associated with that storage profile and calculate the utilization based on that. Are we doing the same?",
+      "range": {
+        "startLine": 159,
+        "startChar": 1,
+        "endLine": 186,
+        "endChar": 2
+      },
+      "revId": "32ef4544dec740998d3de1b084b65b262ec22393",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
