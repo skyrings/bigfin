@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_48568207",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 104,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-02-12T04:10:03Z",
+      "side": 1,
+      "message": "I think what we discussed was to create the task as soon as you land in the provider func and set the state to creating. Then update the state based on the status of the task. You can do this even before starting the task",
+      "range": {
+        "startLine": 100,
+        "startChar": 15,
+        "endLine": 104,
+        "endChar": 5
+      },
+      "revId": "b79568f6c5fae446028c57d11cd8742f17ee2b05",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_e846564e",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-02-12T04:10:03Z",
+      "side": 1,
+      "message": "if all the OSDs failed then we can set the state to failed, otherwise i think it should be in active state",
+      "range": {
+        "startLine": 181,
+        "startChar": 6,
+        "endLine": 187,
+        "endChar": 12
+      },
+      "revId": "b79568f6c5fae446028c57d11cd8742f17ee2b05",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
