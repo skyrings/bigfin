@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_54453b15",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 100,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-02-13T07:10:15Z",
+      "side": 1,
+      "message": "No that system is not in place for now. Currently what is happening is if it fails to pick stats from a mon, then it just logs an error and returns. But as we discussed with  Shubhendu, currently the mon leader related info is not available in skyring. Once that is available may be the GetRandomMon can itself return the current mon leader and we can have these commands run on mon leader",
+      "parentUuid": "fa81d914_85b22392",
+      "range": {
+        "startLine": 100,
+        "startChar": 1,
+        "endLine": 100,
+        "endChar": 41
+      },
+      "revId": "32ef4544dec740998d3de1b084b65b262ec22393",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_e5a59f47",
         "filename": "provider/monitoring.go",
         "patchSetId": 5
@@ -36,6 +60,30 @@
       "writtenOn": "2016-02-12T03:12:13Z",
       "side": 1,
       "message": "Did the issue with this API resolved? I dint see a patch for this?",
+      "range": {
+        "startLine": 125,
+        "startChar": 30,
+        "endLine": 125,
+        "endChar": 56
+      },
+      "revId": "32ef4544dec740998d3de1b084b65b262ec22393",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_744ddf3d",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 125,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-02-13T07:10:15Z",
+      "side": 1,
+      "message": "Resolved and the fix is part of this patch now",
+      "parentUuid": "fa81d914_e5a59f47",
       "range": {
         "startLine": 125,
         "startChar": 30,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "fa81d914_944a5324",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 153,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-02-13T07:10:15Z",
+      "side": 1,
+      "message": "The logic here is, \n1. Fetch all osds\n2. Fetch all osd statistics\n3. for each osd check its storage profile,\n   (i) Get the current osd\u0027s(under processing) statistics\n  (ii) If the table by name formed from collection_name+cluster_name+\"STORAGE_PROFILE_UTILIZATION\"+storage_profile_name+statistic_type(i.e, used/available),\n       (i)exists \u003d\u003e Add to current fetched metric, the value already existing in the table(it is present if there were any osds with same storage profile name before processing the current osd)\n       (ii)doesn\u0027t exist \u003d\u003d\u003e Add an entry in the map and store its value.\n  (iii) For each iteration, calculate the percentage using used*100 / used + available \u003d\u003d\u003e this is done correctly in next patch",
+      "parentUuid": "fa81d914_054d539a",
+      "range": {
+        "startLine": 153,
+        "startChar": 22,
+        "endLine": 153,
+        "endChar": 37
+      },
+      "revId": "32ef4544dec740998d3de1b084b65b262ec22393",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "fa81d914_857943ca",
         "filename": "provider/monitoring.go",
         "patchSetId": 5
@@ -82,6 +154,30 @@
       "writtenOn": "2016-02-12T03:12:13Z",
       "side": 1,
       "message": "What is the logic here? I expect that you add up the capcity of all the osds associated with that storage profile and calculate the utilization based on that. Are we doing the same?",
+      "range": {
+        "startLine": 159,
+        "startChar": 1,
+        "endLine": 186,
+        "endChar": 2
+      },
+      "revId": "32ef4544dec740998d3de1b084b65b262ec22393",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_b453d7e0",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-02-13T07:10:15Z",
+      "side": 1,
+      "message": "Same as above",
+      "parentUuid": "fa81d914_857943ca",
       "range": {
         "startLine": 159,
         "startChar": 1,
