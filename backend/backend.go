@@ -48,10 +48,10 @@ type CephPool struct {
 }
 
 type Backend interface {
-	CreateCluster(clusterName string, fsid uuid.UUID, mons []Mon) (bool, error)
-	AddMon(clusterName string, mons []Mon) (bool, error)
-	StartMon(nodes []string) (bool, error)
-	AddOSD(clusterName string, osd OSD) (map[string][]string, error)
+	CreateCluster(clusterName string, fsid uuid.UUID, mons []Mon, ctxt string) (bool, error)
+	AddMon(clusterName string, mons []Mon, ctxt string) (bool, error)
+	StartMon(nodes []string, ctxt string) (bool, error)
+	AddOSD(clusterName string, osd OSD, ctxt string) (map[string][]string, error)
 	CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64) (bool, error)
 	ListPoolNames(mon string, clusterName string) ([]string, error)
 	GetClusterStatus(mon string, clusterName string) (string, error)

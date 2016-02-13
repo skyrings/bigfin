@@ -258,7 +258,7 @@ def _add_ceph_mon_pillar_data(mon_id_map, cluster_name, monitors):
     return pillar_data
 
 
-def CreateCluster(cluster_name, fsid, minions):
+def CreateCluster(cluster_name, fsid, minions, ctxt):
     # convert list of minions to below dict
     # {MINION_ID: {'public_ip': IP_ADDRESS,
     #              'cluster_ip': IP_ADDRESS}, ...}
@@ -292,13 +292,13 @@ def CreateCluster(cluster_name, fsid, minions):
                                {'skyring': {'mon_bootstrap': True,
                                             minion: pillar_data[minion]}}})
         if out:
-            log.error("mon_bootstrap failed. %s" % out)
+            log.error("%s-mon_bootstrap failed. %s" % (ctxt, out))
         else:
             bootstrapped_minion = minion
             break
 
     if not bootstrapped_minion:
-        log.error("mon_bootstrap failed")
+        log.error("%s-mon_bootstrap failed" % ctxt)
         raise Exception("mon_bootstrap failed")
 
     cluster_key_file = cluster_name + '.keyring'
@@ -307,8 +307,8 @@ def CreateCluster(cluster_name, fsid, minions):
 
     if not pull_minion_file(local, bootstrapped_minion, bootstrap_osd_key_file,
                             cluster_key_path):
-        log.error("failed to pull %s file from %s" %
-                  (bootstrap_osd_key_file, bootstrapped_minion))
+        log.error("%s-failed to pull %s file from %s" %
+                  (ctxt, bootstrap_osd_key_file, bootstrapped_minion))
         raise Exception("failed to pull %s file from %s" %
                         (bootstrap_osd_key_file, bootstrapped_minion))
 
@@ -318,14 +318,14 @@ def CreateCluster(cluster_name, fsid, minions):
         rv = run_state(local, minion_set, 'add_ceph_mon', expr_form='list',
                        kwarg={'pillar': pillar})
         if rv:
-            log.error('add_mon failed for %s. error=%s' %
-                      (minion_set, rv))
+            log.error('%s-add_mon failed for %s. error=%s' %
+                      (ctxt, minion_set, rv))
             raise Exception('add_mon failed for %s. error=%s' %
                             (minion_set, rv))
     return True
 
 
-def AddMon(cluster_name, minions):
+def AddMon(cluster_name, minions, ctxt):
     # convert list of minions to below dict
     # {MINION_ID: {'public_ip': IP_ADDRESS,
     #              'cluster_ip': IP_ADDRESS}, ...}
@@ -366,32 +366,32 @@ def AddMon(cluster_name, minions):
     out = run_state(local, minions, 'add_ceph_mon', expr_form='list',
                     kwarg={'pillar': pillar})
     if out:
-        log.error('add_mon failed for %s. error=%s' %
-                  (minion_set, out))
+        log.error('%s-add_mon failed for %s. error=%s' %
+                  (ctxt, minion_set, out))
         raise Exception('add_mon failed for %s. error=%s' %
                         (minion_set, out))
 
     out = sync_ceph_conf(cluster_name, minions)
     if out:
-        log.error("sync_ceph_conf failed to %s. error=%s" %
-                  (minions, out))
+        log.error("%s-sync_ceph_conf failed to %s. error=%s" %
+                  (ctxt, minions, out))
         raise Exception("sync_ceph_conf failed to %s. error=%s" %
                         (minions, out))
 
     return True
 
 
-def StartMon(monitors):
+def StartMon(monitors, ctxt):
     out = run_state(local, monitors, 'start_ceph_mon', expr_form='list')
     if out:
-        log.error("start_mon failed to %s. error=%s" %
-                  (monitors, out))
+        log.error("%s-start_mon failed to %s. error=%s" %
+                  (ctxt, monitors, out))
         raise Exception("start_mon failed to %s. error=%s" %
                         (monitors, out))
     return True
 
 
-def AddOSD(cluster_name, minions):
+def AddOSD(cluster_name, minions, ctxt):
     # convert minions dict to below dict
     # {MINION_ID: {'public_ip': IP_ADDRESS,
     #              'cluster_ip': IP_ADDRESS,
@@ -427,8 +427,8 @@ def AddOSD(cluster_name, minions):
     out = run_state(local, minions, 'prepare_ceph_osd', expr_form='list',
                     kwarg={'pillar': pillar})
     if out:
-        log.error("prepare_osd failed for %s. error=%s" %
-                  (minions, out))
+        log.error("%s-prepare_osd failed for %s. error=%s" %
+                  (ctxt, minions, out))
         raise Exception("prepare_osd failed for %s. error=%s" %
                         (minions, out))
 
@@ -456,7 +456,7 @@ def AddOSD(cluster_name, minions):
                 break
             count += 1
         if len(failed_devices) != 0:
-            log.error("prepare_osd failed for %s" % failed_devices)
+            log.error("%s-prepare_osd failed for %s" % (ctxt, failed_devices))
             raise Exception("prepare_osd failed for %s" % failed_devices)
 
     out = local.cmd(minions, 'cmd.run_all', ['ceph-disk activate-all'],
@@ -491,13 +491,13 @@ def AddOSD(cluster_name, minions):
 
     out = sync_ceph_conf(cluster_name, minions)
     if out:
-        log.error("sync_cepH-conf failed for %s. error=%s" %
-                  (minions, out))
+        log.error("%s-sync_cepH-conf failed for %s. error=%s" %
+                  (ctxt, minions, out))
         #raise Exception("sync_ceph_conf failed for %s. error=%s" %
         #                (minions, out))
 
     if failed_minions:
-        log.error('add_osd failed. error=%s' % failed_minions)
+        log.error('%s-add_osd failed. error=%s' % (ctxt, failed_minions))
         raise Exception('add_osd failed. error=%s' % failed_minions)
 
     return osd_map

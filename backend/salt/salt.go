@@ -47,10 +47,10 @@ func init() {
 type Salt struct {
 }
 
-func (s Salt) CreateCluster(clusterName string, fsid uuid.UUID, mons []backend.Mon) (bool, error) {
+func (s Salt) CreateCluster(clusterName string, fsid uuid.UUID, mons []backend.Mon, ctxt string) (bool, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	pyobj, err := pyFuncs["CreateCluster"].Call(clusterName, fsid.String(), mons)
+	pyobj, err := pyFuncs["CreateCluster"].Call(clusterName, fsid.String(), mons, ctxt)
 	if err == nil {
 		return gopy.Bool(pyobj), nil
 	}
@@ -58,10 +58,10 @@ func (s Salt) CreateCluster(clusterName string, fsid uuid.UUID, mons []backend.M
 	return false, err
 }
 
-func (s Salt) AddMon(clusterName string, mons []backend.Mon) (bool, error) {
+func (s Salt) AddMon(clusterName string, mons []backend.Mon, ctxt string) (bool, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	pyobj, err := pyFuncs["AddMon"].Call(clusterName, mons)
+	pyobj, err := pyFuncs["AddMon"].Call(clusterName, mons, ctxt)
 	if err == nil {
 		return gopy.Bool(pyobj), nil
 	}
@@ -69,10 +69,10 @@ func (s Salt) AddMon(clusterName string, mons []backend.Mon) (bool, error) {
 	return false, err
 }
 
-func (s Salt) StartMon(nodes []string) (bool, error) {
+func (s Salt) StartMon(nodes []string, ctxt string) (bool, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	pyobj, err := pyFuncs["StartMon"].Call(nodes)
+	pyobj, err := pyFuncs["StartMon"].Call(nodes, ctxt)
 	if err == nil {
 		return gopy.Bool(pyobj), nil
 	}
@@ -80,11 +80,11 @@ func (s Salt) StartMon(nodes []string) (bool, error) {
 	return false, err
 }
 
-func (s Salt) AddOSD(clusterName string, osd backend.OSD) (osds map[string][]string, err error) {
+func (s Salt) AddOSD(clusterName string, osd backend.OSD, ctxt string) (osds map[string][]string, err error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	osdMap := make(map[string][]string)
-	if pyobj, loc_err := pyFuncs["AddOSD"].Call(clusterName, osd); loc_err == nil {
+	if pyobj, loc_err := pyFuncs["AddOSD"].Call(clusterName, osd, ctxt); loc_err == nil {
 		err = gopy.Convert(pyobj, &osdMap)
 		osds = osdMap
 	} else {
