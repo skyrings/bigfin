@@ -1,0 +1,38 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_56a8e08c",
+        "filename": "backend/salt/python/bigfin/saltwrapper.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 559,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-02-14T12:32:40Z",
+      "side": 1,
+      "message": "you need to add this probably into ceph.py as per the latest master and use that ceph.py module here.",
+      "revId": "45db375e8d835deac17e85d18fb0903c6ff3be4a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "fa81d914_16c3c857",
+        "filename": "backend/salt/python/bigfin/saltwrapper.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 562,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-02-14T12:32:40Z",
+      "side": 1,
+      "message": "remove the unintended trailing and leading space and also the first and the last new lines that this patch adds bcoz we need to make sure that no unintended changes can be part of a patch(unless it is a formatting change)",
+      "revId": "45db375e8d835deac17e85d18fb0903c6ff3be4a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
