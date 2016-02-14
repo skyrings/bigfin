@@ -434,21 +434,33 @@ def AddOSD(cluster_name, minions):
 
     for minion, v in minions.iteritems():
         count = 0
+        found = False
+        failed_devices = []
         while count < 6:
-            out = local.cmd(minion, 'ceph.getDeviceMountStatus',
-                            [" ".join(v['devices'].keys())])
+            out = local.cmd(minion, 'cmd.run_all', ['ls -l /dev/disk/by-parttypeuuid'])
             time.sleep(15)
-            count += 1
-            if out[minion]['error'] == '' and len(out[minion]['failedList']) == 0:
+            for key, value in v['devices'].iteritems():
+                val_to_check = key.split('/')[-1]
+                found = False
+                for line in out[minion]["stdout"].splitlines():
+                    if val_to_check in line:
+                        found = True
+                        if key in failed_devices:
+                            failed_devices.remove(key)
+                        break
+                if not found:
+                    if key not in failed_devices:
+                        failed_devices.append(key)
+                    break
+            if found:
                 break
-        if out[minion]['error'] != '':
-            log.error("failed to prepare osd with error:%s" % out[minion]['error'])
-            raise Exception("failed to prepare osd with error:%s" % out[minion]['error'])
-        if len(out[minion]['failedList']) != 0:
-            log.error("prepare_osd failed for %s" % out[minion]['failedList'])
-            raise Exception("prepare_osd failed for %s" % out[minion]['failedList'])
+            count += 1
+        if len(failed_devices) != 0:
+            log.error("prepare_osd failed for %s" % failed_devices)
+            raise Exception("prepare_osd failed for %s" % failed_devices)
 
-    out = local.cmd(minions, 'ceph.activateAllDisk', expr_form='list')
+    out = local.cmd(minions, 'cmd.run_all', ['ceph-disk activate-all'],
+                    expr_form='list')
 
     osd_map = {}
     failed_minions = {}
