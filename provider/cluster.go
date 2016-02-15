@@ -329,7 +329,8 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 							Type:              models.CEPH_OSD,
 							ClusterId:         clusterId,
 							NodeId:            storageNode.NodeId,
-							StorageDeviceId:   storageDisk.FSUUID,
+							StorageDeviceId:   storageDisk.DiskId,
+							StorageProfile:    storageDisk.StorageProfile,
 							StorageDeviceSize: storageDisk.Size,
 							Options:           options,
 						}
