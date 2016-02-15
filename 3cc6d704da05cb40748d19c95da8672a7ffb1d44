@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "fa81d914_3fd25f5c",
+        "filename": "backend/salt/python/bigfin/saltwrapper.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 546,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-15T10:57:41Z",
+      "side": 1,
+      "message": "Shouldnt we do this parsing and forming output in salt module and return a count only from there. Otherwise even though the name is getobjectcount its returning cluster status output...",
+      "revId": "3cc6d704da05cb40748d19c95da8672a7ffb1d44",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
