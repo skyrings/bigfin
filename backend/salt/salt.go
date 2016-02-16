@@ -177,3 +177,8 @@ func (s Salt) GetObjectCount(mon string, clusterName string) (obj string, err er
 
 	return
 }
+
+func (s Salt) GetPGSummary(mon string, clusterId uuid.UUID) (backend.PgSummary, error) {
+	var pgsummary backend.PgSummary
+	return pgsummary, nil
+}
