@@ -60,6 +60,7 @@ type Backend interface {
 	GetClusterStats(mon string, clusterName string) (map[string]int64, error)
 	GetOSDDetails(mon string, clusterName string) ([]OSDDetails, error)
 	GetObjectCount(mon string, clusterName string) (string, error)
+	GetPGSummary(mon string, clusterId uuid.UUID) ([]byte, error)
 }
 
 type OSDDetails struct {
