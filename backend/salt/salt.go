@@ -177,3 +177,7 @@ func (s Salt) GetObjectCount(mon string, clusterName string) (obj string, err er
 
 	return
 }
+
+func (s Salt) GetPGDetails(mon string, clusterId uuid.UUID) ([]byte, error) {
+	return nil, nil
+}

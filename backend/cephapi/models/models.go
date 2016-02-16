@@ -32,3 +32,8 @@ type CephRequestStatus struct {
 	Error        bool   `json:"error"`
 	ErrorMessage string `json:"error_message"`
 }
+type PgSummary struct {
+	ByOSD  map[string]map[string]uint64 `json:"by_osd"`
+	ByPool map[string]map[string]uint64 `json:"by_pool"`
+	All    map[string]uint64            `json:"all"`
+}
