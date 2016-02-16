@@ -2,7 +2,7 @@
 CWD := $(shell pwd)
 PRINT_STATUS = export EC=$$?; cd $(CWD); if [ "$$EC" -eq "0" ]; then printf "SUCCESS!\n"; else exit $$EC; fi
 
-VERSION   := 0.0.1
+VERSION   := 0.0.6
 RELEASE   := 1
 TARDIR    := ../bigfin-$(VERSION)
 RPMBUILD  := $(HOME)/rpmbuild
@@ -46,7 +46,7 @@ test:
 pybuild:
 	@echo "Doing $@"
 	@if [ "$$USER" == "root" ]; then \
-                cd backend/salt/python; python setup.py --quiet install --root /; cd -; \
+                cd backend/salt/python; python setup.py --quiet install --root / --force; cd -; \
         else \
                 cd backend/salt/python; python setup.py --quiet install --user; cd -; \
         fi
