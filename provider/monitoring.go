@@ -1,8 +1,10 @@
 package provider
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/skyrings/bigfin/backend"
+	ceph_models "github.com/skyrings/bigfin/backend/cephapi/models"
 	"github.com/skyrings/bigfin/conf"
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/db"
@@ -29,6 +31,7 @@ var monitoringRoutines = []interface{}{
 	FetchOSDStats,
 	FetchClusterStats,
 	FetchObjectCount,
+	FetchPGSummary,
 }
 
 func InitMonitoringManager() error {
@@ -236,6 +239,36 @@ func FetchObjectCount() (map[string]map[string]string, error) {
 	timeStampStr := strconv.FormatInt(currentTimeStamp, 10)
 	metric_name := monitoringConfig.CollectionName + "." + cluster.Name + "." + skyring_monitoring.NO_OF_OBJECT
 	metrics[metric_name] = map[string]string{timeStampStr: statistics}
+	return metrics, nil
+}
+
+func FetchPGSummary() (map[string]map[string]string, error) {
+	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
+	statistics, statsFetchErr := cephapi_backend.GetPGSummary(monName, cluster.ClusterId)
+	if statsFetchErr != nil {
+		return nil, fmt.Errorf("Unable to fetch PG Details from mon %v of cluster %v.Error: %v", monName, cluster.Name, statsFetchErr)
+	}
+	var pgsummary ceph_models.PgSummary
+	if err := json.Unmarshal(statistics, &pgsummary); err != nil {
+		logger.Get().Error(err.Error())
+	}
+	metrics := make(map[string]map[string]string)
+	currentTimeStamp := time.Now().Unix()
+	for k := range pgsummary.ByPool {
+		for k1, v1 := range pgsummary.ByPool[k] {
+			metric_name := fmt.Sprintf("%s.%s.%s.pool-%s.%s", monitoringConfig.CollectionName, cluster.Name, skyring_monitoring.PG_SUMMARY, k, k1)
+			statMap := make(map[string]string)
+			statMap[strconv.FormatInt(currentTimeStamp, 10)] = strconv.FormatUint(v1, 10)
+			metrics[metric_name] = statMap
+		}
+	}
+	for k, v := range pgsummary.All {
+		metric_name := fmt.Sprintf("%s.%s.%s.all.%s", monitoringConfig.CollectionName, cluster.Name, skyring_monitoring.PG_SUMMARY, k)
+		statMap := make(map[string]string)
+		statMap[strconv.FormatInt(currentTimeStamp, 10)] = strconv.FormatUint(v, 10)
+		metrics[metric_name] = statMap
+
+	}
 	return metrics, nil
 }
 

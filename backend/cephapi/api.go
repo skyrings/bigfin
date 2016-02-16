@@ -221,3 +221,19 @@ func (c CephApi) GetOSDDetails(mon string, clusterName string) (osds []backend.O
 func (c CephApi) GetObjectCount(mon string, clusterName string) (string, error) {
 	return "", nil
 }
+
+func (c CephApi) GetPGSummary(mon string, clusterId uuid.UUID) ([]byte, error) {
+
+	// Replace cluster id in route pattern
+	createPoolRoute := CEPH_API_ROUTES["PGStatistics"]
+	createPoolRoute.Pattern = strings.Replace(createPoolRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+	resp, err := route_request(createPoolRoute, mon, bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return nil, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	return respBody, err
+}
