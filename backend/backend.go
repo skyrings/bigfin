@@ -60,6 +60,7 @@ type Backend interface {
 	GetClusterStats(mon string, clusterName string) (map[string]int64, error)
 	GetOSDDetails(mon string, clusterName string) ([]OSDDetails, error)
 	GetObjectCount(mon string, clusterName string) (string, error)
+	GetPGSummary(mon string, clusterId uuid.UUID) (PgSummary, error)
 }
 
 type OSDDetails struct {
@@ -68,4 +69,9 @@ type OSDDetails struct {
 	Available    uint64
 	UsagePercent uint64
 	Used         uint64
+}
+
+type PgSummary struct {
+	ByPool map[string]map[string]uint64 `json:"by_pool"`
+	All    map[string]uint64            `json:"all"`
 }
