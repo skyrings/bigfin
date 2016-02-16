@@ -63,6 +63,12 @@ func (c *CephApi) LoadRoutes() {
 			Method:  "PATCH",
 			Version: 2,
 		},
+		{
+			Name:    "PGStatistics",
+			Pattern: "cluster/{cluster-fsid}/sync_object/pg_summary?format=json",
+			Method:  "GET",
+			Version: 2,
+		},
 	}
 	for _, route := range routes {
 		CEPH_API_ROUTES[route.Name] = route
