@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da86d52c_7d11dfab",
+        "filename": "backend/backend.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-16T11:20:56Z",
+      "side": 1,
+      "message": "%s/GetPGDetails/GetPGSummary/g",
+      "revId": "2e86ae5a3dab7abadeac2a28b235ba0069b3feaf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da86d52c_9d53f36b",
+        "filename": "backend/cephapi/models/models.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 35,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-16T11:20:56Z",
+      "side": 1,
+      "message": "As discussed we need only by pool and total. This struct we need to receive data from backend but return time only poolwise and all",
+      "revId": "2e86ae5a3dab7abadeac2a28b235ba0069b3feaf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da86d52c_5de89b7c",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 257,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-16T11:20:56Z",
+      "side": 1,
+      "message": "Remove by osd as not required",
+      "revId": "2e86ae5a3dab7abadeac2a28b235ba0069b3feaf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da86d52c_3d9a0715",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 265,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-16T11:20:56Z",
+      "side": 1,
+      "message": "Correct the collection name to make of the format \u003cClusterName\u003e.PgSummary.Pool\u003cNum\u003e.Active+Clean\n\u003cClusterName\u003e.PgSummary.Pool\u003cNum\u003e.Active+Clean+degraded",
+      "revId": "2e86ae5a3dab7abadeac2a28b235ba0069b3feaf",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
