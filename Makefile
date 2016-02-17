@@ -73,9 +73,15 @@ build-special:
 
 saltinstall:
 	@echo "Doing $@"
-	@if ! cp -f backend/salt/sls/*.* /srv/salt/ 2>/dev/null; then \
+	@if [ "$$USER" == "root" ]; then \
+		[ -d /srv/salt ] || mkdir -p /srv/salt; \
+		[ -d /srv/salt/_modules ] || mkdir -p /srv/salt/_modules; \
+		cp backend/salt/sls/*.* /srv/salt; \
+		cp backend/salt/python/bigfin/utils.py /srv/salt/_modules; \
+	else \
 		echo "ERROR: unable to install salt files. Install them manually by"; \
-		echo "    sudo cp -f backend/salt/sls/* /srv/salt/"; \
+		echo "    sudo cp backend/salt/sls/*.* /srv/salt"; \
+		echo "    sudo cp backend/salt/python/bigfin/utils.py /srv/salt/_modules"; \
 	fi
 
 install: build saltinstall

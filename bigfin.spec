@@ -41,6 +41,7 @@ install -D backend/salt/sls/* $RPM_BUILD_ROOT/srv/salt/
 install -d $RPM_BUILD_ROOT/%{python2_sitelib}/bigfin
 install -D backend/salt/python/bigfin/* $RPM_BUILD_ROOT/%{python2_sitelib}/bigfin/
 install -D salt_module/ceph.py $RPM_BUILD_ROOT/srv/salt/_modules
+install -D backend/salt/python/bigfin/utils.py $RPM_BUILD_ROOT/srv/salt/_modules
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -50,7 +51,7 @@ rm -rf $RPM_BUILD_ROOT
 %{_sysconfdir}/skyring/providers.d/ceph.conf
 /srv/salt/*
 %{python2_sitelib}/bigfin/*
-/srv/salt/_modules/ceph.py*
+/srv/salt/_modules/*
 
 %changelog
 * Tue Dec 22 2015 Kanagaraj Mayilsamy <kmayilsa@redhat.com> - 0.0.1-1
