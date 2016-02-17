@@ -13,74 +13,51 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-import salt.modules.cmdmod as cmdmod
+import cephutils
 
 DEFAULT_PG_NUM = 128
 
 
-def getDeviceMountStatus(devices):
-    arr = []
-    path = "/dev/disk/by-parttypeuuid"
-    status = {'failedList': [], 'error': ""}
-    out = cmdmod.run_all("ls -l %s" % path)
-    if out['retcode'] == 0:
-        arr = out['stdout'].splitlines()
-    else:
-        status['error'] = out['stderr']
-        return status
-    for dev in devices.split(" "):
-        found = False
-        for i in arr:
-            if dev.split('/')[-1] in i:
-                found = True
-                break
-        if not found:
-            status['failedList'].append(dev)
-    return status
-
-
-def activateAllDisk():
-    return cmdmod.run_all(['ceph-disk activate-all'])
-
-
 def createPool(clusterName, poolName, pgNum=0):
-    cmd = "ceph --cluster %s osd pool create %s" % (clusterName, poolName)
+    cmd = ["ceph", "--cluster", clusterName, "osd", "pool", "create", poolName]
     if pgNum:
-        cmd += " %s" % pgNum
+        cmd += [pgNum]
     else:
-        cmd += " %s" % DEFAULT_PG_NUM
-    return cmdmod.run_all(cmd)
+        cmd += [DEFAULT_PG_NUM]
+    rc, out, err = cephutils.execCmd(cmd)
+    return out
 
 
 def getPoolList(clusterName):
-    cmd = "ceph --cluster %s -f json osd lspools" % clusterName
-    return cmdmod.run_all(cmd)
+    cmd = ["ceph", "--cluster", clusterName, "-f", "json", "osd", "lspools"]
+    rc, out, err = cephutils.execCmd(cmd)
+    return out
 
 
 def getClusterStatus(clusterName):
-    cmd = "ceph -s --cluster %s" % clusterName
-    out = cmdmod.run_all(cmd)
-    if out['retcode'] == 0:
-        arr = out['stdout'].rstrip.splitlines()
-        for entry in arr:
-            if entry.strip().startswith('health'):
-                return entry.strip().split(' ')[1]
+    cmd = ["ceph", "-s", "--cluster", clusterName]
+    rc, out, err = cephutils.execCmd(cmd)
+    for line in out.splitlines():
+        if line.strip().startswith("health"):
+            return line.strip().split(' ')[1]
     return ''
 
 
 def getClusterStats(clusterName):
-    cmd = "ceph df --cluster=%s -f json" % clusterName
-    return cmdmod.run(cmd)
+    cmd = ["ceph", "df", "--cluster", clusterName, "-f", "json"]
+    rc, out, err = cephutils.execCmd(cmd)
+    return out
 
 
 def getObjectCount(clusterName):
-    cmd = 'ceph -s --cluster=' + clusterName
-    out = cmdmod.run(cmd)
+    cmd = ["ceph", "-s", "--cluster", clusterName]
+    rc, out, err = cephutils.execCmd(cmd)
     for line in out.splitlines():
         if line.strip().startswith("pgmap"):
             return line.split(",")[3].split(' ')[1]
     return ''
 
 def getOSDDetails(clusterName):
-    cmd = "ceph osd df --cluster %s -f json" % clusterName
-    return cmdmod.run(cmd)
+    cmd = ["ceph", "osd", "df", "--cluster", clusterName, "-f", "json"]
+    rc, out, err = cephutils.execCmd(cmd)
+    return out
