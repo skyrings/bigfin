@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da86d52c_817c6574",
+        "filename": "salt_module/ceph.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-18T03:25:34Z",
+      "side": 1,
+      "message": "We shoukd check return code and err as well and accordingly raise exceptions.",
+      "revId": "fd0e38fcd012c834b3faa83890bb2eb7a08639a1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
