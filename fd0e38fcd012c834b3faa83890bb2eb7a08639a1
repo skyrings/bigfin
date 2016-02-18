@@ -16,6 +16,23 @@
       "revId": "fd0e38fcd012c834b3faa83890bb2eb7a08639a1",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da86d52c_21c5795b",
+        "filename": "salt_module/cephutils.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-18T05:14:43Z",
+      "side": 1,
+      "message": "This source is available under backend/salt/python.\nCant we just package the same utils under modules as well? so re-use it well...",
+      "revId": "fd0e38fcd012c834b3faa83890bb2eb7a08639a1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
