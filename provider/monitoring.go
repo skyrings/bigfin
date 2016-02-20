@@ -152,6 +152,7 @@ func FetchOSDStats() (map[string]map[string]string, error) {
 
 func FetchStorageProfileUtilizations(osdDetails []backend.OSDDetails) (statsToPush map[string]map[string]string, err error) {
 	statsToPush = make(map[string]map[string]string)
+	cluster.StorageProfileUsage = make(map[string]models.Utilization)
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
 	slus, sluFetchErr := getOsds(cluster.ClusterId)
 	if sluFetchErr != nil {
@@ -190,11 +191,22 @@ func FetchStorageProfileUtilizations(osdDetails []backend.OSDDetails) (statsToPu
 					statsToPush[metric_name+skyring_monitoring.FREE_SPACE] = map[string]string{currentTimeStamp: strconv.FormatUint(spFree, 10)}
 				}
 
+				cluster.StorageProfileUsage[slu.StorageProfile] = models.Utilization{Used: int64(spUsed), Total: int64(spUsed + spFree)}
+
 				percent_used := (float64(spUsed) * 100) / (float64(spUsed + spFree))
 				statsToPush[metric_name+skyring_monitoring.USAGE_PERCENT] = map[string]string{currentTimeStamp: fmt.Sprintf("%v", percent_used)}
 			}
 		}
 	}
+
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	dbUpdateError := coll.Update(bson.M{"clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"storageprofileusage": cluster.StorageProfileUsage}})
+	if dbUpdateError != nil {
+		logger.Get().Error("Updating the storage profile statistics to db for the cluster %v failed.Error %v", cluster.Name, dbUpdateError.Error())
+	}
+
 	return statsToPush, nil
 }
 
@@ -223,6 +235,15 @@ func FetchClusterStats() (map[string]map[string]string, error) {
 		statMap[strconv.FormatInt(currentTimeStamp, 10)] = strconv.FormatInt(value, 10)
 		metrics[metric_name] = statMap
 	}
+
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	dbUpdateError := coll.Update(bson.M{"clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"usage": models.Utilization{Used: statistics["total_used_bytes"], Total: statistics["total_bytes"]}}})
+	if dbUpdateError != nil {
+		logger.Get().Error("Updating the cluster statistics to db for the cluster %v failed.Error %v", cluster.Name, dbUpdateError.Error())
+	}
+
 	return metrics, nil
 }
 
@@ -232,11 +253,28 @@ func FetchObjectCount() (map[string]map[string]string, error) {
 	if statsFetchErr != nil {
 		return nil, fmt.Errorf("Unable to fetch object count from mon %v of cluster %v.Error: %v", monName, cluster.Name, statsFetchErr)
 	}
+
+	object_cnt, cerr := strconv.ParseUint(statistics, 10, 64)
+	if cerr != nil {
+		logger.Get().Error("Inalid object count %v. Error %v", statistics, cerr)
+		return nil, fmt.Errorf("Inalid object count %v. Error %v", statistics, cerr)
+	}
+
 	metrics := make(map[string]map[string]string)
 	currentTimeStamp := time.Now().Unix()
 	timeStampStr := strconv.FormatInt(currentTimeStamp, 10)
 	metric_name := monitoringConfig.CollectionName + "." + cluster.Name + "." + skyring_monitoring.NO_OF_OBJECT
 	metrics[metric_name] = map[string]string{timeStampStr: statistics}
+
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+
+	dbUpdateError := coll.Update(bson.M{"clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"objectcnt": object_cnt}})
+	if dbUpdateError != nil {
+		logger.Get().Error("Updating the object count to db for the cluster %v failed.Error %v", cluster.Name, dbUpdateError.Error())
+	}
+
 	return metrics, nil
 }
 
