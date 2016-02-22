@@ -139,9 +139,16 @@ func update_cluster_status(clusterStatus int, event models.Event) error {
 }
 
 func ceph_cluster_health_changed(event models.Event) error {
-	status := strings.SplitAfter(event.Message, " ")[len(strings.SplitAfter(event.Message, " "))-1]
-	if err := update_cluster_status(cluster_status_in_enum[status], event); err != nil {
+	cluster, err := getCluster(event.ClusterId)
+	if err != nil {
+		logger.Get().Error("Error getting the  cluster: %v. error: %v", event.ClusterId, err)
 		return err
+	}
+	if cluster.State == models.CLUSTER_STATE_ACTIVE {
+		status := strings.SplitAfter(event.Message, " ")[len(strings.SplitAfter(event.Message, " "))-1]
+		if err := update_cluster_status(cluster_status_in_enum[status], event); err != nil {
+			return err
+		}
 	}
 	return nil
 }

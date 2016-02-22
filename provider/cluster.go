@@ -34,10 +34,10 @@ import (
 )
 
 var (
-	cluster_status_map = map[string]string{
-		"HEALTH_OK":   models.STATUS_OK,
-		"HEALTH_WARN": models.STATUS_WARN,
-		"HEALTH_ERR":  models.STATUS_ERR,
+	cluster_status_map = map[string]models.ClusterStatus{
+		"HEALTH_OK":   models.CLUSTER_STATUS_OK,
+		"HEALTH_WARN": models.CLUSTER_STATUS_WARN,
+		"HEALTH_ERR":  models.CLUSTER_STATUS_ERROR,
 	}
 )
 
@@ -116,6 +116,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 				cluster.Networks = request.Networks
 				cluster.OpenStackServices = request.OpenStackServices
 				cluster.State = models.CLUSTER_STATE_CREATING
+				cluster.AlmStatus = models.ALARM_STATUS_CLEARED
 
 				cluster.MonitoringInterval = request.MonitoringInterval
 				if cluster.MonitoringInterval == 0 {
@@ -196,16 +197,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 					}
 
 					// Update the cluster status at the last
-					status, err := cluster_status(*cluster_uuid, request.Name, ctxt)
-					clusterStatus := models.CLUSTER_STATUS_UNKNOWN
-					switch status {
-					case models.STATUS_OK:
-						clusterStatus = models.CLUSTER_STATUS_OK
-					case models.STATUS_WARN:
-						clusterStatus = models.CLUSTER_STATUS_WARN
-					case models.STATUS_ERR:
-						clusterStatus = models.CLUSTER_STATUS_ERROR
-					}
+					clusterStatus, err := cluster_status(*cluster_uuid, request.Name, ctxt)
 					if err := coll.Update(bson.M{"clusterid": *cluster_uuid}, bson.M{"$set": bson.M{"status": clusterStatus, "state": models.CLUSTER_STATE_ACTIVE}}); err != nil {
 						t.UpdateStatus("Error updating the cluster status")
 						return
@@ -232,6 +224,15 @@ func setClusterState(clusterId uuid.UUID, state models.ClusterState, ctxt string
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
 	if err := coll.Update(bson.M{"clusterid": clusterId}, bson.M{"$set": bson.M{"state": state}}); err != nil {
 		logger.Get().Warning("%s-Error updating the state for cluster: %v", ctxt, clusterId)
+	}
+}
+
+func setClusterStatus(clusterId uuid.UUID, status models.ClusterStatus, ctxt string) {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	if err := coll.Update(bson.M{"clusterid": clusterId}, bson.M{"$set": bson.M{"status": status}}); err != nil {
+		logger.Get().Warning("%s-Error updating the status for cluster: %v", ctxt, clusterId)
 	}
 }
 
@@ -574,26 +575,32 @@ func (s *CephProvider) GetClusterStatus(req models.RpcRequest, resp *models.RpcR
 	if err != nil {
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("error: %v", err))
 	} else {
-		*resp = utils.WriteResponse(http.StatusOK, status)
+		//*resp = utils.WriteResponse(http.StatusOK, status.String())
+		intStatus := int(status)
+		*resp = utils.WriteResponseWithData(http.StatusOK, "", []byte(strconv.Itoa(intStatus)))
 	}
 	return nil
 }
 
-func cluster_status(clusterId uuid.UUID, clusterName string, ctxt string) (status string, err error) {
+func cluster_status(clusterId uuid.UUID, clusterName string, ctxt string) (models.ClusterStatus, error) {
 	// Pick a random mon from the list
 	monnode, err := GetRandomMon(clusterId)
 	if err != nil {
 		logger.Get().Error("%s-Error getting a mon from cluster: %s. error: %v", ctxt, clusterName, err)
-		return "", errors.New(fmt.Sprintf("Error getting a mon. error: %v", err))
+		return models.CLUSTER_STATUS_UNKNOWN, errors.New(fmt.Sprintf("Error getting a mon. error: %v", err))
 	}
 
 	// Get the cluser status
-	status, err = salt_backend.GetClusterStatus(monnode.Hostname, clusterName)
+	status, err := salt_backend.GetClusterStatus(monnode.Hostname, clusterName)
 	if err != nil {
 		logger.Get().Error("%s-Could not get up status of cluster: %v. error: %v", ctxt, clusterName, err)
-		return "", err
+		return models.CLUSTER_STATUS_UNKNOWN, err
 	}
-	return cluster_status_map[status], nil
+	if val, ok := cluster_status_map[status]; ok {
+		return val, nil
+	} else {
+		return models.CLUSTER_STATUS_UNKNOWN, nil
+	}
 }
 
 func RecalculatePgnum(clusterId uuid.UUID, t *task.Task) bool {
@@ -619,6 +626,15 @@ func RecalculatePgnum(clusterId uuid.UUID, t *task.Task) bool {
 			continue
 		}
 		pgNum := DerivePgNum(clusterId, storage.Size, storage.Replicas)
+		currentPgNum, err := strconv.Atoi(storage.Options["pgnum"])
+		if err != nil {
+			utils.FailTask(fmt.Sprintf("Error getting details of pool: %s for cluster: %v", storage.Name, clusterId), err, t)
+			return false
+		}
+		if pgNum == uint(currentPgNum) {
+			logger.Get().Info("No change in PgNum .. Continuing ..")
+			continue
+		}
 		id, err := strconv.Atoi(storage.Options["id"])
 		if err != nil {
 			utils.FailTask(fmt.Sprintf("Error getting details of pool: %s for cluster: %v", storage.Name, clusterId), err, t)
