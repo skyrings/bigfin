@@ -523,6 +523,15 @@ def ListPool(monitor, cluster_name):
     raise Exception("list_pool failed. error=%s" % out)
 
 
+def RemovePool(monitor, cluster, pool, ctxt):
+    out = local.cmd(monitor, 'ceph.removePool', [cluster, pool])
+    if out.get(monitor, {}).get('retcode') == 0:
+        return True
+
+    log.error("%s - Remove pool failed. error=%s" % (ctxt, out))
+    raise Exception("Remove pool failed. error=%s", out)
+
+
 def GetClusterStatus(monitor, cluster_name):
     out = local.cmd(monitor, 'ceph.getClusterStatus', [cluster_name])
     if out[monitor] != '':

@@ -32,6 +32,7 @@ var funcNames = [...]string{
 	"GetClusterStats",
 	"GetOSDDetails",
 	"GetObjectCount",
+	"RemovePool",
 }
 
 var pyFuncs map[string]*gopy.PyFunction
@@ -149,6 +150,17 @@ func (s Salt) GetClusterStats(mon string, clusterName string) (stats map[string]
 
 func (s Salt) UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool map[string]interface{}) (bool, error) {
 	return true, nil
+}
+
+func (s Salt) RemovePool(mon string, clusterId uuid.UUID, clusterName string, pool string, poolId int, ctxt string) (bool, error) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	pyobj, err := pyFuncs["RemovePool"].Call(mon, clusterName, pool, ctxt)
+	if err == nil {
+		return gopy.Bool(pyobj), nil
+	}
+
+	return false, err
 }
 
 func New() backend.Backend {
