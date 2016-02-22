@@ -306,3 +306,74 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 	*resp = utils.WriteResponseWithData(http.StatusOK, "", result)
 	return nil
 }
+
+func (s *CephProvider) RemoveStorage(req models.RpcRequest, resp *models.RpcResponse) error {
+	cluster_id_str := req.RpcRequestVars["cluster-id"]
+	cluster_id, err := uuid.Parse(cluster_id_str)
+	if err != nil {
+		logger.Get().Error("Error parsing the cluster id: %s. error: %v", cluster_id_str, err)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
+		return err
+	}
+	storage_id_str := req.RpcRequestVars["storage-id"]
+	storage_id, err := uuid.Parse(storage_id_str)
+	if err != nil {
+		logger.Get().Error("Error parsing the storage id: %s. error: %v", storage_id_str, err)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the storage id: %s", storage_id_str))
+		return err
+	}
+
+	asyncTask := func(t *task.Task) {
+		for {
+			select {
+			case <-t.StopCh:
+				return
+			default:
+				t.UpdateStatus("Started ceph provider pool deletion: %v", t.ID)
+				// Get the storage details
+				sessionCopy := db.GetDatastore().Copy()
+				defer sessionCopy.Close()
+				coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+				var storage models.Storage
+				if err := coll.Find(bson.M{"clusterid": *cluster_id, "storageid": *storage_id}).One(&storage); err != nil {
+					utils.FailTask("Error getting details of storage", err, t)
+					return
+				}
+				poolId, err := strconv.Atoi(storage.Options["id"])
+				if err != nil {
+					utils.FailTask("Error getting id of storage", err, t)
+					return
+				}
+
+				monnode, err := GetRandomMon(*cluster_id)
+				if err != nil {
+					utils.FailTask("Error getting a mon node for cluster", err, t)
+					return
+				}
+
+				ok, err := cephapi_backend.RemovePool(monnode.Hostname, *cluster_id, poolId)
+				if err != nil || !ok {
+					utils.FailTask(fmt.Sprintf("Remove pool %s failed", storage.Name), err, t)
+					return
+				} else {
+					if err := coll.Remove(bson.M{"clusterid": *cluster_id, "storageid": *storage_id}); err != nil {
+						utils.FailTask(fmt.Sprintf("Error removing pool %s from DB", storage.Name), err, t)
+						return
+					} else {
+						t.UpdateStatus("Success")
+						t.Done(models.TASK_STATUS_SUCCESS)
+						return
+					}
+				}
+			}
+		}
+	}
+	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-DeleteStorage", asyncTask, 120*time.Second, nil, nil, nil); err != nil {
+		logger.Get().Error("Task creation failed for delete storage on cluster: %v. error: %v", *cluster_id, err)
+		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for storage deletion")
+		return err
+	} else {
+		*resp = utils.WriteAsyncResponse(taskId, fmt.Sprintf("Task Created for delete storage on cluster: %v", *cluster_id), []byte{})
+	}
+	return nil
+}

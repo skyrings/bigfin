@@ -151,6 +151,10 @@ func (s Salt) UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool map[s
 	return true, nil
 }
 
+func (s Salt) RemovePool(mon string, clusterId uuid.UUID, poolId int) (bool, error) {
+	return true, nil
+}
+
 func New() backend.Backend {
 	return new(Salt)
 }

@@ -70,6 +70,10 @@ func HttpPatch(mon string, url string, contentType string, body io.Reader) (*htt
 	return invokeUpdateRestApi("PATCH", mon, url, contentType, body)
 }
 
+func HttpDelete(mon string, url string, contentType string, body io.Reader) (*http.Response, error) {
+	return invokeUpdateRestApi("DEL", mon, url, contentType, body)
+}
+
 func csrf_token(resp *http.Response) (token string) {
 	cookies := strings.Split(resp.Header["Set-Cookie"][0], ";")
 	for _, cookie := range cookies {
