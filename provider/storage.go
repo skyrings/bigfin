@@ -22,6 +22,7 @@ import (
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/task"
 	"github.com/skyrings/skyring-common/tools/uuid"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"strconv"
@@ -59,9 +60,36 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 			case <-t.StopCh:
 				return
 			default:
-				t.UpdateStatus("Started ceph provider pool creation: %v", t.ID)
-				if ok := createPool(*cluster_id, request, t); !ok {
-					return
+				t.UpdateStatus("Started ceph provider storage creation: %v", t.ID)
+				if backingStorageDet, ok := request.BackingStorage.(string); ok {
+					// Check if the used storage exist. If not error out
+					sessionCopy := db.GetDatastore().Copy()
+					defer sessionCopy.Close()
+					coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+					var storage models.Storage
+					err := coll.Find(bson.M{"clusterid": *cluster_id, "name": backingStorageDet}).One(&storage)
+					if err == mgo.ErrNotFound {
+						utils.FailTask(fmt.Sprintf("Invalid backing storage id: %v", backingStorageDet), err, t)
+						return
+					}
+					t.UpdateStatus("Creating block storage")
+					if ok := createBlockStorage(*cluster_id, backingStorageDet, request, t); !ok {
+						return
+					}
+				} else if backingStorageDet, ok := request.BackingStorage.(models.AddStorageRequest); ok {
+					t.UpdateStatus("Creating backing storage pool")
+					if ok := createPool(*cluster_id, backingStorageDet, t); !ok {
+						utils.FailTask("Error creating backing storage pool", err, t)
+						return
+					}
+					t.UpdateStatus("Creating block storage")
+					if ok := createBlockStorage(*cluster_id, backingStorageDet.Name, request, t); !ok {
+						return
+					}
+				} else {
+					if ok := createPool(*cluster_id, request, t); !ok {
+						return
+					}
 				}
 
 				t.UpdateStatus("Success")
@@ -78,6 +106,64 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 		*resp = utils.WriteAsyncResponse(taskId, fmt.Sprintf("Task Created for create storage %s on cluster: %v", request.Name, *cluster_id), []byte{})
 	}
 	return nil
+}
+
+func createBlockStorage(clusterId uuid.UUID, backingStorage string, request models.AddStorageRequest, t *task.Task) bool {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+
+	t.UpdateStatus("Getting cluster details")
+	// Get cluster details
+	var cluster models.Cluster
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	if err := coll.Find(bson.M{"clusterid": clusterId}).One(&cluster); err != nil {
+		utils.FailTask(fmt.Sprintf("Error getting the cluster details for :%v", clusterId), err, t)
+		return false
+	}
+
+	t.UpdateStatus("Getting a mon from cluster")
+	monnode, err := GetRandomMon(clusterId)
+	if err != nil {
+		utils.FailTask(fmt.Sprintf("Error getting mon node details for cluster: %v", clusterId), err, t)
+		return false
+	}
+
+	// Create the block device image
+	sizeMBs := utils.SizeFromStr(request.Size) / 1024
+	cmd := fmt.Sprintf("rbd create --size %dM %s --pool %s", sizeMBs, request.Name, backingStorage)
+	ok, err := cephapi_backend.ExecCmd(monnode.Hostname, clusterId, cmd)
+	if err != nil || !ok {
+		utils.FailTask(fmt.Sprintf("Creation of block storage failed on cluster: %s", clusterId), err, t)
+		return false
+	} else {
+		t.UpdateStatus("Perisisting the block storage entity")
+		var storage models.Storage
+		storage_id, err := uuid.New()
+		if err != nil {
+			utils.FailTask("Error creating id for block storage", err, t)
+			return false
+		}
+		storage.StorageId = *storage_id
+		storage.Name = request.Name
+		storage.Type = request.Type
+		storage.Tags = request.Tags
+		storage.ClusterId = clusterId
+		storage.Size = request.Size
+		storage.Status = models.STATUS_UP
+		storage.SnapshotsEnabled = request.SnapshotsEnabled
+		// TODO: Populate the schedule ids once schedule created
+		// storage.SnapshotScheduleIds = <created schedule ids>
+		storage.QuotaEnabled = request.QuotaEnabled
+		storage.QuotaParams = request.QuotaParams
+
+		coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+		if err := coll.Insert(storage); err != nil {
+			utils.FailTask(fmt.Sprintf("Error persisting block staorage entity for cluster: %d", clusterId), err, t)
+			return false
+		}
+	}
+
+	return true
 }
 
 func createPool(clusterId uuid.UUID, request models.AddStorageRequest, t *task.Task) bool {
@@ -275,7 +361,7 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 	for _, pool := range pools {
 		storage := models.AddStorageRequest{
 			Name:     pool.Name,
-			Type:     "replicated",
+			Type:     models.STORAGE_TYPE_REPLICATED,
 			Replicas: pool.Size,
 		}
 		if pool.QuotaMaxObjects != 0 && pool.QuotaMaxBytes != 0 {

@@ -75,6 +75,12 @@ func (c *CephApi) LoadRoutes() {
 			Method:  "GET",
 			Version: 2,
 		},
+		{
+			Name:    "ExecCmd",
+			Pattern: "cluster/{cluster-fsid}/cli",
+			Method:  "POST",
+			Version: 2,
+		},
 	}
 	for _, route := range routes {
 		CEPH_API_ROUTES[route.Name] = route
