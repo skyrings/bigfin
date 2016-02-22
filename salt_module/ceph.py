@@ -40,6 +40,25 @@ def getPoolList(clusterName):
         return err
 
 
+def removePool(clusterName, poolName):
+    cmd = [
+            "ceph",
+            "osd",
+            "pool",
+            "delete",
+            poolName,
+            poolName,
+            "--yes-i-really-really-mean-it",
+            "--cluster",
+            clusterName
+          ]
+    rc, out, err = utils.execCmd(cmd)
+    if not rc:
+        return out
+    else:
+        return err
+
+
 def getClusterStatus(clusterName):
     cmd = ["ceph", "-s", "--cluster", clusterName]
     rc, out, err = utils.execCmd(cmd)

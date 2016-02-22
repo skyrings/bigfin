@@ -64,6 +64,12 @@ func (c *CephApi) LoadRoutes() {
 			Version: 2,
 		},
 		{
+			Name:    "RemovePool",
+			Pattern: "cluster/{cluster-fsid}/pool/{pool-id}",
+			Method:  "DELETE",
+			Version: 2,
+		},
+		{
 			Name:    "PGStatistics",
 			Pattern: "cluster/{cluster-fsid}/sync_object/pg_summary?format=json",
 			Method:  "GET",

@@ -172,6 +172,13 @@ func route_request(route CephApiRoute, mon string, body io.Reader) (*http.Respon
 			"application/json",
 			body)
 	}
+	if route.Method == "DELETE" {
+		return handler.HttpDelete(
+			mon,
+			fmt.Sprintf("http://%s:%d/%s/v%d/%s", mon, models.CEPH_API_PORT, models.CEPH_API_DEFAULT_PREFIX, route.Version, route.Pattern),
+			"application/json",
+			body)
+	}
 	return nil, errors.New(fmt.Sprintf("Invalid method type: %s", route.Method))
 }
 
@@ -208,6 +215,21 @@ func (c CephApi) UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool ma
 	resp, err := route_request(updatePoolRoute, mon, body)
 	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted) {
 		return false, errors.New(fmt.Sprintf("Failed to update pool-id: %d for cluster: %v.error: %v", poolId, clusterId, err))
+	} else {
+		ok, err := syncRequestStatus(mon, resp)
+		return ok, err
+	}
+}
+
+func (c CephApi) RemovePool(mon string, clusterId uuid.UUID, clusterName string, pool string, poolId int, ctxt string) (bool, error) {
+	// Replace cluster id in route pattern
+	removePoolRoute := CEPH_API_ROUTES["RemovePool"]
+	removePoolRoute.Pattern = strings.Replace(removePoolRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+	removePoolRoute.Pattern = strings.Replace(removePoolRoute.Pattern, "{pool-id}", strconv.Itoa(poolId), 1)
+
+	resp, err := route_request(removePoolRoute, mon, bytes.NewBuffer([]byte{}))
+	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted) {
+		return false, errors.New(fmt.Sprintf("Failed to remove pool-id: %d for cluster: %v.error: %v", poolId, clusterId, err))
 	} else {
 		ok, err := syncRequestStatus(mon, resp)
 		return ok, err
