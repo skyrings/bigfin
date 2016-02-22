@@ -263,3 +263,33 @@ func (c CephApi) GetPGSummary(mon string, clusterId uuid.UUID) (backend.PgSummar
 	}
 	return pgsummary, err
 }
+
+func (c CephApi) ExecCmd(mon string, clusterId uuid.UUID, cmd string) (bool, error) {
+	// Replace cluster id in route pattern
+	createPoolRoute := CEPH_API_ROUTES["ExecCmd"]
+	createPoolRoute.Pattern = strings.Replace(createPoolRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+	command := map[string][]string{"command": strings.Split(cmd, " ")}
+	buf, err := json.Marshal(command)
+	if err != nil {
+		return false, errors.New(fmt.Sprintf("Error forming request body. error: %v", err))
+	}
+	body := bytes.NewBuffer(buf)
+	resp, err := route_request(createPoolRoute, mon, body)
+	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted) {
+		return false, errors.New(fmt.Sprintf("Failed to execute command: %s. error: %v", cmd, err))
+	} else {
+		respBody, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return false, err
+		}
+		var cmdExecResp models.CephCommandResponse
+		if err := json.Unmarshal(respBody, &cmdExecResp); err != nil {
+			return false, err
+		}
+		if cmdExecResp.Status != 0 {
+			return false, fmt.Errorf(cmdExecResp.Error)
+		} else {
+			return true, nil
+		}
+	}
+}

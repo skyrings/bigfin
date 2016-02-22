@@ -59,7 +59,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 			case <-t.StopCh:
 				return
 			default:
-				t.UpdateStatus("Started ceph provider pool creation: %v", t.ID)
+				t.UpdateStatus("Started ceph provider storage creation: %v", t.ID)
 				if ok := createPool(*cluster_id, request, t); !ok {
 					return
 				}
@@ -275,7 +275,7 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 	for _, pool := range pools {
 		storage := models.AddStorageRequest{
 			Name:     pool.Name,
-			Type:     "replicated",
+			Type:     models.STORAGE_TYPE_REPLICATED,
 			Replicas: pool.Size,
 		}
 		if pool.QuotaMaxObjects != 0 && pool.QuotaMaxBytes != 0 {
