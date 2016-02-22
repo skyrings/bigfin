@@ -174,6 +174,22 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 						return
 					}
 
+					// Delete the default created pool "rbd"
+					t.UpdateStatus("Removing default created pool \"rbd\"")
+					monnode, err := GetRandomMon(*cluster_uuid)
+					if err != nil {
+						utils.FailTask(fmt.Sprintf("%s-Error getting a mon from cluster: %s", ctxt, request.Name), err, t)
+						setClusterState(*cluster_uuid, models.CLUSTER_STATE_FAILED, ctxt)
+						return
+					}
+					// First pool in the cluster so poolid = 0
+					ok, err := salt_backend.RemovePool(monnode.Hostname, *cluster_uuid, request.Name, "rbd", 0, ctxt)
+					if err != nil || !ok {
+						utils.FailTask("Could not remove default created pool", err, t)
+						setClusterState(*cluster_uuid, models.CLUSTER_STATE_FAILED, ctxt)
+						return
+					}
+
 					// Add OSDs
 					t.UpdateStatus("Getting updated nodes list for OSD creation")
 					updated_nodes, err := getNodes(request.Nodes)
@@ -203,6 +219,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 						t.UpdateStatus("Error updating the cluster status")
 						return
 					}
+
 					t.UpdateStatus("Success")
 					t.Done(models.TASK_STATUS_SUCCESS)
 					return
