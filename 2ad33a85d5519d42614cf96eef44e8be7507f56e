@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "7a75e904_26c116e5",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 202,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-22T03:15:11Z",
+      "side": 1,
+      "message": "We can add functions for these and call them here.",
+      "revId": "2ad33a85d5519d42614cf96eef44e8be7507f56e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
