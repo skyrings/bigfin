@@ -117,6 +117,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 				cluster.OpenStackServices = request.OpenStackServices
 				cluster.State = models.CLUSTER_STATE_CREATING
 				cluster.AlmStatus = models.ALARM_STATUS_CLEARED
+				cluster.AutoExpand = !request.DisableAutoExpand
 
 				cluster.MonitoringInterval = request.MonitoringInterval
 				if cluster.MonitoringInterval == 0 {
@@ -292,7 +293,7 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 	var failedOSDs []backend.OSD
 	var succeededOSDs []backend.OSD
 	for _, requestNode := range requestNodes {
-		if utils.StringInSlice("OSD", requestNode.NodeType) {
+		if utils.StringInSlice(models.NODE_TYPE_OSD, requestNode.NodeType) {
 			var updatedStorageDisks []models.Disk
 			uuid, err := uuid.Parse(requestNode.NodeId)
 			if err != nil {
