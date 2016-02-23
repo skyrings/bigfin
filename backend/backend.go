@@ -61,6 +61,7 @@ type Backend interface {
 	GetOSDDetails(mon string, clusterName string) ([]OSDDetails, error)
 	GetObjectCount(mon string, clusterName string) (string, error)
 	GetPGSummary(mon string, clusterId uuid.UUID) (PgSummary, error)
+	ExecCmd(mon string, clusterId uuid.UUID, cmd string) (bool, error)
 }
 
 type OSDDetails struct {
