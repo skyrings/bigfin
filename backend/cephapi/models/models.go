@@ -32,3 +32,9 @@ type CephRequestStatus struct {
 	Error        bool   `json:"error"`
 	ErrorMessage string `json:"error_message"`
 }
+
+type CephCommandResponse struct {
+	Out    string `json:"out"`
+	Error  string `json:"err"`
+	Status int    `json:"status"`
+}

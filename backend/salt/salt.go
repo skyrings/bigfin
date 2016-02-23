@@ -182,3 +182,7 @@ func (s Salt) GetPGSummary(mon string, clusterId uuid.UUID) (backend.PgSummary, 
 	var pgsummary backend.PgSummary
 	return pgsummary, nil
 }
+
+func (s Salt) ExecCmd(mon string, clusterId uuid.UUID, cmd string) (bool, error) {
+	return true, nil
+}
