@@ -117,6 +117,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 				cluster.OpenStackServices = request.OpenStackServices
 				cluster.State = models.CLUSTER_STATE_CREATING
 				cluster.AlmStatus = models.ALARM_STATUS_CLEARED
+				cluster.AutoExpand = !request.DisableAutoExpand
 
 				cluster.MonitoringInterval = request.MonitoringInterval
 				if cluster.MonitoringInterval == 0 {
