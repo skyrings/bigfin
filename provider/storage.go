@@ -37,9 +37,10 @@ const (
 )
 
 func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResponse) error {
+	ctxt := req.RpcRequestContext
 	var request models.AddStorageRequest
 	if err := json.Unmarshal(req.RpcRequestData, &request); err != nil {
-		logger.Get().Error("Unbale to parse the request. error: %v", err)
+		logger.Get().Error("%s - Unbale to parse the request. error: %v", ctxt, err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unbale to parse the request. error: %v", err))
 		return err
 	}
@@ -48,7 +49,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 	cluster_id_str := req.RpcRequestVars["cluster-id"]
 	cluster_id, err := uuid.Parse(cluster_id_str)
 	if err != nil {
-		logger.Get().Error("Error parsing the cluster id: %s. error: %v", cluster_id_str, err)
+		logger.Get().Error("%s - Error parsing the cluster id: %s. error: %v", ctxt, cluster_id_str, err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
 		return err
 	}
@@ -59,9 +60,57 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 			case <-t.StopCh:
 				return
 			default:
+				sessionCopy := db.GetDatastore().Copy()
+				defer sessionCopy.Close()
+				var cluster models.Cluster
+
 				t.UpdateStatus("Started ceph provider storage creation: %v", t.ID)
-				if ok := createPool(*cluster_id, request, t); !ok {
+
+				t.UpdateStatus("Getting cluster details")
+				// Get cluster details
+				coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+				if err := coll.Find(bson.M{"clusterid": *cluster_id}).One(&cluster); err != nil {
+					utils.FailTask(fmt.Sprintf("Error getting the cluster details for :%v", *cluster_id), fmt.Errorf("%s - %v", ctxt, err), t)
 					return
+				}
+
+				t.UpdateStatus("Getting a mon from cluster")
+				monnode, err := GetRandomMon(*cluster_id)
+				if err != nil {
+					utils.FailTask(fmt.Sprintf("Error getting mon node details for cluster: %v", *cluster_id), fmt.Errorf("%s - %v", ctxt, err), t)
+					return
+				}
+
+				poolId, ok := createPool(ctxt, *cluster_id, request, t)
+				if !ok {
+					return
+				}
+				if len(request.BlockDevices) > 0 {
+					t.UpdateStatus("Creating bolck devices")
+					var failedBlkDevices []string
+					for _, entry := range request.BlockDevices {
+						blockDevice := models.BlockDevice{
+							Name:             entry.Name,
+							Tags:             entry.Tags,
+							ClusterId:        *cluster_id,
+							ClusterName:      cluster.Name,
+							StorageId:        *poolId,
+							StorageName:      request.Name,
+							Size:             entry.Size,
+							SnapshotsEnabled: entry.SnapshotsEnabled,
+							// TODO: Populate the schedule ids once schedule created
+							// SnapshotScheduleIds = <created schedule ids>
+							QuotaEnabled: entry.QuotaEnabled,
+							QuotaParams:  entry.QuotaParams,
+							Options:      entry.Options,
+						}
+						if ok := createBlockStorage(ctxt, monnode.Hostname, *cluster_id, cluster.Name, request.Name, blockDevice, t); !ok {
+							failedBlkDevices = append(failedBlkDevices, entry.Name)
+						}
+					}
+					if len(failedBlkDevices) > 0 {
+						t.UpdateStatus("Block device creation failed for: %v", failedBlkDevices)
+					}
 				}
 
 				t.UpdateStatus("Success")
@@ -80,7 +129,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 	return nil
 }
 
-func createPool(clusterId uuid.UUID, request models.AddStorageRequest, t *task.Task) bool {
+func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageRequest, t *task.Task) (*uuid.UUID, bool) {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 
@@ -89,15 +138,15 @@ func createPool(clusterId uuid.UUID, request models.AddStorageRequest, t *task.T
 	var cluster models.Cluster
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
 	if err := coll.Find(bson.M{"clusterid": clusterId}).One(&cluster); err != nil {
-		utils.FailTask(fmt.Sprintf("Error getting the cluster details for :%v", clusterId), err, t)
-		return false
+		utils.FailTask(fmt.Sprintf("Error getting the cluster details for :%v", clusterId), fmt.Errorf("%s - %v", ctxt, err), t)
+		return nil, false
 	}
 
 	t.UpdateStatus("Getting a mon from cluster")
 	monnode, err := GetRandomMon(clusterId)
 	if err != nil {
-		utils.FailTask(fmt.Sprintf("Error getting mon node details for cluster: %v", clusterId), err, t)
-		return false
+		utils.FailTask(fmt.Sprintf("Error getting mon node details for cluster: %v", clusterId), fmt.Errorf("%s - %v", ctxt, err), t)
+		return nil, false
 	}
 
 	t.UpdateStatus("Creating pool")
@@ -118,37 +167,37 @@ func createPool(clusterId uuid.UUID, request models.AddStorageRequest, t *task.T
 		var err error
 		if request.QuotaParams["quota_max_objects"] != "" {
 			if quotaMaxObjects, err = strconv.Atoi(request.QuotaParams["quota_max_objects"]); err != nil {
-				utils.FailTask(fmt.Sprintf("Error parsing quota config value quota_max_objects for pool %s on cluster: %v", request.Name, clusterId), err, t)
-				return false
+				utils.FailTask(fmt.Sprintf("Error parsing quota config value quota_max_objects for pool %s on cluster: %v", request.Name, clusterId), fmt.Errorf("%s - %v", ctxt, err), t)
+				return nil, false
 			}
 		}
 		if request.QuotaParams["quota_max_bytes"] != "" {
 			if quotaMaxBytes, err = strconv.ParseUint(request.QuotaParams["quota_max_bytes"], 10, 64); err != nil {
-				utils.FailTask(fmt.Sprintf("Error parsing quota config value quota_max_bytes for pool %s on cluster: %v", request.Name, clusterId), err, t)
-				return false
+				utils.FailTask(fmt.Sprintf("Error parsing quota config value quota_max_bytes for pool %s on cluster: %v", request.Name, clusterId), fmt.Errorf("%s - %v", ctxt, err), t)
+				return nil, false
 			}
 		}
 	}
 
 	ok, err := cephapi_backend.CreatePool(request.Name, monnode.Hostname, cluster.Name, uint(pgNum), request.Replicas, quotaMaxObjects, quotaMaxBytes)
 	if err != nil || !ok {
-		utils.FailTask(fmt.Sprintf("Create pool %s failed on cluster: %s", request.Name, cluster.Name), err, t)
-		return false
+		utils.FailTask(fmt.Sprintf("Create pool %s failed on cluster: %s", request.Name, cluster.Name), fmt.Errorf("%s - %v", ctxt, err), t)
+		return nil, false
 	} else {
 		pools, err := cephapi_backend.GetPools(monnode.Hostname, clusterId)
 		if err != nil {
-			utils.FailTask("Error getting created pools", err, t)
-			return false
+			utils.FailTask("Error getting created pools", fmt.Errorf("%s - %v", ctxt, err), t)
+			return nil, false
+		}
+		storage_id, err := uuid.New()
+		if err != nil {
+			utils.FailTask("Error creating id for pool", fmt.Errorf("%s - %v", ctxt, err), t)
+			return nil, false
 		}
 		for _, pool := range pools {
 			if request.Name == pool.Name {
 				t.UpdateStatus("Perisisting the storage entity")
 				var storage models.Storage
-				storage_id, err := uuid.New()
-				if err != nil {
-					utils.FailTask("Error creating id for pool", err, t)
-					return false
-				}
 				storage.StorageId = *storage_id
 				storage.Name = request.Name
 				storage.Type = request.Type
@@ -176,14 +225,14 @@ func createPool(clusterId uuid.UUID, request models.AddStorageRequest, t *task.T
 
 				coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
 				if err := coll.Insert(storage); err != nil {
-					utils.FailTask(fmt.Sprintf("Error persisting pool %s for cluster: %s", request.Name, cluster.Name), err, t)
-					return false
+					utils.FailTask(fmt.Sprintf("Error persisting pool %s for cluster: %s", request.Name, cluster.Name), fmt.Errorf("%s - %v", ctxt, err), t)
+					return nil, false
 				}
 				break
 			}
 		}
+		return storage_id, true
 	}
-	return true
 }
 
 // RULES FOR DERIVING THE PG NUM
