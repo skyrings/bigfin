@@ -209,7 +209,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 			}
 		}
 	}
-	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-CreateCluster", asyncTask, 300*time.Second, nil, nil, nil); err != nil {
+	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-CreateCluster", asyncTask, 7000*time.Second, nil, nil, nil); err != nil {
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Task creation failed for create cluster %s", request.Name))
 		return err
 	} else {
@@ -542,7 +542,7 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 		}
 	}
 
-	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-ExpandCluster", asyncTask, 300*time.Second, nil, nil, nil); err != nil {
+	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-ExpandCluster", asyncTask, 7000*time.Second, nil, nil, nil); err != nil {
 		logger.Get().Error("Task creation failed for exoand cluster: %v. error: %v", *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for cluster expansion")
 		return err
