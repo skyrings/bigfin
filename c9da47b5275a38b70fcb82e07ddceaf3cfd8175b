@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_98bbfc71",
+        "filename": "provider/cluster.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 186,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-02-25T09:27:01Z",
+      "side": 1,
+      "message": "will this be reflecting in calamari immed after clsuter creation? or should we do this after everything is done?",
+      "range": {
+        "startLine": 186,
+        "startChar": 5,
+        "endLine": 186,
+        "endChar": 51
+      },
+      "revId": "c9da47b5275a38b70fcb82e07ddceaf3cfd8175b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
