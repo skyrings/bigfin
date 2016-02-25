@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_78dd6042",
+        "filename": "provider/block_devices.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 44,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-02-25T08:34:36Z",
+      "side": 1,
+      "message": "Can you break this into two functions? You can have 1 single rpc API and from there route to specific funcs.",
+      "range": {
+        "startLine": 44,
+        "startChar": 1,
+        "endLine": 44,
+        "endChar": 26
+      },
+      "revId": "54d9d9c4254d31fbbb6b9eccbf3b41441f003b73",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_18ee2ced",
+        "filename": "provider/block_devices.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 65,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-02-25T08:34:36Z",
+      "side": 1,
+      "message": "FailTask?",
+      "range": {
+        "startLine": 65,
+        "startChar": 6,
+        "endLine": 65,
+        "endChar": 12
+      },
+      "revId": "54d9d9c4254d31fbbb6b9eccbf3b41441f003b73",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_78b480f2",
+        "filename": "provider/block_devices.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 87,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-02-25T08:34:36Z",
+      "side": 1,
+      "message": "FailTask?",
+      "range": {
+        "startLine": 87,
+        "startChar": 6,
+        "endLine": 87,
+        "endChar": 12
+      },
+      "revId": "54d9d9c4254d31fbbb6b9eccbf3b41441f003b73",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_98b93cec",
+        "filename": "provider/block_devices.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-02-25T08:34:36Z",
+      "side": 1,
+      "message": "FailTask?",
+      "range": {
+        "startLine": 148,
+        "startChar": 6,
+        "endLine": 148,
+        "endChar": 12
+      },
+      "revId": "54d9d9c4254d31fbbb6b9eccbf3b41441f003b73",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
