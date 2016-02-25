@@ -22,6 +22,24 @@
       "revId": "d590dab6481248261ee72e28687b3eded352d2fa",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_18d8ec1c",
+        "filename": "backend/cephapi/api.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-25T08:35:24Z",
+      "side": 1,
+      "message": "Correct. We should check for only 200 and not 202 as its sync call.",
+      "parentUuid": "5a72e520_580a64d3",
+      "revId": "d590dab6481248261ee72e28687b3eded352d2fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
