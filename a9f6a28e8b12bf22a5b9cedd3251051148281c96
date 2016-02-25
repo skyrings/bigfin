@@ -43,6 +43,24 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_365218de",
+        "filename": "provider/block_devices.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-25T18:10:28Z",
+      "side": 1,
+      "message": "Always block devices are supposed to be within a storage pool, so its fine as discussed with Kanagaraj.",
+      "parentUuid": "5a72e520_d873b4e5",
+      "revId": "a9f6a28e8b12bf22a5b9cedd3251051148281c96",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_b888b8c7",
         "filename": "provider/block_devices.go",
         "patchSetId": 5
