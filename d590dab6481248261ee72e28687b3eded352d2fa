@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_580a64d3",
+        "filename": "backend/cephapi/api.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 256,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-02-25T08:04:53Z",
+      "side": 1,
+      "message": "is this a valid status code for cli endpoint?",
+      "range": {
+        "startLine": 256,
+        "startChar": 55,
+        "endLine": 256,
+        "endChar": 92
+      },
+      "revId": "d590dab6481248261ee72e28687b3eded352d2fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
