@@ -67,3 +67,22 @@ func GetRandomMon(clusterId uuid.UUID) (*models.Node, error) {
 	}
 	return &monnode, nil
 }
+
+func GetMons(param bson.M) (models.Nodes, error) {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	var mons models.Nodes
+	var clusterNodes models.Nodes
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
+	if err := coll.Find(param).All(&clusterNodes); err != nil {
+		return mons, err
+	}
+	for _, clusterNode := range clusterNodes {
+		for k, v := range clusterNode.Options {
+			if k == "mon" && v == "Y" {
+				mons = append(mons, clusterNode)
+			}
+		}
+	}
+	return mons, nil
+}

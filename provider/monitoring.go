@@ -1,6 +1,7 @@
 package provider
 
 import (
+	"encoding/json"
 	"fmt"
 	"github.com/skyrings/bigfin/backend"
 	"github.com/skyrings/bigfin/conf"
@@ -23,6 +24,10 @@ var (
 	cluster           models.Cluster
 	nodes             models.Nodes
 	monName           string
+)
+
+const (
+	monitor = "monitor"
 )
 
 var monitoringRoutines = []interface{}{
@@ -121,6 +126,35 @@ func (s *CephProvider) MonitorCluster(req models.RpcRequest, resp *models.RpcRes
 	}
 	*resp = utils.WriteResponseWithData(http.StatusOK, "", []byte{})
 	return nil
+}
+
+func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcResponse) error {
+	result := make(map[string]interface{})
+	httpStatusCode := http.StatusOK
+
+	mons, monErr := GetMons(nil)
+	var err_str string
+	if monErr != nil {
+		err_str = fmt.Sprintf("Unable to fetch monitor nodes.Error %v", monErr.Error())
+		logger.Get().Error("Unable to fetch monitor nodes.Error %v", monErr.Error())
+	} else {
+		result[monitor] = len(mons)
+	}
+
+	if err_str != "" {
+		if len(result) != 0 {
+			httpStatusCode = http.StatusPartialContent
+		} else {
+			httpStatusCode = http.StatusInternalServerError
+		}
+	}
+	bytes, marshalErr := json.Marshal(result)
+	if marshalErr != nil {
+		*resp = utils.WriteResponseWithData(http.StatusInternalServerError, err_str, []byte{})
+		return fmt.Errorf("Failed to marshal %v.Error %v", result, marshalErr)
+	}
+	*resp = utils.WriteResponseWithData(httpStatusCode, err_str, bytes)
+	return fmt.Errorf("%v", err_str)
 }
 
 func FetchOSDStats() (map[string]map[string]string, error) {
