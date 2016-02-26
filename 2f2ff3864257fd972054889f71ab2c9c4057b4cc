@@ -107,6 +107,24 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_67d5b842",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-26T13:08:53Z",
+      "side": 1,
+      "message": "Got the point. So you want this while status setting only if err_str us non balnk",
+      "parentUuid": "5a72e520_e70fe82c",
+      "revId": "2f2ff3864257fd972054889f71ab2c9c4057b4cc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_1ce53ba8",
         "filename": "provider/monitoring.go",
         "patchSetId": 1
