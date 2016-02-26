@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_dcdc8377",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 30,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-26T09:48:31Z",
+      "side": 1,
+      "message": "Define this in models constants list",
+      "revId": "2f2ff3864257fd972054889f71ab2c9c4057b4cc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_9cf3eb09",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-26T09:48:31Z",
+      "side": 1,
+      "message": "Context from request and use while logging..",
+      "revId": "2f2ff3864257fd972054889f71ab2c9c4057b4cc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_3ce4b73a",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 144,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-26T09:48:31Z",
+      "side": 1,
+      "message": "Cant it be like \n\nif err_str !\u003d \"\" \u0026\u0026 len(result) !\u003d 0 {\n  httpStatusCode \u003d http.StatusPartialContent\n} else {\n  httpStatusCode \u003d http.StatusInternalServerError\n}",
+      "revId": "2f2ff3864257fd972054889f71ab2c9c4057b4cc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_5ce97319",
+        "filename": "provider/provider.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 82,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-26T09:48:31Z",
+      "side": 1,
+      "message": "I remember we are using this field named \"mon\" while setting as well. Better create a const in models and use in all the places. Similarly for \"Y\" and \"N\" may be.",
+      "revId": "2f2ff3864257fd972054889f71ab2c9c4057b4cc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
