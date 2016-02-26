@@ -130,8 +130,15 @@ func (s *CephProvider) MonitorCluster(req models.RpcRequest, resp *models.RpcRes
 
 func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcResponse) error {
 	result := make(map[string]interface{})
+
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+
 	httpStatusCode := http.StatusOK
 
+	/*
+		Fetch mon count
+	*/
 	mons, monErr := GetMons(nil)
 	var err_str string
 	if monErr != nil {
@@ -141,6 +148,24 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 		result[monitor] = len(mons)
 	}
 
+	/*
+		Fetch pg count
+	*/
+	collection := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+	var storages models.Storages
+	if sorageFetchErr := collection.Find(nil).All(&storages); err != nil {
+		err_str = fmt.Sprintf("Error getting the storage list error: %v", sorageFetchErr)
+		logger.Get().Error("Error getting the storage list error: %v", sorageFetchErr)
+	} else {
+		var pg_count uint32
+		for _, storage := range storages {
+			if pgnum, ok := storage.Options["pgnum"]; ok {
+				val, _ := strconv.ParseUint(request.Options["pgnum"], 10, 32)
+				pg_count = pg_count + val
+			}
+		}
+		result["pgnum"] = pg_count
+	}
 	if err_str != "" {
 		if len(result) != 0 {
 			httpStatusCode = http.StatusPartialContent
