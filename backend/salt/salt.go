@@ -134,8 +134,7 @@ func (s Salt) GetPools(mon string, clusterId uuid.UUID) ([]backend.CephPool, err
 	return []backend.CephPool{}, nil
 }
 
-func (s Salt) GetClusterStats(mon string, clusterName string) (stats map[string]int64, err error) {
-	stats = make(map[string]int64)
+func (s Salt) GetClusterStats(mon string, clusterName string) (stats backend.ClusterUtilization, err error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	if pyobj, loc_err := pyFuncs["GetClusterStats"].Call(mon, clusterName); loc_err == nil {
