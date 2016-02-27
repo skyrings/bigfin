@@ -204,7 +204,7 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 				storage.Tags = request.Tags
 				storage.ClusterId = clusterId
 				storage.Size = request.Size
-				storage.Status = models.STATUS_UP
+				storage.Status = models.STORAGE_STATUS_OK
 				storage.Replicas = request.Replicas
 				storage.Profile = request.Profile
 				storage.SnapshotsEnabled = request.SnapshotsEnabled
