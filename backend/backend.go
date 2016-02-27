@@ -61,6 +61,9 @@ type Backend interface {
 	GetOSDDetails(mon string, clusterName string) ([]OSDDetails, error)
 	GetObjectCount(mon string, clusterName string) (string, error)
 	GetPGSummary(mon string, clusterId uuid.UUID) (PgSummary, error)
+	GetOSDs(mon string, clusterId uuid.UUID) ([]CephOSD, error)
+	GetOSD(mon string, clusterId uuid.UUID, osdId string) (CephOSD, error)
+	UpdateOSD(mon string, clusterId uuid.UUID, osdId string, params map[string]interface{}) (bool, error)
 }
 
 type OSDDetails struct {
@@ -74,4 +77,20 @@ type OSDDetails struct {
 type PgSummary struct {
 	ByPool map[string]map[string]uint64 `json:"by_pool"`
 	All    map[string]uint64            `json:"all"`
+}
+
+type CephOSD struct {
+	Uuid                 uuid.UUID `json:"uuid"`
+	Up                   bool      `json:"up"`
+	In                   bool      `json:"in"`
+	Id                   int       `json:"id"`
+	Reweight             float32   `json:"reweight"`
+	Server               string    `json:"server"`
+	Pools                []int     `json:"pools"`
+	ValidCommand         []string  `json:"valid_commands"`
+	PublicAddr           string    `json:"public_addr"`
+	ClusterAddr          string    `json:"cluster_addr"`
+	CrushNodeAncestry    [][]int   `json:"crush_node_ancestry"`
+	BackendPartitionPath string    `json:"backend_partition_path"`
+	BackendDeviceNode    string    `json:"backend_device_node"`
 }

@@ -241,3 +241,62 @@ func (c CephApi) GetPGSummary(mon string, clusterId uuid.UUID) (backend.PgSummar
 	}
 	return pgsummary, err
 }
+
+func (c CephApi) GetOSDs(mon string, clusterId uuid.UUID) ([]backend.CephOSD, error) {
+	// Replace cluster id in route pattern
+	getOsdsRoute := CEPH_API_ROUTES["GetOSDs"]
+	getOsdsRoute.Pattern = strings.Replace(getOsdsRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+	resp, err := route_request(getOsdsRoute, mon, bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return []backend.CephOSD{}, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return []backend.CephOSD{}, err
+	}
+	var osds []backend.CephOSD
+	if err := json.Unmarshal(respBody, &osds); err != nil {
+		return []backend.CephOSD{}, err
+	}
+	return osds, nil
+}
+
+func (c CephApi) UpdateOSD(mon string, clusterId uuid.UUID, osdId string, params map[string]interface{}) (bool, error) {
+	// Replace cluster id in route pattern
+	updateOsdRoute := CEPH_API_ROUTES["UpdateOSD"]
+	updateOsdRoute.Pattern = strings.Replace(updateOsdRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+	updateOsdRoute.Pattern = strings.Replace(updateOsdRoute.Pattern, "{osd-id}", osdId, 1)
+
+	buf, err := json.Marshal(params)
+	if err != nil {
+		return false, errors.New(fmt.Sprintf("Error forming request body: %v", err))
+	}
+	body := bytes.NewBuffer(buf)
+	resp, err := route_request(updateOsdRoute, mon, body)
+	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted) {
+		return false, errors.New(fmt.Sprintf("Failed to update osd-id: %s for cluster: %v.error: %v", osdId, clusterId, err))
+	} else {
+		ok, err := syncRequestStatus(mon, resp)
+		return ok, err
+	}
+}
+
+func (c CephApi) GetOSD(mon string, clusterId uuid.UUID, osdId string) (backend.CephOSD, error) {
+	getOsdRoute := CEPH_API_ROUTES["UpdateOSD"]
+	getOsdRoute.Pattern = strings.Replace(getOsdRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+	getOsdRoute.Pattern = strings.Replace(getOsdRoute.Pattern, "{osd-id}", osdId, 1)
+
+	resp, err := route_request(getOsdRoute, mon, bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return backend.CephOSD{}, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return backend.CephOSD{}, err
+	}
+	var osd backend.CephOSD
+	if err := json.Unmarshal(respBody, &osd); err != nil {
+		return backend.CephOSD{}, err
+	}
+	return osd, nil
+}

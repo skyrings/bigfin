@@ -52,6 +52,18 @@ func (c *CephApi) LoadRoutes() {
 			Version: 2,
 		},
 		{
+			Name:    "GetOSD",
+			Pattern: "cluster/{cluster-fsid}/osd/{osd-id}?format=json",
+			Method:  "GET",
+			Version: 2,
+		},
+		{
+			Name:    "UpdateOSD",
+			Pattern: "cluster/{cluster-fsid}/osd/{osd-id}",
+			Method:  "PATCH",
+			Version: 2,
+		},
+		{
 			Name:    "GetPools",
 			Pattern: "cluster/{cluster-fsid}/pool?format=json",
 			Method:  "GET",
