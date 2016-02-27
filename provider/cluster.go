@@ -17,6 +17,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/skyrings/bigfin/backend"
+	"github.com/skyrings/bigfin/bigfinmodels"
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/conf"
 	"github.com/skyrings/skyring-common/db"
@@ -25,9 +26,11 @@ import (
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/task"
 	"github.com/skyrings/skyring-common/tools/uuid"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	bigfin_task "github.com/skyrings/bigfin/tools/task"
@@ -307,8 +310,11 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 	defer sessionCopy.Close()
 
 	updatedStorageDisksMap := make(map[uuid.UUID][]models.Disk)
-	var failedOSDs []backend.OSD
-	var succeededOSDs []backend.OSD
+	var (
+		failedOSDs    []backend.OSD
+		succeededOSDs []backend.OSD
+		slus          = make(map[string]models.StorageLogicalUnit)
+	)
 	for _, requestNode := range requestNodes {
 		if utils.StringInSlice(models.NODE_TYPE_OSD, requestNode.NodeType) {
 			var updatedStorageDisks []models.Disk
@@ -352,12 +358,16 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 							StorageProfile:    storageDisk.StorageProfile,
 							StorageDeviceSize: storageDisk.Size,
 							Options:           options,
+							Status:            models.SLU_STATUS_UNKNOWN,
+							State:             bigfinmodels.OSD_STATE_IN,
+							AlmStatus:         models.ALARM_STATUS_CLEARED,
 						}
 						if ok, err := persistOSD(slu, t, ctxt); err != nil || !ok {
-							logger.Get().Error("%s-Error persisting %s for cluster: %s. error: %v", ctxt, slu.Name, clusterName, err)
+							logger.Get().Error("%s-Error persis മറുപടി പറയുകting %s for cluster: %s. error: %v", ctxt, slu.Name, clusterName, err)
 							failedOSDs = append(failedOSDs, osd)
 							break
 						}
+						slus[osdName] = slu
 						succeededOSDs = append(succeededOSDs, osd)
 						storageDisk.Used = true
 					}
@@ -377,7 +387,22 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 			logger.Get().Error("%s-Error updating disks for node: %v post add OSDs for cluster: %s. error: %v", ctxt, nodeid, clusterName, err)
 		}
 	}
-
+	t.UpdateStatus("Syncing the OSD status")
+	/*
+		TODO: Sleep will be removed once the events are vailable
+		from calamari on OSD status change. Immeadiately after the
+		the creation the OSD sttaus set to out and down, so wait for
+		sometime to get the right status
+	*/
+	time.Sleep(60 * time.Second)
+	for count := 0; count < 3; count++ {
+		if err := syncOsdDetails(clusterId, slus, ctxt); err != nil || len(slus) > 0 {
+			logger.Get().Error("%s-Error syncing the OSD status. Err: %v", ctxt, err)
+			time.Sleep(10 * time.Second)
+		} else {
+			break
+		}
+	}
 	return failedOSDs, succeededOSDs
 }
 
@@ -600,6 +625,135 @@ func (s *CephProvider) GetClusterStatus(req models.RpcRequest, resp *models.RpcR
 	return nil
 }
 
+func (s *CephProvider) UpdateStorageLogicalUnitParams(req models.RpcRequest, resp *models.RpcResponse) error {
+	ctxt := req.RpcRequestContext
+
+	cluster_id_str, ok := req.RpcRequestVars["clusterid"]
+	if !ok {
+		logger.Get().Error("%s- Cluster-id is not provided along with request")
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Cluster-id is not provided along with request"))
+		return errors.New("Cluster-id is not provided along with request")
+	}
+	cluster_id, err := uuid.Parse(cluster_id_str)
+	if err != nil {
+		logger.Get().Error("%s-Error parsing the cluster id: %s. error: %v", ctxt, cluster_id_str, err)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
+		return err
+	}
+	slu_id_str, ok := req.RpcRequestVars["sluid"]
+	if !ok {
+		logger.Get().Error("%s- slu-id is not provided along with request")
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("slu-id is not provided along with request"))
+		return errors.New("slu-id is not provided along with request")
+	}
+	slu_id, err := uuid.Parse(slu_id_str)
+	if err != nil {
+		logger.Get().Error("%s-Error parsing the cluster id: %s. error: %v", ctxt, cluster_id_str, err)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
+		return err
+	}
+
+	osdData := make(map[string]interface{})
+
+	if state, ok := req.RpcRequestVars["state"]; ok {
+		osdData["in"] = state
+	}
+	if status, ok := req.RpcRequestVars["status"]; ok {
+		osdData["up"] = status
+	}
+
+	if len(osdData) == 0 {
+		logger.Get().Error("%s-No valid data provided to update", ctxt)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("No valid data provided to update"))
+		return err
+	}
+
+	// Get a random mon node
+	monnode, err := GetRandomMon(*cluster_id)
+	if err != nil {
+		logger.Get().Error("%s-Error getting a mon node in cluster: %s. error: %v", ctxt, *cluster_id, err)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error getting a mon node in cluster: %s. error: %v", *cluster_id, err))
+		return err
+	}
+
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
+	var slu models.StorageLogicalUnit
+	if err := coll.Find(bson.M{"sluid": *slu_id}).One(&slu); err != nil {
+		logger.Get().Error("%s-Error fetching details of slu: %v. error: %v", ctxt, *cluster_id, err)
+		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error fetching details of slu: %v. error: %v", *cluster_id, err))
+		return err
+	}
+	osdId := strings.Split(slu.Name, ".")[1]
+
+	asyncTask := func(t *task.Task) {
+		for {
+			select {
+			case <-t.StopCh:
+				return
+			default:
+				t.UpdateStatus("Started updating osd params: %v", t.ID)
+				ok, err := cephapi_backend.UpdateOSD(monnode.Hostname, *cluster_id, osdId, osdData)
+				if err != nil || !ok {
+					utils.FailTask(fmt.Sprintf("Could not update osd params for slu: %s of cluster: %v", slu_id, cluster_id), err, t)
+					return
+				}
+
+				//Now get the sync the latest status from calamari
+				fetchedOSD, err := cephapi_backend.GetOSD(monnode.Hostname, *cluster_id, osdId)
+				if err != nil {
+					utils.FailTask(fmt.Sprintf("Error getting OSD details for cluster: %v.", cluster_id), err, t)
+					return
+				}
+				status := mapOsdStatus(fetchedOSD.Up, fetchedOSD.In)
+				state := mapOsdState(fetchedOSD.In)
+				if err := coll.Update(bson.M{"sluid": fetchedOSD.Uuid, "clusterid": cluster_id}, bson.M{"$set": bson.M{"status": status, "state": state}}); err != nil {
+					utils.FailTask(fmt.Sprintf("Error updating the details for slu: %s.", slu.Name), err, t)
+					return
+				}
+				t.UpdateStatus("Success")
+				t.Done(models.TASK_STATUS_SUCCESS)
+				return
+			}
+		}
+	}
+	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-UpdateOSD", asyncTask, 120*time.Second, nil, nil, nil); err != nil {
+		logger.Get().Error("Task creation failed for update OSD %s on cluster: %v. error: %v", *slu_id, *cluster_id, err)
+		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for update OSD")
+		return err
+	} else {
+		*resp = utils.WriteAsyncResponse(taskId, fmt.Sprintf("Task Created for update OSD %s on cluster: %v", *slu_id, *cluster_id), []byte{})
+	}
+	return nil
+}
+
+func (s *CephProvider) SyncStorageLogicalUnitParams(req models.RpcRequest, resp *models.RpcResponse) error {
+	ctxt := req.RpcRequestContext
+
+	cluster_id_str, ok := req.RpcRequestVars["cluster-id"]
+	if !ok {
+		logger.Get().Error("%s- Cluster-id is not provided along with request")
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Cluster-id is not provided along with request"))
+		return errors.New("Cluster-id is not provided along with request")
+	}
+	cluster_id, err := uuid.Parse(cluster_id_str)
+	if err != nil {
+		logger.Get().Error("%s-Error parsing the cluster id: %s. error: %v", ctxt, cluster_id_str, err)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
+		return err
+	}
+
+	if err := syncOsdStatus(*cluster_id, ctxt); err != nil {
+		logger.Get().Error("%s-Error syncing the OSD status. Err: %v", ctxt, err)
+		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error syncing the OSD status. Err: %v", err))
+		return err
+	}
+	*resp = utils.WriteResponse(http.StatusOK, "")
+	return nil
+
+}
+
 func cluster_status(clusterId uuid.UUID, clusterName string, ctxt string) (models.ClusterStatus, error) {
 	// Pick a random mon from the list
 	monnode, err := GetRandomMon(clusterId)
@@ -670,4 +824,96 @@ func RecalculatePgnum(clusterId uuid.UUID, t *task.Task) bool {
 		}
 	}
 	return true
+}
+
+func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUnit, ctxt string) error {
+
+	// Get a random mon node
+	monnode, err := GetRandomMon(clusterId)
+	if err != nil {
+		logger.Get().Error("%s-Error getting a mon node in cluster: %s. error: %v", ctxt, clusterId, err)
+		return err
+	}
+
+	fetchedOSDs, err := cephapi_backend.GetOSDs(monnode.Hostname, clusterId)
+	if err != nil {
+		logger.Get().Error("%s-Error getting OSD details for cluster: %v. error: %v", ctxt, clusterId, err)
+		return err
+	}
+
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
+	for _, slu := range slus {
+		for _, fetchedOSD := range fetchedOSDs {
+			id, err := strconv.Atoi(strings.Split(slu.Name, ".")[1])
+			if err != nil {
+				logger.Get().Error("%s-Error getting OSD id from name: %s. error: %v", ctxt, slu.Name, err)
+				return err
+			}
+			if fetchedOSD.Id == id {
+				status := mapOsdStatus(fetchedOSD.Up, fetchedOSD.In)
+				state := mapOsdState(fetchedOSD.In)
+				if err := coll.Update(bson.M{"name": slu.Name, "clusterid": clusterId}, bson.M{"$set": bson.M{"sluid": fetchedOSD.Uuid, "status": status, "state": state}}); err != nil {
+					logger.Get().Error("%s-Error updating the details for slu: %s. error: %v", ctxt, slu.Name, err)
+					return err
+				}
+				delete(slus, slu.Name)
+			}
+		}
+	}
+	return nil
+}
+
+func syncOsdStatus(clusterId uuid.UUID, ctxt string) error {
+
+	// Get a random mon node
+	monnode, err := GetRandomMon(clusterId)
+	if err != nil {
+		logger.Get().Error("%s-Error getting a mon node in cluster: %s. error: %v", ctxt, clusterId, err)
+		return err
+	}
+
+	fetchedOSDs, err := cephapi_backend.GetOSDs(monnode.Hostname, clusterId)
+	if err != nil {
+		logger.Get().Error("%s-Error getting OSD details for cluster: %v. error: %v", ctxt, clusterId, err)
+		return err
+	}
+
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
+
+	for _, fetchedOSD := range fetchedOSDs {
+
+		status := mapOsdStatus(fetchedOSD.Up, fetchedOSD.In)
+		state := mapOsdState(fetchedOSD.In)
+		if err := coll.Update(bson.M{"sluid": fetchedOSD.Uuid, "clusterid": clusterId}, bson.M{"$set": bson.M{"status": status, "state": state}}); err != nil {
+			if err != mgo.ErrNotFound {
+				logger.Get().Error("%s-Error updating the status for slu: %s. error: %v", ctxt, fetchedOSD.Uuid.String(), err)
+				return err
+			}
+		}
+	}
+
+	return nil
+}
+
+func mapOsdStatus(status bool, state bool) int {
+	if status && state {
+		return models.SLU_STATUS_OK
+	} else if status && !state {
+		return models.SLU_STATUS_WARN
+	} else if !status {
+		return models.SLU_STATUS_ERROR
+	}
+	return models.SLU_STATUS_UNKNOWN
+
+}
+
+func mapOsdState(state bool) string {
+	if state {
+		return bigfinmodels.OSD_STATE_IN
+	}
+	return bigfinmodels.OSD_STATE_OUT
 }
