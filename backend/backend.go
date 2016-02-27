@@ -47,6 +47,28 @@ type CephPool struct {
 	CrushRuleSet        int    `json:"crush_ruleset"`
 }
 
+type ClusterUtilization struct {
+	ClusterStats     ClusterStat `json:"stats"`
+	PoolUtilizations []PoolStat  `json:"pools"`
+}
+
+type ClusterStat struct {
+	Used      int64 `json:"total_used_bytes"`
+	Available int64 `json:"total_avail_bytes"`
+	Total     int64 `json:"total_bytes"`
+}
+
+type PoolStat struct {
+	Name        string          `json:"name"`
+	Id          int             `json:"id"`
+	Utilization PoolUtilization `json:"stats"`
+}
+
+type PoolUtilization struct {
+	Used      int64 `json:"bytes_used"`
+	Available int64 `json:"max_avail"`
+}
+
 type Backend interface {
 	CreateCluster(clusterName string, fsid uuid.UUID, mons []Mon, ctxt string) (bool, error)
 	AddMon(clusterName string, mons []Mon, ctxt string) (bool, error)
@@ -58,7 +80,7 @@ type Backend interface {
 	GetPools(mon string, clusterId uuid.UUID) ([]CephPool, error)
 	UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool map[string]interface{}) (bool, error)
 	RemovePool(mon string, clusterId uuid.UUID, clusterName string, pool string, poolId int, ctxt string) (bool, error)
-	GetClusterStats(mon string, clusterName string) (map[string]int64, error)
+	GetClusterStats(mon string, clusterName string) (ClusterUtilization, error)
 	GetOSDDetails(mon string, clusterName string) ([]OSDDetails, error)
 	GetObjectCount(mon string, clusterName string) (string, error)
 	GetPGSummary(mon string, clusterId uuid.UUID) (PgSummary, error)

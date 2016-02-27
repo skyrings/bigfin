@@ -546,7 +546,7 @@ def GetClusterStats(monitor, cluster_name):
     if not out:
         log.error("Failed to get cluster statistics from %s", monitor)
         raise Exception("Failed to get cluster statistics from %s" % monitor)
-    return ast.literal_eval(out[monitor])["stats"]
+    return ast.literal_eval(out[monitor])
 
 
 def GetObjectCount(monitor, cluster_name):
