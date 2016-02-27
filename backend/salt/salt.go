@@ -198,3 +198,16 @@ func (s Salt) GetPGSummary(mon string, clusterId uuid.UUID) (backend.PgSummary, 
 func (s Salt) ExecCmd(mon string, clusterId uuid.UUID, cmd string) (bool, error) {
 	return true, nil
 }
+
+func (s Salt) GetOSDs(mon string, clusterId uuid.UUID) ([]backend.CephOSD, error) {
+	return []backend.CephOSD{}, nil
+}
+
+func (c Salt) UpdateOSD(mon string, clusterId uuid.UUID, osdId string, params map[string]interface{}) (bool, error) {
+	return true, nil
+
+}
+func (c Salt) GetOSD(mon string, clusterId uuid.UUID, osdId string) (backend.CephOSD, error) {
+
+	return backend.CephOSD{}, nil
+}
