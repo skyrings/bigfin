@@ -1,0 +1,72 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_fc393ad9",
+        "filename": "backend/cephapi/api.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 337,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-28T14:30:05Z",
+      "side": 1,
+      "message": "UpdateOSD while GetOSD?",
+      "revId": "866a3b7f5aaeb11cdb7829af7041e5e51105137b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_1c37f6e4",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 366,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-28T14:30:05Z",
+      "side": 1,
+      "message": "Some kannada text??",
+      "revId": "866a3b7f5aaeb11cdb7829af7041e5e51105137b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_3c34b2dd",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 400,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-28T14:30:05Z",
+      "side": 1,
+      "message": "Evrytime to log as error or just warning is enough.",
+      "revId": "866a3b7f5aaeb11cdb7829af7041e5e51105137b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_5c316eeb",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 711,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-02-28T14:30:05Z",
+      "side": 1,
+      "message": "\"Now update the latest status from calamari\",",
+      "revId": "866a3b7f5aaeb11cdb7829af7041e5e51105137b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
