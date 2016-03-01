@@ -21,6 +21,7 @@ import (
 	"github.com/skyrings/skyring-common/conf"
 	"github.com/skyrings/skyring-common/db"
 	"github.com/skyrings/skyring-common/models"
+	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/uuid"
 	"gopkg.in/mgo.v2/bson"
 )
@@ -85,4 +86,31 @@ func GetMons(param bson.M) (models.Nodes, error) {
 		}
 	}
 	return mons, nil
+}
+
+func CreateDefaultECProfiles(mon string, clusterId uuid.UUID) (bool, error) {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	var cluster models.Cluster
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	if err := coll.Find(bson.M{"clusterid": clusterId}).One(&cluster); err != nil {
+		logger.Get().Error("Error getting cluster details for %v. error: %v", clusterId, err)
+		return false, err
+	}
+	var cmdMap map[string]string = map[string]string{
+		"4+2": fmt.Sprintf("ceph osd erasure-code-profile set k4m2 plugin=jerasure k=4 m=2 --cluster %s", cluster.Name),
+		"6+3": fmt.Sprintf("ceph osd erasure-code-profile set k6m3 plugin=jerasure k=6 m=3 --cluster %s", cluster.Name),
+		"8+4": fmt.Sprintf("ceph osd erasure-code-profile set k8m4 plugin=jerasure k=8 m=4 --cluster %s", cluster.Name),
+	}
+
+	for k, v := range cmdMap {
+		ok, err := cephapi_backend.ExecCmd(mon, clusterId, v)
+		if err != nil || !ok {
+			logger.Get().Error("Error creating EC profile for %s. error: %v", k, err)
+			continue
+		} else {
+			logger.Get().Debug("Added EC profile for %s", k)
+		}
+	}
+	return true, nil
 }

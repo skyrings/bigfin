@@ -229,6 +229,13 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 						}
 					}
 
+					// Create default EC profiles
+					t.UpdateStatus("Creating default EC profiles")
+					if ok, err := CreateDefaultECProfiles(monnode.Hostname, *cluster_uuid); !ok || err != nil {
+						logger.Get().Error("Error creating default EC profiles for cluster: %s. error: %v", request.Name, err)
+						t.UpdateStatus("Could not create default EC profile")
+					}
+
 					t.UpdateStatus("Success")
 					t.Done(models.TASK_STATUS_SUCCESS)
 					return
