@@ -85,7 +85,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 				if !ok {
 					return
 				}
-				if len(request.BlockDevices) > 0 {
+				if request.Type != models.STORAGE_TYPE_ERASURE_CODED && len(request.BlockDevices) > 0 {
 					t.UpdateStatus("Creating bolck devices")
 					var failedBlkDevices []string
 					for _, entry := range request.BlockDevices {
@@ -179,7 +179,14 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 		}
 	}
 
-	ok, err := cephapi_backend.CreatePool(request.Name, monnode.Hostname, cluster.Name, uint(pgNum), request.Replicas, quotaMaxObjects, quotaMaxBytes)
+	ok := true
+	if request.Type == models.STORAGE_TYPE_ERASURE_CODED {
+		cmd := fmt.Sprintf("ceph --cluster %s osd pool create %s %d %d erasure %s", cluster.Name, request.Name, uint(pgNum), uint(pgNum), request.Options["ecprofile"])
+		ok, err = cephapi_backend.ExecCmd(monnode.Hostname, clusterId, cmd)
+		time.Sleep(10 * time.Second)
+	} else {
+		ok, err = cephapi_backend.CreatePool(request.Name, monnode.Hostname, cluster.Name, uint(pgNum), request.Replicas, quotaMaxObjects, quotaMaxBytes)
+	}
 	if err != nil || !ok {
 		utils.FailTask(fmt.Sprintf("Create pool %s failed on cluster: %s", request.Name, cluster.Name), fmt.Errorf("%s - %v", ctxt, err), t)
 		return nil, false
@@ -221,6 +228,9 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 				options["min_size"] = strconv.FormatUint(pool.MinSize, 10)
 				options["crash_replay_interval"] = strconv.Itoa(pool.CrashReplayInterval)
 				options["crush_ruleset"] = strconv.Itoa(pool.CrushRuleSet)
+				if request.Type == models.STORAGE_TYPE_ERASURE_CODED {
+					options["ecprofile"] = request.Options["ecprofile"]
+				}
 				storage.Options = options
 
 				coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
