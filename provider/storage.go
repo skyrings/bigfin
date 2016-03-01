@@ -85,7 +85,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 				if !ok {
 					return
 				}
-				if len(request.BlockDevices) > 0 {
+				if request.Type != models.STORAGE_TYPE_ERASURE_CODED && len(request.BlockDevices) > 0 {
 					t.UpdateStatus("Creating bolck devices")
 					var failedBlkDevices []string
 					for _, entry := range request.BlockDevices {
@@ -181,7 +181,12 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 
 	ok := true
 	if request.Type == models.STORAGE_TYPE_ERASURE_CODED {
-		if ok := validECProfile(monnode.Hostname, cluster, request.Options["ecprofile"]); !ok {
+		ok, err := validECProfile(monnode.Hostname, cluster, request.Options["ecprofile"])
+		if err != nil {
+			utils.FailTask("", fmt.Errorf("%s - Error checking validity of ec profile value. error: %v", ctxt, err), t)
+			return nil, false
+		}
+		if !ok {
 			utils.FailTask(
 				"Ivalid EC profile",
 				fmt.Errorf(
@@ -192,7 +197,7 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 					cluster.Name,
 					err),
 				t)
-			returnnil, false
+			return nil, false
 		}
 		cmd := fmt.Sprintf("ceph --cluster %s osd pool create %s %d %d erasure %s", cluster.Name, request.Name, uint(pgNum), uint(pgNum), request.Options["ecprofile"])
 		ok, _, err = cephapi_backend.ExecCmd(monnode.Hostname, clusterId, cmd)
@@ -241,6 +246,9 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 				options["min_size"] = strconv.FormatUint(pool.MinSize, 10)
 				options["crash_replay_interval"] = strconv.Itoa(pool.CrashReplayInterval)
 				options["crush_ruleset"] = strconv.Itoa(pool.CrushRuleSet)
+				if request.Type == models.STORAGE_TYPE_ERASURE_CODED {
+					options["ecprofile"] = request.Options["ecprofile"]
+				}
 				storage.Options = options
 
 				coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
@@ -253,6 +261,25 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 		}
 		return storage_id, true
 	}
+}
+
+func validECProfile(mon string, cluster models.Cluster, ecprofile string) (bool, error) {
+	cmd := fmt.Sprintf("ceph osd erasure-code-profile ls --cluster %s --format=json", cluster.Name)
+	ok, out, err := cephapi_backend.ExecCmd(mon, cluster.ClusterId, cmd)
+	var fetchedProfiles []string
+	if !ok || err != nil {
+		return false, err
+	} else {
+		if err := json.Unmarshal([]byte(out), &fetchedProfiles); err != nil {
+			return false, err
+		}
+	}
+	for _, value := range fetchedProfiles {
+		if value == ecprofile {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // RULES FOR DERIVING THE PG NUM
