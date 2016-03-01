@@ -85,32 +85,8 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 				if !ok {
 					return
 				}
-				if len(request.BlockDevices) > 0 {
-					t.UpdateStatus("Creating bolck devices")
-					var failedBlkDevices []string
-					for _, entry := range request.BlockDevices {
-						blockDevice := models.BlockDevice{
-							Name:             entry.Name,
-							Tags:             entry.Tags,
-							ClusterId:        *cluster_id,
-							ClusterName:      cluster.Name,
-							StorageId:        *poolId,
-							StorageName:      request.Name,
-							Size:             entry.Size,
-							SnapshotsEnabled: entry.SnapshotsEnabled,
-							// TODO: Populate the schedule ids once schedule created
-							// SnapshotScheduleIds = <created schedule ids>
-							QuotaEnabled: entry.QuotaEnabled,
-							QuotaParams:  entry.QuotaParams,
-							Options:      entry.Options,
-						}
-						if ok := createBlockStorage(ctxt, monnode.Hostname, *cluster_id, cluster.Name, request.Name, blockDevice, t); !ok {
-							failedBlkDevices = append(failedBlkDevices, entry.Name)
-						}
-					}
-					if len(failedBlkDevices) > 0 {
-						t.UpdateStatus("Block device creation failed for: %v", failedBlkDevices)
-					}
+				if request.Type != models.STORAGE_TYPE_ERASURE_CODED && len(request.BlockDevices) > 0 {
+					createBlockDevices(ctxt, monnode.Hostname, cluster, *poolId, request, t)
 				}
 
 				t.UpdateStatus("Success")
@@ -127,6 +103,34 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 		*resp = utils.WriteAsyncResponse(taskId, fmt.Sprintf("Task Created for create storage %s on cluster: %v", request.Name, *cluster_id), []byte{})
 	}
 	return nil
+}
+
+func createBlockDevices(ctxt string, mon string, cluster models.Cluster, poolId uuid.UUID, request models.AddStorageRequest, t *task.Task) {
+	t.UpdateStatus("Creating bolck devices")
+	var failedBlkDevices []string
+	for _, entry := range request.BlockDevices {
+		blockDevice := models.BlockDevice{
+			Name:             entry.Name,
+			Tags:             entry.Tags,
+			ClusterId:        cluster.ClusterId,
+			ClusterName:      cluster.Name,
+			StorageId:        poolId,
+			StorageName:      request.Name,
+			Size:             entry.Size,
+			SnapshotsEnabled: entry.SnapshotsEnabled,
+			// TODO: Populate the schedule ids once schedule created
+			// SnapshotScheduleIds = <created schedule ids>
+			QuotaEnabled: entry.QuotaEnabled,
+			QuotaParams:  entry.QuotaParams,
+			Options:      entry.Options,
+		}
+		if ok := createBlockStorage(ctxt, mon, cluster.ClusterId, cluster.Name, request.Name, blockDevice, t); !ok {
+			failedBlkDevices = append(failedBlkDevices, entry.Name)
+		}
+	}
+	if len(failedBlkDevices) > 0 {
+		t.UpdateStatus("Block device creation failed for: %v", failedBlkDevices)
+	}
 }
 
 func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageRequest, t *task.Task) (*uuid.UUID, bool) {
@@ -181,9 +185,14 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 
 	ok := true
 	if request.Type == models.STORAGE_TYPE_ERASURE_CODED {
-		if ok := validECProfile(monnode.Hostname, cluster, request.Options["ecprofile"]); !ok {
+		ok, err := validECProfile(monnode.Hostname, cluster, request.Options["ecprofile"])
+		if err != nil {
+			utils.FailTask("", fmt.Errorf("%s - Error checking validity of ec profile value. error: %v", ctxt, err), t)
+			return nil, false
+		}
+		if !ok {
 			utils.FailTask(
-				"Ivalid EC profile",
+				"",
 				fmt.Errorf(
 					"%s-Invalid EC profile value: %s passed for pool: %s creation on cluster: %s. error: %v",
 					ctxt,
@@ -241,6 +250,9 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 				options["min_size"] = strconv.FormatUint(pool.MinSize, 10)
 				options["crash_replay_interval"] = strconv.Itoa(pool.CrashReplayInterval)
 				options["crush_ruleset"] = strconv.Itoa(pool.CrushRuleSet)
+				if request.Type == models.STORAGE_TYPE_ERASURE_CODED {
+					options["ecprofile"] = request.Options["ecprofile"]
+				}
 				storage.Options = options
 
 				coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
@@ -253,6 +265,25 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 		}
 		return storage_id, true
 	}
+}
+
+func validECProfile(mon string, cluster models.Cluster, ecprofile string) (bool, error) {
+	cmd := fmt.Sprintf("ceph osd erasure-code-profile ls --cluster %s --format=json", cluster.Name)
+	ok, out, err := cephapi_backend.ExecCmd(mon, cluster.ClusterId, cmd)
+	var fetchedProfiles []string
+	if !ok || err != nil {
+		return false, err
+	} else {
+		if err := json.Unmarshal([]byte(out), &fetchedProfiles); err != nil {
+			return false, err
+		}
+	}
+	for _, value := range fetchedProfiles {
+		if value == ecprofile {
+			return true, nil
+		}
+	}
+	return false, nil
 }
 
 // RULES FOR DERIVING THE PG NUM
