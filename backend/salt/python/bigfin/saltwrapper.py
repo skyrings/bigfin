@@ -542,11 +542,25 @@ def GetClusterStatus(monitor, cluster_name):
 
 
 def GetClusterStats(monitor, cluster_name):
+    ret_val = {}
     out = local.cmd(monitor, "ceph.getClusterStats", [cluster_name])
     if not out:
         log.error("Failed to get cluster statistics from %s", monitor)
         raise Exception("Failed to get cluster statistics from %s" % monitor)
-    return ast.literal_eval(out[monitor])["stats"]
+    stats = ast.literal_eval(out[monitor])
+    ret_val["Used"] = stats["stats"]["total_used_bytes"]
+    ret_val["Available"] = stats["stats"]["total_avail_bytes"]
+    ret_val["Total"] = stats["stats"]["total_bytes"]
+    pools = []
+    poolStat = {}
+    for pool in stats["pools"]:
+        poolStat["Name"] = pool["name"]
+        poolStat["Id"] = pool["id"]
+        poolStat["Used"] = pool["stats"]["bytes_used"]
+        poolStat["Available"] = pool["stats"]["max_avail"]
+        pools.append(poolStat)
+    ret_val["Pools"] = pools
+    return ret_val
 
 
 def GetObjectCount(monitor, cluster_name):
