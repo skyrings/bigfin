@@ -62,7 +62,7 @@ type Backend interface {
 	GetOSDDetails(mon string, clusterName string) ([]OSDDetails, error)
 	GetObjectCount(mon string, clusterName string) (string, error)
 	GetPGSummary(mon string, clusterId uuid.UUID) (PgSummary, error)
-	ExecCmd(mon string, clusterId uuid.UUID, cmd string) (bool, error)
+	ExecCmd(mon string, clusterId uuid.UUID, cmd string) (bool, string, error)
 	GetOSDs(mon string, clusterId uuid.UUID) ([]CephOSD, error)
 	GetOSD(mon string, clusterId uuid.UUID, osdId string) (CephOSD, error)
 	UpdateOSD(mon string, clusterId uuid.UUID, osdId string, params map[string]interface{}) (bool, error)

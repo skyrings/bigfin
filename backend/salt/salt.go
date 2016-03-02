@@ -195,8 +195,8 @@ func (s Salt) GetPGSummary(mon string, clusterId uuid.UUID) (backend.PgSummary, 
 	return pgsummary, nil
 }
 
-func (s Salt) ExecCmd(mon string, clusterId uuid.UUID, cmd string) (bool, error) {
-	return true, nil
+func (s Salt) ExecCmd(mon string, clusterId uuid.UUID, cmd string) (bool, string, error) {
+	return true, "", nil
 }
 
 func (s Salt) GetOSDs(mon string, clusterId uuid.UUID) ([]backend.CephOSD, error) {
