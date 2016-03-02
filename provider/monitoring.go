@@ -223,7 +223,8 @@ func FetchStorageProfileUtilizations(osdDetails []backend.OSDDetails) (statsToPu
 					statsToPush[metric_name+skyring_monitoring.FREE_SPACE] = map[string]string{currentTimeStamp: strconv.FormatUint(spFree, 10)}
 				}
 
-				cluster.StorageProfileUsage[slu.StorageProfile] = models.Utilization{Used: int64(spUsed), Total: int64(spUsed + spFree)}
+				percentUsed := float64(spUsed*100) / float64(spUsed+spFree)
+				cluster.StorageProfileUsage[slu.StorageProfile] = models.Utilization{Used: int64(spUsed), Total: int64(spUsed + spFree), PercentUsed: percentUsed}
 
 				percent_used := (float64(spUsed) * 100) / (float64(spUsed + spFree))
 				statsToPush[metric_name+skyring_monitoring.USAGE_PERCENT] = map[string]string{currentTimeStamp: fmt.Sprintf("%v", percent_used)}
@@ -260,7 +261,11 @@ func getOsds(clusterId uuid.UUID) (slus []models.StorageLogicalUnit, err error) 
 }
 
 func FetchClusterStats() (map[string]map[string]string, error) {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
+
 	statistics, statsFetchErr := salt_backend.GetClusterStats(monName, cluster.Name)
 	if statsFetchErr != nil {
 		return nil, fmt.Errorf("Unable to fetch cluster stats from mon %v of cluster %v.Error: %v", monName, cluster.Name, statsFetchErr)
@@ -268,15 +273,30 @@ func FetchClusterStats() (map[string]map[string]string, error) {
 
 	metrics := make(map[string]map[string]string)
 	currentTimeStamp := time.Now().Unix()
-	for statType, value := range statistics {
-		metric_name := monitoringConfig.CollectionName + "." + cluster.Name + "." + skyring_monitoring.CLUSTER_UTILIZATION + "." + statType
-		statMap := make(map[string]string)
-		statMap[strconv.FormatInt(currentTimeStamp, 10)] = strconv.FormatInt(value, 10)
-		metrics[metric_name] = statMap
+
+	metric_name := fmt.Sprintf("%s.%s.%s.", monitoringConfig.CollectionName, cluster.Name, skyring_monitoring.CLUSTER_UTILIZATION)
+
+	metrics[metric_name+skyring_monitoring.USED_SPACE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", statistics.Used)}
+	metrics[metric_name+skyring_monitoring.FREE_SPACE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", statistics.Available)}
+	metrics[metric_name+skyring_monitoring.TOTAL_SPACE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", statistics.Total)}
+
+	percentUsed := (float64(statistics.Used*100) / float64(statistics.Total))
+	if err := updateCluster(bson.M{"clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"usage": models.Utilization{Used: statistics.Used, Total: statistics.Total, PercentUsed: percentUsed}}}); err != nil {
+		logger.Get().Error("Updating the cluster statistics to db for the cluster %v failed.Error %v", cluster.Name, err.Error())
 	}
 
-	if err := updateCluster(bson.M{"clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"usage": models.Utilization{Used: statistics["total_used_bytes"], Total: statistics["total_bytes"]}}}); err != nil {
-		logger.Get().Error("Updating the cluster statistics to db for the cluster %v failed.Error %v", cluster.Name, err.Error())
+	collection := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+	for _, poolStat := range statistics.Pools {
+		used := poolStat.Used
+		total := poolStat.Used + poolStat.Available
+		percentUsed := 0.0
+		if total != 0 {
+			percentUsed = (float64(used*100) / float64(total))
+		}
+		dbUpdateError := collection.Update(bson.M{"clusterid": cluster.ClusterId, "name": poolStat.Name}, bson.M{"$set": bson.M{"usage": models.Utilization{Used: used, Total: total, PercentUsed: percentUsed}}})
+		if dbUpdateError != nil {
+			logger.Get().Error("Failed to update utilization of pool %v of cluster %v to db.Error %v", poolStat.Name, cluster.Name, dbUpdateError)
+		}
 	}
 
 	return metrics, nil
