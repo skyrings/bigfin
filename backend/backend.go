@@ -47,6 +47,20 @@ type CephPool struct {
 	CrushRuleSet        int    `json:"crush_ruleset"`
 }
 
+type ClusterUtilization struct {
+	Used      int64
+	Available int64
+	Total     int64
+	Pools     []PoolStats
+}
+
+type PoolStats struct {
+	Id        int
+	Name      string
+	Used      int64
+	Available int64
+}
+
 type Backend interface {
 	CreateCluster(clusterName string, fsid uuid.UUID, mons []Mon, ctxt string) (bool, error)
 	AddMon(clusterName string, mons []Mon, ctxt string) (bool, error)
@@ -58,7 +72,7 @@ type Backend interface {
 	GetPools(mon string, clusterId uuid.UUID) ([]CephPool, error)
 	UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool map[string]interface{}) (bool, error)
 	RemovePool(mon string, clusterId uuid.UUID, clusterName string, pool string, poolId int, ctxt string) (bool, error)
-	GetClusterStats(mon string, clusterName string) (map[string]int64, error)
+	GetClusterStats(mon string, clusterName string) (ClusterUtilization, error)
 	GetOSDDetails(mon string, clusterName string) ([]OSDDetails, error)
 	GetObjectCount(mon string, clusterName string) (string, error)
 	GetPGSummary(mon string, clusterId uuid.UUID) (PgSummary, error)
