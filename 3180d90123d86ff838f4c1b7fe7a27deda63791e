@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_724e4ac3",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1006048
+      },
+      "writtenOn": "2016-03-02T04:47:19Z",
+      "side": 1,
+      "message": "This would be\n\nBuild report - https://travis-ci.org/skyrings/bigfin",
+      "range": {
+        "startLine": 16,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 53
+      },
+      "revId": "3180d90123d86ff838f4c1b7fe7a27deda63791e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
