@@ -182,7 +182,7 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 	ok := true
 	if request.Type == models.STORAGE_TYPE_ERASURE_CODED {
 		cmd := fmt.Sprintf("ceph --cluster %s osd pool create %s %d %d erasure %s", cluster.Name, request.Name, uint(pgNum), uint(pgNum), request.Options["ecprofile"])
-		ok, err = cephapi_backend.ExecCmd(monnode.Hostname, clusterId, cmd)
+		ok, _, err = cephapi_backend.ExecCmd(monnode.Hostname, clusterId, cmd)
 		time.Sleep(10 * time.Second)
 	} else {
 		ok, err = cephapi_backend.CreatePool(request.Name, monnode.Hostname, cluster.Name, uint(pgNum), request.Replicas, quotaMaxObjects, quotaMaxBytes)
@@ -330,11 +330,15 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting storages. error: %v", err))
 		return err
 	}
+	type ECProfileDet struct {
+		Pool      string `json:"pool"`
+		PoolId    int    `json:"pool_id"`
+		ECProfile string `json:"erasure_code_profile"`
+	}
 	var storages []models.AddStorageRequest
 	for _, pool := range pools {
 		storage := models.AddStorageRequest{
 			Name:     pool.Name,
-			Type:     models.STORAGE_TYPE_REPLICATED,
 			Replicas: pool.Size,
 		}
 		if pool.QuotaMaxObjects != 0 && pool.QuotaMaxBytes != 0 {
@@ -353,6 +357,23 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 		options["min_size"] = strconv.FormatUint(pool.MinSize, 10)
 		options["crash_replay_interval"] = strconv.Itoa(pool.CrashReplayInterval)
 		options["crush_ruleset"] = strconv.Itoa(pool.CrushRuleSet)
+		// Get EC profile details of pool
+		ok, out, err := cephapi_backend.ExecCmd(
+			monnode.Hostname,
+			*cluster_id,
+			fmt.Sprintf("ceph --cluster %s osd pool get %s erasure_code_profile --format=json", cluster.Name, pool.Name))
+		if err != nil || !ok {
+			storage.Type = models.STORAGE_TYPE_REPLICATED
+			logger.Get().Warning("Error getting EC profile details of pool: %s of cluster: %s", pool.Name, cluster.Name)
+		} else {
+			var ecprofileDet ECProfileDet
+			if err := json.Unmarshal([]byte(out), &ecprofileDet); err != nil {
+				logger.Get().Warning("Error parsing EC profile details of pool: %s of cluster: %s", pool.Name, cluster.Name)
+			} else {
+				storage.Type = models.STORAGE_TYPE_ERASURE_CODED
+				options["ecprofile"] = ecprofileDet.ECProfile
+			}
+		}
 		storage.Options = options
 		storages = append(storages, storage)
 	}

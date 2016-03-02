@@ -104,7 +104,7 @@ func CreateDefaultECProfiles(mon string, clusterId uuid.UUID) (bool, error) {
 	}
 
 	for k, v := range cmdMap {
-		ok, err := cephapi_backend.ExecCmd(mon, clusterId, v)
+		ok, _, err := cephapi_backend.ExecCmd(mon, clusterId, v)
 		if err != nil || !ok {
 			logger.Get().Error("Error creating EC profile for %s. error: %v", k, err)
 			continue
