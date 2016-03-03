@@ -19,7 +19,6 @@ import (
 	"github.com/natefinch/pie"
 	"github.com/op/go-logging"
 	"github.com/skyrings/bigfin/backend/cephapi/client"
-	bigfin_conf "github.com/skyrings/bigfin/conf"
 	"github.com/skyrings/bigfin/provider"
 	"github.com/skyrings/bigfin/tools/task"
 	"github.com/skyrings/skyring-common/conf"
@@ -28,6 +27,9 @@ import (
 	"net/rpc/jsonrpc"
 	"os"
 	"path/filepath"
+
+	bigfin_conf "github.com/skyrings/bigfin/conf"
+	_ "github.com/skyrings/skyring-common/provisioner/cephinstaller"
 )
 
 func main() {
@@ -70,7 +72,7 @@ func main() {
 
 	provd := &provider.CephProvider{}
 	p := pie.NewProvider()
-	if err := p.RegisterName("ceph", provd); err != nil {
+	if err := p.RegisterName(bigfin_conf.ProviderName, provd); err != nil {
 		logger.Get().Fatalf("Failed to register plugin. error: %v", err)
 	}
 	p.ServeCodec(jsonrpc.NewServerCodec)

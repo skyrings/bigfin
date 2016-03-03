@@ -7,3 +7,7 @@ import (
 var (
 	SystemConfig conf.SkyringCollection
 )
+
+const (
+	ProviderName = "ceph"
+)
