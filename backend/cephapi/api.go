@@ -93,8 +93,23 @@ func (c CephApi) ListPoolNames(mon string, clusterName string) ([]string, error)
 	return []string{}, nil
 }
 
-func (c CephApi) GetClusterStatus(mon string, clusterName string) (status string, err error) {
-	return "", nil
+func (c CephApi) GetClusterStatus(mon string, clusterId uuid.UUID, clusterName string) (status string, err error) {
+	// Replace cluster id in route pattern
+	getPoolsRoute := CEPH_API_ROUTES["GetClusterStatus"]
+	getPoolsRoute.Pattern = strings.Replace(getPoolsRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+	resp, err := route_request(getPoolsRoute, mon, bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return "", err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	var clusterHealth backend.CephClusterHealth
+	if err := json.Unmarshal(respBody, &clusterHealth); err != nil {
+		return "", err
+	}
+	return clusterHealth.OverallStatus, nil
 }
 
 func (c CephApi) GetClusterStats(mon string, clusterName string) (backend.ClusterUtilization, error) {
@@ -354,5 +369,32 @@ func (c CephApi) GetOSD(mon string, clusterId uuid.UUID, osdId string) (backend.
 		return osds[0], nil
 	} else {
 		return backend.CephOSD{}, errors.New("Couldn't retrieve the specified OSD")
+	}
+}
+
+func (c CephApi) GetMonitors(mon string, clusterId uuid.UUID) ([]string, error) {
+	getMonsRoute := CEPH_API_ROUTES["GetMons"]
+	getMonsRoute.Pattern = strings.Replace(getMonsRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+
+	resp, err := route_request(getMonsRoute, mon, bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return []string{}, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return []string{}, err
+	}
+	var monsDet backend.CephMons
+	if err := json.Unmarshal(respBody, &monsDet); err != nil {
+		return []string{}, err
+	}
+	if len(monsDet.Mons) > 0 {
+		var list []string
+		for _, mon := range monsDet.Mons {
+			list = append(list, strings.Split(mon.Addr, ":")[0])
+		}
+		return list, nil
+	} else {
+		return []string{}, errors.New("Couldn't retrieve the mons")
 	}
 }

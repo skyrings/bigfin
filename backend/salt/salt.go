@@ -119,7 +119,7 @@ func (s Salt) ListPoolNames(mon string, clusterName string) (names []string, err
 	return
 }
 
-func (s Salt) GetClusterStatus(mon string, clusterName string) (status string, err error) {
+func (s Salt) GetClusterStatus(mon string, clusterId uuid.UUID, clusterName string) (status string, err error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	if pyobj, loc_err := pyFuncs["GetClusterStatus"].Call(mon, clusterName); loc_err == nil {
@@ -211,4 +211,8 @@ func (c Salt) UpdateOSD(mon string, clusterId uuid.UUID, osdId string, params ma
 func (c Salt) GetOSD(mon string, clusterId uuid.UUID, osdId string) (backend.CephOSD, error) {
 
 	return backend.CephOSD{}, nil
+}
+
+func (c Salt) GetMonitors(mon string, clusterId uuid.UUID) ([]string, error) {
+	return []string{}, nil
 }

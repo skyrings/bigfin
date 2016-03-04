@@ -62,7 +62,7 @@ func (c Installer) ListPoolNames(mon string, clusterName string) ([]string, erro
 	return []string{}, nil
 }
 
-func (c Installer) GetClusterStatus(mon string, clusterName string) (status string, err error) {
+func (c Installer) GetClusterStatus(mon string, clusterId uuid.UUID, clusterName string) (status string, err error) {
 	return "", nil
 }
 
@@ -108,4 +108,8 @@ func (c Installer) UpdateOSD(mon string, clusterId uuid.UUID, osdId string, para
 
 func (c Installer) GetOSD(mon string, clusterId uuid.UUID, osdId string) (backend.CephOSD, error) {
 	return backend.CephOSD{}, nil
+}
+
+func (c Installer) GetMonitors(mon string, clusterId uuid.UUID) ([]string, error) {
+	return []string{}, nil
 }
