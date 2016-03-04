@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/skyrings/bigfin/backend"
+	bigfin_models "github.com/skyrings/bigfin/bigfinmodels"
 	"github.com/skyrings/bigfin/conf"
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/db"
@@ -138,6 +139,23 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 	} else {
 		result[models.Monitor] = len(mons)
 	}
+
+	clusters, clustersFetchErr := getClustersByType(bigfin_models.CLUSTER_TYPE)
+	if clustersFetchErr != nil {
+		logger.Get().Error("%s - Unable to fetch clusters of type %v. Err %v", ctxt, bigfin_models.CLUSTER_TYPE, clustersFetchErr)
+		return fmt.Errorf("%s - Unable to fetch clusters of type %v. Err %v", ctxt, bigfin_models.CLUSTER_TYPE, clustersFetchErr)
+	}
+
+	var objectCount int64
+	var degradedObjectCount int64
+	for _, cluster := range clusters {
+		/*
+			Fetch object count
+		*/
+		objectCount = objectCount + cluster.ObjectCount[bigfin_models.NUMBER_OF_OBJECTS]
+		degradedObjectCount = degradedObjectCount + cluster.ObjectCount[bigfin_models.NUMBER_OF_DEGRADED_OBJECTS]
+	}
+	result[bigfin_models.OBJECTS] = map[string]interface{}{bigfin_models.NUMBER_OF_OBJECTS: objectCount, bigfin_models.NUMBER_OF_DEGRADED_OBJECTS: degradedObjectCount}
 
 	if err_str != "" {
 		if len(result) != 0 {
@@ -312,19 +330,16 @@ func FetchObjectCount() (map[string]map[string]string, error) {
 		return nil, fmt.Errorf("Unable to fetch object count from mon %v of cluster %v.Error: %v", monName, cluster.Name, statsFetchErr)
 	}
 
-	object_cnt, cerr := strconv.ParseUint(statistics, 10, 64)
-	if cerr != nil {
-		logger.Get().Error("Inalid object count %v. Error %v", statistics, cerr)
-		return nil, fmt.Errorf("Inalid object count %v. Error %v", statistics, cerr)
-	}
-
+	//object_cnt, cerr := strconv.ParseUint(statistics, 10, 64)
+	objectCnt := statistics[bigfin_models.NUMBER_OF_OBJECTS]
+	objectErrCnt := statistics[bigfin_models.NUMBER_OF_DEGRADED_OBJECTS]
 	metrics := make(map[string]map[string]string)
 	currentTimeStamp := time.Now().Unix()
 	timeStampStr := strconv.FormatInt(currentTimeStamp, 10)
 	metric_name := monitoringConfig.CollectionName + "." + cluster.Name + "." + skyring_monitoring.NO_OF_OBJECT
-	metrics[metric_name] = map[string]string{timeStampStr: statistics}
+	metrics[metric_name] = map[string]string{timeStampStr: fmt.Sprintf("%v", objectCnt)}
 
-	if err := updateCluster(bson.M{"clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"objectcnt": object_cnt}}); err != nil {
+	if err := updateCluster(bson.M{"clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"objectcnt": map[string]int64{bigfin_models.NUMBER_OF_OBJECTS: objectCnt, bigfin_models.NUMBER_OF_DEGRADED_OBJECTS: objectErrCnt}}}); err != nil {
 		logger.Get().Error("Updating the object count to db for the cluster %v failed.Error %v", cluster.Name, err.Error())
 	}
 
@@ -383,6 +398,16 @@ func getClusterNodesById(cluster_id *uuid.UUID) (models.Nodes, error) {
 		return nil, err
 	}
 	return nodes, nil
+}
+
+func getClustersByType(clusterType string) (clusters []models.Cluster, err error) {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	collection := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	if err := collection.Find(bson.M{"type": clusterType}).All(&clusters); err != nil {
+		return clusters, err
+	}
+	return clusters, nil
 }
 
 func getCluster(cluster_id uuid.UUID) (cluster models.Cluster, err error) {

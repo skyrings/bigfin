@@ -240,8 +240,8 @@ func (c CephApi) GetOSDDetails(mon string, clusterName string) (osds []backend.O
 	return []backend.OSDDetails{}, nil
 }
 
-func (c CephApi) GetObjectCount(mon string, clusterName string) (string, error) {
-	return "", nil
+func (c CephApi) GetObjectCount(mon string, clusterName string) (map[string]int64, error) {
+	return map[string]int64{}, nil
 }
 
 func (c CephApi) GetPGSummary(mon string, clusterId uuid.UUID) (backend.PgSummary, error) {
