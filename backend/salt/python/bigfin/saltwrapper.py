@@ -564,9 +564,18 @@ def GetClusterStats(monitor, cluster_name):
 
 
 def GetObjectCount(monitor, cluster_name):
-    out = local.cmd(monitor, "ceph.getObjectCount", [cluster_name])
-    if out[monitor] != '':
-        return out[monitor]
+    res = local.cmd(monitor, "ceph.getObjectCount", [cluster_name])
+    object_cnt = {}
+    if res:
+        num_objects = 0
+        num_objects_degraded = 0
+        res = ast.literal_eval(res[monitor])
+        for pool in res["pools"]:
+            num_objects = num_objects + int(pool["num_objects"])
+            num_objects_degraded = num_objects_degraded + int(pool["num_objects_degraded"])
+        object_cnt["num_objects"] = num_objects
+        object_cnt["num_objects_degraded"] = num_objects_degraded
+        return object_cnt
     log.error("Object Count failed. error=%s", out)
     raise Exception("Object Count failed. error=%s" % out)
 

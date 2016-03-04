@@ -178,9 +178,10 @@ func (s Salt) GetOSDDetails(mon string, clusterName string) (osds []backend.OSDD
 	return
 }
 
-func (s Salt) GetObjectCount(mon string, clusterName string) (obj string, err error) {
+func (s Salt) GetObjectCount(mon string, clusterName string) (obj map[string]int64, err error) {
 	mutex.Lock()
 	defer mutex.Unlock()
+	obj = make(map[string]int64)
 	if pyobj, loc_err := pyFuncs["GetObjectCount"].Call(mon, clusterName); loc_err == nil {
 		err = gopy.Convert(pyobj, &obj)
 	} else {
