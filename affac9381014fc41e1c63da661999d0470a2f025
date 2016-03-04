@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_81d8c91e",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 226,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-04T06:43:35Z",
+      "side": 1,
+      "message": "is this val can be zero by any chance?",
+      "range": {
+        "startLine": 226,
+        "startChar": 49,
+        "endLine": 226,
+        "endChar": 63
+      },
+      "revId": "affac9381014fc41e1c63da661999d0470a2f025",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
