@@ -132,3 +132,15 @@ func (c Installer) GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt st
 func (c Installer) GetClusterConfig(mon string, clusterId uuid.UUID, ctxt string) (map[string]string, error) {
 	return map[string]string{}, nil
 }
+
+func (c Installer) GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error) {
+	return []string{}, nil
+}
+
+func (c Installer) GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CephClusterNode, error) {
+	return []backend.CephClusterNode{}, nil
+}
+
+func (c Installer) GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt string) (backend.MonNodeStatus, error) {
+	return backend.MonNodeStatus{}, nil
+}
