@@ -14,6 +14,7 @@ package provider
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/conf"
@@ -25,6 +26,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"strconv"
+	"strings"
 	"time"
 
 	bigfin_task "github.com/skyrings/bigfin/tools/task"
@@ -511,6 +513,125 @@ func (s *CephProvider) RemoveStorage(req models.RpcRequest, resp *models.RpcResp
 		return err
 	} else {
 		*resp = utils.WriteAsyncResponse(taskId, fmt.Sprintf("Task Created for delete storage on cluster: %v", *cluster_id), []byte{})
+	}
+	return nil
+}
+
+func (s *CephProvider) UpdateStorageLogicalUnitParams(req models.RpcRequest, resp *models.RpcResponse) error {
+	ctxt := req.RpcRequestContext
+
+	cluster_id_str, ok := req.RpcRequestVars["cluster-id"]
+	if !ok {
+		logger.Get().Error("%s- Cluster-id is not provided along with request")
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Cluster-id is not provided along with request"))
+		return errors.New("Cluster-id is not provided along with request")
+	}
+	cluster_id, err := uuid.Parse(cluster_id_str)
+	if err != nil {
+		logger.Get().Error("%s-Error parsing the cluster id: %s. error: %v", ctxt, cluster_id_str, err)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
+		return err
+	}
+	slu_id_str, ok := req.RpcRequestVars["slu-id"]
+	if !ok {
+		logger.Get().Error("%s- slu-id is not provided along with request")
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("slu-id is not provided along with request"))
+		return errors.New("slu-id is not provided along with request")
+	}
+	slu_id, err := uuid.Parse(slu_id_str)
+	if err != nil {
+		logger.Get().Error("%s-Error parsing the cluster id: %s. error: %v", ctxt, cluster_id_str, err)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
+		return err
+	}
+
+	var upreq map[string]interface{}
+	if err := json.Unmarshal(req.RpcRequestData, &upreq); err != nil {
+		logger.Get().Error(fmt.Sprintf("%s-Unbale to parse the update slu params request for %s. error: %v", ctxt, slu_id_str, err))
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unable to parse the request. error: %v", err))
+		return err
+	}
+
+	//make sure we dealing with only the supported parameters
+	osdData := make(map[string]interface{})
+
+	if in, ok := upreq["in"]; ok {
+		osdData["in"] = in
+	}
+	if up, ok := upreq["up"]; ok {
+		osdData["up"] = up
+	}
+
+	if len(osdData) == 0 {
+		logger.Get().Error("%s-No valid data provided to update", ctxt)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("No valid data provided to update"))
+		return err
+	}
+
+	// Get a random mon node
+	monnode, err := GetRandomMon(*cluster_id)
+	if err != nil {
+		logger.Get().Error("%s-Error getting a mon node in cluster: %s. error: %v", ctxt, *cluster_id, err)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error getting a mon node in cluster: %s. error: %v", *cluster_id, err))
+		return err
+	}
+
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
+	var slu models.StorageLogicalUnit
+	if err := coll.Find(bson.M{"sluid": *slu_id}).One(&slu); err != nil {
+		logger.Get().Error("%s-Error fetching details of slu: %v. error: %v", ctxt, *cluster_id, err)
+		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error fetching details of slu: %v. error: %v", *cluster_id, err))
+		return err
+	}
+	osdId := strings.Split(slu.Name, ".")[1]
+
+	asyncTask := func(t *task.Task) {
+		for {
+			select {
+			case <-t.StopCh:
+				return
+			default:
+				t.UpdateStatus("Started updating osd params: %v", t.ID)
+				ok, err := cephapi_backend.UpdateOSD(monnode.Hostname, *cluster_id, osdId, osdData)
+				if err != nil || !ok {
+					utils.FailTask(fmt.Sprintf("Could not update osd params for slu: %s of cluster: %v", slu_id, cluster_id), err, t)
+					return
+				}
+				//Now update the latest status from calamari
+				fetchedOSD, err := cephapi_backend.GetOSD(monnode.Hostname, *cluster_id, osdId)
+				if err != nil {
+					utils.FailTask(fmt.Sprintf("Error getting OSD details for cluster: %v.", cluster_id), err, t)
+					return
+				}
+				status := mapOsdStatus(fetchedOSD.Up, fetchedOSD.In)
+				state := mapOsdState(fetchedOSD.In)
+				slu.Options["in"] = strconv.FormatBool(fetchedOSD.In)
+				slu.Options["up"] = strconv.FormatBool(fetchedOSD.Up)
+				slu.State = state
+				slu.Status = status
+
+				sessionCopy := db.GetDatastore().Copy()
+				defer sessionCopy.Close()
+				coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
+
+				if err := coll.Update(bson.M{"sluid": fetchedOSD.Uuid, "clusterid": cluster_id}, slu); err != nil {
+					utils.FailTask(fmt.Sprintf("Error updating the details for slu: %s.", slu.Name), err, t)
+					return
+				}
+				t.UpdateStatus("Success")
+				t.Done(models.TASK_STATUS_SUCCESS)
+				return
+			}
+		}
+	}
+	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-UpdateOSD", asyncTask, 120*time.Second, nil, nil, nil); err != nil {
+		logger.Get().Error("Task creation failed for update OSD %s on cluster: %v. error: %v", *slu_id, *cluster_id, err)
+		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for update OSD")
+		return err
+	} else {
+		*resp = utils.WriteAsyncResponse(taskId, fmt.Sprintf("Task Created for update OSD %s on cluster: %v", *slu_id, *cluster_id), []byte{})
 	}
 	return nil
 }
