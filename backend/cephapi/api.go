@@ -95,7 +95,22 @@ func (c CephApi) ListPoolNames(mon string, clusterName string, ctxt string) ([]s
 }
 
 func (c CephApi) GetClusterStatus(mon string, clusterId uuid.UUID, clusterName string, ctxt string) (status string, err error) {
-	return "", nil
+	// Replace cluster id in route pattern
+	getPoolsRoute := CEPH_API_ROUTES["GetClusterStatus"]
+	getPoolsRoute.Pattern = strings.Replace(getPoolsRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+	resp, err := route_request(getPoolsRoute, mon, bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return "", err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+	var clusterHealth backend.CephClusterHealth
+	if err := json.Unmarshal(respBody, &clusterHealth); err != nil {
+		return "", err
+	}
+	return clusterHealth.OverallStatus, nil
 }
 
 func (c CephApi) GetClusterStats(mon string, clusterName string, ctxt string) (backend.ClusterUtilization, error) {
@@ -425,4 +440,80 @@ func (c CephApi) GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt stri
 	} else {
 		return backend.CephOSD{}, errors.New("Couldn't retrieve the specified OSD")
 	}
+}
+
+func (c CephApi) GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error) {
+	getMonsRoute := CEPH_API_ROUTES["GetMons"]
+	getMonsRoute.Pattern = strings.Replace(getMonsRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+
+	resp, err := route_request(getMonsRoute, mon, bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return []string{}, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return []string{}, err
+	}
+	var monsDet backend.CephMons
+	if err := json.Unmarshal(respBody, &monsDet); err != nil {
+		return []string{}, err
+	}
+	if len(monsDet.Mons) > 0 {
+		var list []string
+		for _, mon := range monsDet.Mons {
+			list = append(list, strings.Split(mon.Addr, ":")[0])
+		}
+		return list, nil
+	} else {
+		return []string{}, errors.New("Couldn't retrieve the mons")
+	}
+}
+
+func (c CephApi) GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CephClusterNode, error) {
+	getNodesRoute := CEPH_API_ROUTES["GetNodes"]
+	getNodesRoute.Pattern = strings.Replace(
+		getNodesRoute.Pattern,
+		"{cluster-fsid}",
+		clusterId.String(),
+		1)
+	resp, err := route_request(getNodesRoute, mon, bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return []backend.CephClusterNode{}, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return []backend.CephClusterNode{}, err
+	}
+	var clusterNodes []backend.CephClusterNode
+	if err := json.Unmarshal(respBody, &clusterNodes); err != nil {
+		return []backend.CephClusterNode{}, err
+	}
+	return clusterNodes, nil
+}
+
+func (c CephApi) GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt string) (backend.MonNodeStatus, error) {
+	getMonStatusRoute := CEPH_API_ROUTES["GetMonStatus"]
+	getMonStatusRoute.Pattern = strings.Replace(
+		getMonStatusRoute.Pattern,
+		"{cluster-fsid}",
+		clusterId.String(),
+		1)
+	getMonStatusRoute.Pattern = strings.Replace(
+		getMonStatusRoute.Pattern,
+		"{mon-name}",
+		node,
+		1)
+	resp, err := route_request(getMonStatusRoute, mon, bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return backend.MonNodeStatus{}, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return backend.MonNodeStatus{}, err
+	}
+	var monStatus backend.MonNodeStatus
+	if err := json.Unmarshal(respBody, &monStatus); err != nil {
+		return backend.MonNodeStatus{}, err
+	}
+	return monStatus, nil
 }
