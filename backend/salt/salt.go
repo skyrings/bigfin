@@ -213,3 +213,7 @@ func (c Salt) GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt string)
 
 	return backend.CephOSD{}, nil
 }
+
+func (c Salt) GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error) {
+	return []string{}, nil
+}
