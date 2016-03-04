@@ -79,13 +79,12 @@ def getClusterStats(clusterName):
 
 
 def getObjectCount(clusterName):
-    cmd = ["ceph", "-s", "--cluster", clusterName]
+    cmd = ["rados", "df", "--cluster", clusterName, "--format", "json"]
     rc, out, err = utils.execCmd(cmd)
     if not rc:
-        for line in out.splitlines():
-            if line.strip().startswith("pgmap"):
-                return line.split(",")[3].split(' ')[1]
-    return ''
+        return out
+    return {}
+
 
 def getOSDDetails(clusterName):
     cmd = ["ceph", "osd", "df", "--cluster", clusterName, "-f", "json"]
