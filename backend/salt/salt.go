@@ -224,26 +224,40 @@ func (s Salt) GetOSDs(mon string, clusterId uuid.UUID, ctxt string) ([]backend.C
 
 func (c Salt) UpdateOSD(mon string, clusterId uuid.UUID, osdId string, params map[string]interface{}, ctxt string) (bool, error) {
 	return true, nil
-
 }
 
 func (c Salt) GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt string) (backend.CephOSD, error) {
-
 	return backend.CephOSD{}, nil
 }
 
 func (c Salt) GetClusterConfig(mon string, clusterId uuid.UUID, ctxt string) (map[string]string, error) {
 	return map[string]string{}, nil
 }
+
 func (c Salt) CreateCrushRule(mon string, clusterId uuid.UUID, rule backend.CrushRuleRequest, ctxt string) error {
 	return nil
 }
+
 func (c Salt) CreateCrushNode(mon string, clusterId uuid.UUID, node backend.CrushNodeRequest, ctxt string) (int, error) {
 	return 0, nil
 }
+
 func (c Salt) GetCrushNodes(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CrushNode, error) {
 	return []backend.CrushNode{}, nil
 }
+
 func (c Salt) PatchCrushNode(mon string, clusterId uuid.UUID, crushNodeId int, params map[string]interface{}, ctxt string) (bool, error) {
 	return true, nil
+}
+
+func (c Salt) GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error) {
+	return []string{}, nil
+}
+
+func (c Salt) GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CephClusterNode, error) {
+	return []backend.CephClusterNode{}, nil
+}
+
+func (c Salt) GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt string) (backend.MonNodeStatus, error) {
+	return backend.MonNodeStatus{}, nil
 }

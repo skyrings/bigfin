@@ -133,15 +133,31 @@ func (c Installer) GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt st
 func (c Installer) GetClusterConfig(mon string, clusterId uuid.UUID, ctxt string) (map[string]string, error) {
 	return map[string]string{}, nil
 }
+
 func (c Installer) CreateCrushRule(mon string, clusterId uuid.UUID, rule backend.CrushRuleRequest, ctxt string) error {
 	return nil
 }
+
 func (c Installer) CreateCrushNode(mon string, clusterId uuid.UUID, node backend.CrushNodeRequest, ctxt string) (int, error) {
 	return 0, nil
 }
+
 func (c Installer) GetCrushNodes(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CrushNode, error) {
 	return []backend.CrushNode{}, nil
 }
+
 func (c Installer) PatchCrushNode(mon string, clusterId uuid.UUID, crushNodeId int, params map[string]interface{}, ctxt string) (bool, error) {
 	return true, nil
+}
+
+func (c Installer) GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error) {
+	return []string{}, nil
+}
+
+func (c Installer) GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CephClusterNode, error) {
+	return []backend.CephClusterNode{}, nil
+}
+
+func (c Installer) GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt string) (backend.MonNodeStatus, error) {
+	return backend.MonNodeStatus{}, nil
 }

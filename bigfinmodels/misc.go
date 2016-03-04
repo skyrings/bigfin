@@ -27,6 +27,9 @@ const (
 	OBJECTS                    = "objects"
 	NUMBER_OF_OBJECTS          = "num_objects"
 	NUMBER_OF_DEGRADED_OBJECTS = "num_objects_degraded"
+
+	NODE_SERVICE_MON = "mon"
+	NODE_SERVICE_OSD = "osd"
 )
 
 type CrushInfo struct {

@@ -61,6 +61,47 @@ type PoolStats struct {
 	Available int64
 }
 
+type CephClusterHealth struct {
+	OverallStatus string                      `json:"overall_status"`
+	Health        []CephClusterHealthServices `json:"health_services"`
+	Summary       []SeveritySummary           `json:"summary"`
+	TimeChecks    ClusterTimeChecks           `json:"timechecks"`
+}
+
+type CephClusterHealthServices struct {
+	Mons []MonDetail `json:"mons"`
+}
+
+type MonDetail struct {
+	Name         string     `json:"name"`
+	LastUpdated  string     `json:"last_updated"`
+	AvailPercent int        `json:"avail_percent"`
+	KbTotal      uint64     `json:"kb_total"`
+	KbAvail      uint64     `json:"kb_avail"`
+	KbUsed       uint64     `json:"kb_used"`
+	Health       string     `json:"health"`
+	StoreStats   StoreStats `json:"store_stats"`
+}
+
+type StoreStats struct {
+	BytesTotak  uint64 `json:"bytes_total"`
+	BytesLog    uint64 `json:"bytes_log"`
+	BytesMisc   uint64 `json:"bytes_misc"`
+	BytesSst    uint64 `json:"bytes_sst"`
+	LastUpdated string `json:"last_updated"`
+}
+
+type SeveritySummary struct {
+	Severity string `json:"severity"`
+	Summary  string `json:"summary"`
+}
+
+type ClusterTimeChecks struct {
+	RoundStatus string `json:"round_status"`
+	Epoch       int    `json:"epoch"`
+	Round       int    `json:"round"`
+}
+
 type Backend interface {
 	CreateCluster(clusterName string, fsid uuid.UUID, mons []Mon, ctxt string) (bool, error)
 	AddMon(clusterName string, mons []Mon, ctxt string) (bool, error)
@@ -87,6 +128,9 @@ type Backend interface {
 	CreateCrushNode(mon string, clusterId uuid.UUID, node CrushNodeRequest, ctxt string) (int, error)
 	GetCrushNodes(mon string, clusterId uuid.UUID, ctxt string) ([]CrushNode, error)
 	PatchCrushNode(mon string, clusterId uuid.UUID, crushNodeId int, params map[string]interface{}, ctxt string) (bool, error)
+	GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error)
+	GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string) ([]CephClusterNode, error)
+	GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt string) (MonNodeStatus, error)
 }
 
 type OSDDetails struct {
@@ -124,6 +168,7 @@ type CrushItem struct {
 	Weight float64 `json:"weight"`
 	Pos    int     `json:"pos"`
 }
+
 type CrushNodeRequest struct {
 	BucketType string      `json:"bucket_type"`
 	Name       string      `json:"name"`
@@ -147,4 +192,47 @@ type CrushNode struct {
 	Alg        string      `json:"alg"`
 	Hash       string      `json:"hash"`
 	Items      []CrushItem `json:"items"`
+}
+
+type CephMons struct {
+	Quorum    []int     `json:"quorum"`
+	Created   string    `json:"crated"`
+	Mofified  string    `json:"modified"`
+	ClusterId uuid.UUID `json:"fsid"`
+	Mons      []CephMon `json:"mons"`
+}
+
+type CephMon struct {
+	Name string `json:"name"`
+	Rank int    `json:"rank"`
+	Addr string `json:"addr"`
+}
+
+type BlockDevice struct {
+	Name            string `json:"name"`
+	Size            uint64 `json:"size"`
+	Objects         uint64 `json:"objects"`
+	Order           int    `json:"order"`
+	ObjectSize      uint64 `json:"object_size"`
+	BlockNamePrefix string `json:"block_name_prefix"`
+	Format          int    `json:"format"`
+}
+
+type CephClusterNode struct {
+	Hostname string            `json:"hostname"`
+	FQDN     string            `json:"fqdn"`
+	Managed  bool              `json:"managed"`
+	Services []CephNodeService `json:"services"`
+}
+
+type CephNodeService struct {
+	Id      string `json:"id"`
+	Type    string `json:"type"`
+	Running bool   `json:"running"`
+}
+
+type MonNodeStatus struct {
+	State  string `json:"state"`
+	Rank   uint   `json:"rank"`
+	Quorum []uint `json:"quorum"`
 }
