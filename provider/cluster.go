@@ -806,13 +806,13 @@ func (s *CephProvider) UpdateStorageLogicalUnitParams(req models.RpcRequest, res
 				t.UpdateStatus("Started updating osd params: %v", t.ID)
 				ok, err := cephapi_backend.UpdateOSD(monnode.Hostname, *cluster_id, osdId, osdData, ctxt)
 				if err != nil || !ok {
-					utils.FailTask(fmt.Sprintf("Could not update osd params for slu: %s of cluster: %v", slu_id, cluster_id), err, t)
+					utils.FailTask(fmt.Sprintf("Could not update osd params for slu: %s of cluster: %v", slu_id, cluster_id), fmt.Errorf("%s-%v", ctxt, err), t)
 					return
 				}
 				//Now update the latest status from calamari
 				fetchedOSD, err := cephapi_backend.GetOSD(monnode.Hostname, *cluster_id, osdId, ctxt)
 				if err != nil {
-					utils.FailTask(fmt.Sprintf("Error getting OSD details for cluster: %v.", cluster_id), err, t)
+					utils.FailTask(fmt.Sprintf("Error getting OSD details for cluster: %v.", cluster_id), fmt.Errorf("%s-%v", ctxt, err), t)
 					return
 				}
 				status := mapOsdStatus(fetchedOSD.Up, fetchedOSD.In)
@@ -827,7 +827,7 @@ func (s *CephProvider) UpdateStorageLogicalUnitParams(req models.RpcRequest, res
 				coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
 
 				if err := coll.Update(bson.M{"sluid": fetchedOSD.Uuid, "clusterid": cluster_id}, slu); err != nil {
-					utils.FailTask(fmt.Sprintf("Error updating the details for slu: %s.", slu.Name), err, t)
+					utils.FailTask(fmt.Sprintf("Error updating the details for slu: %s.", slu.Name), fmt.Errorf("%s-%v", ctxt, err), t)
 					return
 				}
 				t.UpdateStatus("Success")
@@ -1139,23 +1139,4 @@ func SyncOsdStatus(clusterId uuid.UUID, ctxt string) error {
 	}
 
 	return nil
-}
-
-func mapOsdStatus(status bool, state bool) models.SluStatus {
-	if status && state {
-		return models.SLU_STATUS_OK
-	} else if status && !state {
-		return models.SLU_STATUS_WARN
-	} else if !status {
-		return models.SLU_STATUS_ERROR
-	}
-	return models.SLU_STATUS_UNKNOWN
-
-}
-
-func mapOsdState(state bool) string {
-	if state {
-		return bigfinmodels.OSD_STATE_IN
-	}
-	return bigfinmodels.OSD_STATE_OUT
 }

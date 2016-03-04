@@ -223,14 +223,24 @@ func (s Salt) GetOSDs(mon string, clusterId uuid.UUID, ctxt string) ([]backend.C
 
 func (c Salt) UpdateOSD(mon string, clusterId uuid.UUID, osdId string, params map[string]interface{}, ctxt string) (bool, error) {
 	return true, nil
-
 }
 
 func (c Salt) GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt string) (backend.CephOSD, error) {
-
 	return backend.CephOSD{}, nil
 }
 
 func (c Salt) GetClusterConfig(mon string, clusterId uuid.UUID, ctxt string) (map[string]string, error) {
 	return map[string]string{}, nil
+}
+
+func (c Salt) GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error) {
+	return []string{}, nil
+}
+
+func (c Salt) GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CephClusterNode, error) {
+	return []backend.CephClusterNode{}, nil
+}
+
+func (c Salt) GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt string) (backend.MonNodeStatus, error) {
+	return backend.MonNodeStatus{}, nil
 }
