@@ -13,14 +13,18 @@ limitations under the License.
 package bigfinmodels
 
 const (
-	OSD_STATE_IN        = "In"
-	OSD_STATE_OUT       = "Out"
-	OSD_STATE_PAUSED    = "Paused"
-	OSD_STATE_REPAIRING = "Repairing"
-	OSD_STATE_SCRUBBING = "Scrubbing"
-	OSD_STATE_UNSET     = "Unset"
-	OSD_STATE_NOUP      = "Noup"
-	OSD_STATE_NODOWN    = "Nodown"
-	OSD_STATE_NOOUT     = "Noout"
-	OSD_STATE_NOIN      = "Noin"
+	OSD_STATE_IN               = "In"
+	OSD_STATE_OUT              = "Out"
+	OSD_STATE_PAUSED           = "Paused"
+	OSD_STATE_REPAIRING        = "Repairing"
+	OSD_STATE_SCRUBBING        = "Scrubbing"
+	OSD_STATE_UNSET            = "Unset"
+	OSD_STATE_NOUP             = "Noup"
+	OSD_STATE_NODOWN           = "Nodown"
+	OSD_STATE_NOOUT            = "Noout"
+	OSD_STATE_NOIN             = "Noin"
+	CLUSTER_TYPE               = "ceph"
+	OBJECTS                    = "objects"
+	NUMBER_OF_OBJECTS          = "num_objects"
+	NUMBER_OF_DEGRADED_OBJECTS = "num_objects_degraded"
 )
