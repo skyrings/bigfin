@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_3db1f5e1",
+        "filename": "backend/mariner/mariner.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 17,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-05T11:00:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a72e520_bc308c57",
+      "revId": "3d204dba6c8f5fc3c55e09c857a86af41221f739",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_dc354847",
         "filename": "backend/mariner/mariner.go",
         "patchSetId": 1
@@ -30,6 +48,30 @@
       "writtenOn": "2016-03-04T11:24:13Z",
       "side": 1,
       "message": "We call Mariner? I feel CephInstaller is fine.",
+      "range": {
+        "startLine": 23,
+        "startChar": 5,
+        "endLine": 23,
+        "endChar": 12
+      },
+      "revId": "3d204dba6c8f5fc3c55e09c857a86af41221f739",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_5db6b1da",
+        "filename": "backend/mariner/mariner.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 23,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-05T11:00:22Z",
+      "side": 1,
+      "message": "CephInstaller, we have another package in common, will confuse. After all its just a name :)",
+      "parentUuid": "5a72e520_dc354847",
       "range": {
         "startLine": 23,
         "startChar": 5,
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_7dca8d50",
+        "filename": "backend/mariner/mariner.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 31,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-05T11:00:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a72e520_fc3a0435",
+      "range": {
+        "startLine": 31,
+        "startChar": 1,
+        "endLine": 31,
+        "endChar": 14
+      },
+      "revId": "3d204dba6c8f5fc3c55e09c857a86af41221f739",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_1c3fe026",
         "filename": "main.go",
         "patchSetId": 1
@@ -82,6 +148,24 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_9dc74945",
+        "filename": "main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 22,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-05T11:00:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a72e520_1c3fe026",
+      "revId": "3d204dba6c8f5fc3c55e09c857a86af41221f739",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_3c3c9c2f",
         "filename": "main.go",
         "patchSetId": 1
@@ -93,6 +177,24 @@
       "writtenOn": "2016-03-04T11:24:13Z",
       "side": 1,
       "message": "Move the line at the last",
+      "revId": "3d204dba6c8f5fc3c55e09c857a86af41221f739",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_bdc40541",
+        "filename": "main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 27,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-05T11:00:22Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a72e520_3c3c9c2f",
       "revId": "3d204dba6c8f5fc3c55e09c857a86af41221f739",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
