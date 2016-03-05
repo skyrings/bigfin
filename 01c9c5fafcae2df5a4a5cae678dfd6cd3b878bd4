@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_1dc0b94f",
+        "filename": "provider/storage.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-05T10:14:51Z",
+      "side": 1,
+      "message": "Can we separate out the code to create object/block/erasure?\neven if we duplicate bit of code it will throw away complexities with multiple checks",
+      "range": {
+        "startLine": 84,
+        "startChar": 4,
+        "endLine": 113,
+        "endChar": 6
+      },
+      "revId": "01c9c5fafcae2df5a4a5cae678dfd6cd3b878bd4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
