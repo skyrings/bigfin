@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_a676b23c",
+        "filename": "provider/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-07T10:27:17Z",
+      "side": 1,
+      "message": "Good to have both as block devices cannot be created for erasure coded pools.",
+      "parentUuid": "5a72e520_e688aa24",
+      "range": {
+        "startLine": 88,
+        "startChar": 6,
+        "endLine": 88,
+        "endChar": 56
+      },
+      "revId": "999f0164c6558f15dcdceec3b84a82c65e925bdc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_c69c8e6c",
         "filename": "provider/storage.go",
         "patchSetId": 5
@@ -36,6 +60,30 @@
       "writtenOn": "2016-03-07T10:23:06Z",
       "side": 1,
       "message": "Is it ECPool?",
+      "range": {
+        "startLine": 89,
+        "startChar": 5,
+        "endLine": 89,
+        "endChar": 17
+      },
+      "revId": "999f0164c6558f15dcdceec3b84a82c65e925bdc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_c673ae4b",
+        "filename": "provider/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-07T10:27:17Z",
+      "side": 1,
+      "message": "Correct its createBlokcDevices. will correct...",
+      "parentUuid": "5a72e520_c69c8e6c",
       "range": {
         "startLine": 89,
         "startChar": 5,
