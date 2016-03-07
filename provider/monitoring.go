@@ -125,11 +125,88 @@ func (s *CephProvider) MonitorCluster(req models.RpcRequest, resp *models.RpcRes
 	return nil
 }
 
+func (s *CephProvider) GetClusterSummary(req models.RpcRequest, resp *models.RpcResponse) error {
+	ctxt := req.RpcRequestContext
+
+	result := make(map[string]interface{})
+	httpStatusCode := http.StatusOK
+
+	cluster_id_str, ok := req.RpcRequestVars["cluster-id"]
+	if !ok {
+		logger.Get().Error("%s - Incorrect cluster id: %s", ctxt, cluster_id_str)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Incorrect cluster id: %s", cluster_id_str))
+		return fmt.Errorf("Incorrect cluster id: %s", cluster_id_str)
+	}
+	clusterId, err := uuid.Parse(cluster_id_str)
+	if err != nil {
+		logger.Get().Error("%s - Error parsing the cluster id: %s. Error: %v", ctxt, cluster_id_str, err)
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s.Error: %v", cluster_id_str, err))
+		return fmt.Errorf("Error parsing the cluster id: %s.Error: %v", cluster_id_str, err)
+	}
+
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+
+	mons, monErr := GetMons(bson.M{"clusterid": *clusterId})
+	var err_str string
+	if monErr != nil {
+		err_str = fmt.Sprintf("Unable to fetch monitor nodes.Error %v", monErr.Error())
+		logger.Get().Error("%s - Unable to fetch monitor nodes.Error %v", ctxt, monErr.Error())
+	} else {
+		result[models.Monitor] = len(mons)
+	}
+
+	cluster, clusterFetchErr := getCluster(*clusterId)
+	if clusterFetchErr != nil {
+		logger.Get().Error("%s - Unable to fetch cluster with id %v. Err %v", ctxt, *clusterId, clusterFetchErr)
+		return fmt.Errorf("%s - Unable to fetch cluster with id %v. Err %v", ctxt, *clusterId, clusterFetchErr)
+	}
+
+	/*
+		Fetch pg count
+	*/
+	collection := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+	var storages models.Storages
+	if sorageFetchErr := collection.Find(bson.M{"clusterid": *clusterId}).All(&storages); sorageFetchErr != nil {
+		err_str = fmt.Sprintf("Error getting the storage list error: %v", sorageFetchErr)
+		logger.Get().Error("Error getting the storage list error: %v", sorageFetchErr)
+	} else {
+		var pg_count uint64
+		for _, storage := range storages {
+			if pgnum, ok := storage.Options["pgnum"]; ok {
+				val, _ := strconv.ParseUint(pgnum, 10, 64)
+				pg_count = pg_count + val
+			}
+		}
+		result["pgnum"] = pg_count
+	}
+
+	result[bigfin_models.OBJECTS] = map[string]interface{}{bigfin_models.NUMBER_OF_OBJECTS: cluster.ObjectCount[bigfin_models.NUMBER_OF_OBJECTS], bigfin_models.NUMBER_OF_DEGRADED_OBJECTS: cluster.ObjectCount[bigfin_models.NUMBER_OF_DEGRADED_OBJECTS]}
+
+	if err_str != "" {
+		if len(result) != 0 {
+			httpStatusCode = http.StatusPartialContent
+		} else {
+			httpStatusCode = http.StatusInternalServerError
+		}
+	}
+	bytes, marshalErr := json.Marshal(result)
+	if marshalErr != nil {
+		*resp = utils.WriteResponseWithData(http.StatusInternalServerError, err_str, []byte{})
+		return fmt.Errorf("Failed to marshal %v.Error %v", result, marshalErr)
+	}
+	*resp = utils.WriteResponseWithData(httpStatusCode, err_str, bytes)
+	return fmt.Errorf("%v", err_str)
+}
+
 func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcResponse) error {
 	ctxt := req.RpcRequestContext
 
 	result := make(map[string]interface{})
 	httpStatusCode := http.StatusOK
+
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
 
 	mons, monErr := GetMons(nil)
 	var err_str string
@@ -148,6 +225,26 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 
 	var objectCount int64
 	var degradedObjectCount int64
+
+	/*
+		Fetch pg count
+	*/
+	collection := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+	var storages models.Storages
+	if sorageFetchErr := collection.Find(nil).All(&storages); sorageFetchErr != nil {
+		err_str = fmt.Sprintf("Error getting the storage list error: %v", sorageFetchErr)
+		logger.Get().Error("Error getting the storage list error: %v", sorageFetchErr)
+	} else {
+		var pg_count uint64
+		for _, storage := range storages {
+			if pgnum, ok := storage.Options["pgnum"]; ok {
+				val, _ := strconv.ParseUint(pgnum, 10, 64)
+				pg_count = pg_count + val
+			}
+		}
+		result["pgnum"] = pg_count
+	}
+
 	for _, cluster := range clusters {
 		/*
 			Fetch object count
