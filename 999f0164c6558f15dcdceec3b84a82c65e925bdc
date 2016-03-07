@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_e688aa24",
+        "filename": "provider/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-07T10:23:06Z",
+      "side": 1,
+      "message": "Do we really need this check?len(request.BlockDevices) \u003e 0 is good enough right?",
+      "range": {
+        "startLine": 88,
+        "startChar": 6,
+        "endLine": 88,
+        "endChar": 56
+      },
+      "revId": "999f0164c6558f15dcdceec3b84a82c65e925bdc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_c69c8e6c",
+        "filename": "provider/storage.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-07T10:23:06Z",
+      "side": 1,
+      "message": "Is it ECPool?",
+      "range": {
+        "startLine": 89,
+        "startChar": 5,
+        "endLine": 89,
+        "endChar": 17
+      },
+      "revId": "999f0164c6558f15dcdceec3b84a82c65e925bdc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
