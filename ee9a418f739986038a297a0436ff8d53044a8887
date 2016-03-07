@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_e6d0aa55",
+        "filename": "provider/storage.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-07T09:58:51Z",
+      "side": 1,
+      "message": "I think I forgot to update the corrected patch.",
+      "parentUuid": "5a72e520_869376a2",
+      "range": {
+        "startLine": 195,
+        "startChar": 3,
+        "endLine": 195,
+        "endChar": 12
+      },
+      "revId": "ee9a418f739986038a297a0436ff8d53044a8887",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_66dd9a70",
         "filename": "provider/storage.go",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2016-03-07T09:52:28Z",
       "side": 1,
       "message": "Why its done this way? can we check this before sending the request to retrieve the ec profiles?",
+      "range": {
+        "startLine": 376,
+        "startChar": 3,
+        "endLine": 377,
+        "endChar": 98
+      },
+      "revId": "ee9a418f739986038a297a0436ff8d53044a8887",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_4647be1f",
+        "filename": "provider/storage.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 377,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-07T09:58:51Z",
+      "side": 1,
+      "message": "So actually its getting the full list of pools from ceph cluster here and caller does the cross check if available or not. If not available in USM db, creates a new record else updates the details.\n\nHere based on whether erasure_code_profile is set, we decide the type of the pool.",
+      "parentUuid": "5a72e520_66dd9a70",
       "range": {
         "startLine": 376,
         "startChar": 3,
