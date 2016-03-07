@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_4b47c71f",
+        "filename": "provider/storage.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 113,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-07T04:25:43Z",
+      "side": 1,
+      "message": "Its part of flow of storage creation, so kept here. This piece of code gets invoked only if block devices passed. May be we can have another function and invoke the same here, based on condition.\n\nWhat you say?",
+      "parentUuid": "5a72e520_1dc0b94f",
+      "range": {
+        "startLine": 84,
+        "startChar": 4,
+        "endLine": 113,
+        "endChar": 6
+      },
+      "revId": "01c9c5fafcae2df5a4a5cae678dfd6cd3b878bd4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_dd9c616c",
         "filename": "provider/storage.go",
         "patchSetId": 3
@@ -36,6 +60,30 @@
       "writtenOn": "2016-03-05T10:30:49Z",
       "side": 1,
       "message": "do we need to check the ecprofile is valid? I think so",
+      "range": {
+        "startLine": 184,
+        "startChar": 132,
+        "endLine": 184,
+        "endChar": 160
+      },
+      "revId": "01c9c5fafcae2df5a4a5cae678dfd6cd3b878bd4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_2b428b10",
+        "filename": "provider/storage.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 184,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-07T04:25:43Z",
+      "side": 1,
+      "message": "It would be good. Anyway the pool creation should fail it invalid ecprofile passed. Will check if we can pre-check..",
+      "parentUuid": "5a72e520_dd9c616c",
       "range": {
         "startLine": 184,
         "startChar": 132,
