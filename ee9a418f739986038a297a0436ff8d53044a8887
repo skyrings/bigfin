@@ -93,6 +93,30 @@
       "revId": "ee9a418f739986038a297a0436ff8d53044a8887",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_86f616d6",
+        "filename": "provider/storage.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 377,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-07T10:02:23Z",
+      "side": 1,
+      "message": "ok",
+      "parentUuid": "5a72e520_4647be1f",
+      "range": {
+        "startLine": 376,
+        "startChar": 3,
+        "endLine": 377,
+        "endChar": 98
+      },
+      "revId": "ee9a418f739986038a297a0436ff8d53044a8887",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
