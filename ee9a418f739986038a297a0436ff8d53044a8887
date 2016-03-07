@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_869376a2",
+        "filename": "provider/storage.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 195,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-07T09:52:28Z",
+      "side": 1,
+      "message": "I think there is some goof up here",
+      "range": {
+        "startLine": 195,
+        "startChar": 3,
+        "endLine": 195,
+        "endChar": 12
+      },
+      "revId": "ee9a418f739986038a297a0436ff8d53044a8887",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_66dd9a70",
+        "filename": "provider/storage.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 377,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-07T09:52:28Z",
+      "side": 1,
+      "message": "Why its done this way? can we check this before sending the request to retrieve the ec profiles?",
+      "range": {
+        "startLine": 376,
+        "startChar": 3,
+        "endLine": 377,
+        "endChar": 98
+      },
+      "revId": "ee9a418f739986038a297a0436ff8d53044a8887",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
