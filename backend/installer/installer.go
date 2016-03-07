@@ -66,8 +66,8 @@ func (c Installer) GetClusterStatus(mon string, clusterName string) (status stri
 	return "", nil
 }
 
-func (c Installer) GetClusterStats(mon string, clusterName string) (map[string]int64, error) {
-	return nil, nil
+func (c Installer) GetClusterStats(mon string, clusterName string) (backend.ClusterUtilization, error) {
+	return backend.ClusterUtilization{}, nil
 }
 
 func (c Installer) GetPools(mon string, clusterId uuid.UUID) ([]backend.CephPool, error) {
@@ -86,8 +86,8 @@ func (c Installer) GetOSDDetails(mon string, clusterName string) (osds []backend
 	return []backend.OSDDetails{}, nil
 }
 
-func (c Installer) GetObjectCount(mon string, clusterName string) (string, error) {
-	return "", nil
+func (c Installer) GetObjectCount(mon string, clusterName string) (map[string]int64, error) {
+	return map[string]int64{}, nil
 }
 
 func (c Installer) GetPGSummary(mon string, clusterId uuid.UUID) (backend.PgSummary, error) {
