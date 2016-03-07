@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_6b02c33f",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 403,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-07T08:35:58Z",
+      "side": 1,
+      "message": "This function can move to util, where we have getClusterById() etc...",
+      "revId": "81573b7a17a4771377050e21e3ae74e86290ff8b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
