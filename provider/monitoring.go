@@ -131,6 +131,9 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 	result := make(map[string]interface{})
 	httpStatusCode := http.StatusOK
 
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+
 	mons, monErr := GetMons(nil)
 	var err_str string
 	if monErr != nil {
@@ -148,6 +151,26 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 
 	var objectCount int64
 	var degradedObjectCount int64
+
+	/*
+		Fetch pg count
+	*/
+	collection := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+	var storages models.Storages
+	if sorageFetchErr := collection.Find(nil).All(&storages); sorageFetchErr != nil {
+		err_str = fmt.Sprintf("Error getting the storage list error: %v", sorageFetchErr)
+		logger.Get().Error("Error getting the storage list error: %v", sorageFetchErr)
+	} else {
+		var pg_count uint64
+		for _, storage := range storages {
+			if pgnum, ok := storage.Options["pgnum"]; ok {
+				val, _ := strconv.ParseUint(pgnum, 10, 64)
+				pg_count = pg_count + val
+			}
+		}
+		result["pgnum"] = pg_count
+	}
+
 	for _, cluster := range clusters {
 		/*
 			Fetch object count
