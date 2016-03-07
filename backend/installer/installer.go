@@ -94,8 +94,8 @@ func (c Installer) GetPGSummary(mon string, clusterId uuid.UUID) (backend.PgSumm
 	return backend.PgSummary{}, nil
 }
 
-func (c Installer) ExecCmd(mon string, clusterId uuid.UUID, cmd string) (bool, error) {
-	return true, nil
+func (c Installer) ExecCmd(mon string, clusterId uuid.UUID, cmd string) (bool, string, error) {
+	return true, "", nil
 }
 
 func (c Installer) GetOSDs(mon string, clusterId uuid.UUID) ([]backend.CephOSD, error) {
