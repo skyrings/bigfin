@@ -154,10 +154,11 @@ func ceph_cluster_health_changed(event models.Event) error {
 }
 
 func (s *CephProvider) ProcessEvent(req models.RpcRequest, resp *models.RpcResponse) error {
+	ctxt := req.RpcRequestContext
 	var e models.Event
 
 	if err := json.Unmarshal(req.RpcRequestData, &e); err != nil {
-		logger.Get().Error("Unbale to parse the request. error: %v", err)
+		logger.Get().Error("%s-Unbale to parse the request. error: %v", ctxt, err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unbale to parse the request. error: %v", err))
 		return err
 	}
@@ -167,12 +168,12 @@ func (s *CephProvider) ProcessEvent(req models.RpcRequest, resp *models.RpcRespo
 			if match {
 				if err := handler.(func(models.Event) error)(e); err != nil {
 					*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Event Handling Failed for event: %s", err))
-					logger.Get().Error("Event Handling Failed for event: %s. error: %v", e.Tag, err)
+					logger.Get().Error("%s-Event Handling Failed for event: %s. error: %v", ctxt, e.Tag, err)
 					return err
 				}
-				if err := event.Persist_event(e); err != nil {
+				if err := event.Persist_event(ctxt, e); err != nil {
 					*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Could not persist the event to DB: %s", err))
-					logger.Get().Error("Could not persist the event: %s to DB. error: %v", e.Tag, err)
+					logger.Get().Error("%s-Could not persist the event: %s to DB. error: %v", ctxt, e.Tag, err)
 					return err
 				} else {
 					*resp = utils.WriteResponse(http.StatusOK, "")
@@ -181,11 +182,11 @@ func (s *CephProvider) ProcessEvent(req models.RpcRequest, resp *models.RpcRespo
 			}
 		} else {
 			*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error while mapping handler: %s", err))
-			logger.Get().Error("Error while maping handler for event: %s. error: %v", e.Tag, err)
+			logger.Get().Error("%s-Error while maping handler for event: %s. error: %v", ctxt, e.Tag, err)
 			return err
 		}
 	}
-	logger.Get().Warning("Handler not defined for event %s", e.Tag)
+	logger.Get().Warning("%s-Handler not defined for event %s", ctxt, e.Tag)
 	*resp = utils.WriteResponse(http.StatusNotImplemented, fmt.Sprintf("Handler not defined for event %s", e.Tag))
 	return nil
 }

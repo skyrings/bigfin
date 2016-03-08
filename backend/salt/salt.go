@@ -96,10 +96,10 @@ func (s Salt) AddOSD(clusterName string, osd backend.OSD, ctxt string) (osds map
 	return
 }
 
-func (s Salt) CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64) (bool, error) {
+func (s Salt) CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64, ctxt string) (bool, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	pyobj, err := pyFuncs["CreatePool"].Call(name, mon, clusterName, pgnum)
+	pyobj, err := pyFuncs["CreatePool"].Call(name, mon, clusterName, pgnum, ctxt)
 	if err == nil {
 		return gopy.Bool(pyobj), nil
 	}
@@ -107,10 +107,10 @@ func (s Salt) CreatePool(name string, mon string, clusterName string, pgnum uint
 	return false, err
 }
 
-func (s Salt) ListPoolNames(mon string, clusterName string) (names []string, err error) {
+func (s Salt) ListPoolNames(mon string, clusterName string, ctxt string) (names []string, err error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	if pyobj, loc_err := pyFuncs["ListPool"].Call(mon, clusterName); loc_err == nil {
+	if pyobj, loc_err := pyFuncs["ListPool"].Call(mon, clusterName, ctxt); loc_err == nil {
 		err = gopy.Convert(pyobj, &names)
 	} else {
 		err = loc_err
@@ -119,10 +119,10 @@ func (s Salt) ListPoolNames(mon string, clusterName string) (names []string, err
 	return
 }
 
-func (s Salt) GetClusterStatus(mon string, clusterId uuid.UUID, clusterName string) (status string, err error) {
+func (s Salt) GetClusterStatus(mon string, clusterId uuid.UUID, clusterName string, ctxt string) (status string, err error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	if pyobj, loc_err := pyFuncs["GetClusterStatus"].Call(mon, clusterName); loc_err == nil {
+	if pyobj, loc_err := pyFuncs["GetClusterStatus"].Call(mon, clusterName, ctxt); loc_err == nil {
 		err = gopy.Convert(pyobj, &status)
 	} else {
 		err = loc_err
@@ -131,15 +131,15 @@ func (s Salt) GetClusterStatus(mon string, clusterId uuid.UUID, clusterName stri
 	return
 }
 
-func (s Salt) GetPools(mon string, clusterId uuid.UUID) ([]backend.CephPool, error) {
+func (s Salt) GetPools(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CephPool, error) {
 	return []backend.CephPool{}, nil
 }
 
-func (s Salt) GetClusterStats(mon string, clusterName string) (stats backend.ClusterUtilization, err error) {
+func (s Salt) GetClusterStats(mon string, clusterName string, ctxt string) (stats backend.ClusterUtilization, err error) {
 	stats = backend.ClusterUtilization{}
 	mutex.Lock()
 	defer mutex.Unlock()
-	if pyobj, loc_err := pyFuncs["GetClusterStats"].Call(mon, clusterName); loc_err == nil {
+	if pyobj, loc_err := pyFuncs["GetClusterStats"].Call(mon, clusterName, ctxt); loc_err == nil {
 		err = gopy.Convert(pyobj, &stats)
 	} else {
 		err = loc_err
@@ -148,7 +148,7 @@ func (s Salt) GetClusterStats(mon string, clusterName string) (stats backend.Clu
 	return
 }
 
-func (s Salt) UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool map[string]interface{}) (bool, error) {
+func (s Salt) UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool map[string]interface{}, ctxt string) (bool, error) {
 	return true, nil
 }
 
@@ -167,10 +167,10 @@ func New() backend.Backend {
 	return new(Salt)
 }
 
-func (s Salt) GetOSDDetails(mon string, clusterName string) (osds []backend.OSDDetails, err error) {
+func (s Salt) GetOSDDetails(mon string, clusterName string, ctxt string) (osds []backend.OSDDetails, err error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	if pyobj, loc_err := pyFuncs["GetOSDDetails"].Call(mon, clusterName); loc_err == nil {
+	if pyobj, loc_err := pyFuncs["GetOSDDetails"].Call(mon, clusterName, ctxt); loc_err == nil {
 		err = gopy.Convert(pyobj, &osds)
 	} else {
 		err = loc_err
@@ -178,11 +178,11 @@ func (s Salt) GetOSDDetails(mon string, clusterName string) (osds []backend.OSDD
 	return
 }
 
-func (s Salt) GetObjectCount(mon string, clusterName string) (obj map[string]int64, err error) {
+func (s Salt) GetObjectCount(mon string, clusterName string, ctxt string) (obj map[string]int64, err error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	obj = make(map[string]int64)
-	if pyobj, loc_err := pyFuncs["GetObjectCount"].Call(mon, clusterName); loc_err == nil {
+	if pyobj, loc_err := pyFuncs["GetObjectCount"].Call(mon, clusterName, ctxt); loc_err == nil {
 		err = gopy.Convert(pyobj, &obj)
 	} else {
 		err = loc_err
@@ -191,28 +191,29 @@ func (s Salt) GetObjectCount(mon string, clusterName string) (obj map[string]int
 	return
 }
 
-func (s Salt) GetPGSummary(mon string, clusterId uuid.UUID) (backend.PgSummary, error) {
+func (s Salt) GetPGSummary(mon string, clusterId uuid.UUID, ctxt string) (backend.PgSummary, error) {
 	var pgsummary backend.PgSummary
 	return pgsummary, nil
 }
 
-func (s Salt) ExecCmd(mon string, clusterId uuid.UUID, cmd string) (bool, string, error) {
+func (s Salt) ExecCmd(mon string, clusterId uuid.UUID, cmd string, ctxt string) (bool, string, error) {
 	return true, "", nil
 }
 
-func (s Salt) GetOSDs(mon string, clusterId uuid.UUID) ([]backend.CephOSD, error) {
+func (s Salt) GetOSDs(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CephOSD, error) {
 	return []backend.CephOSD{}, nil
 }
 
-func (c Salt) UpdateOSD(mon string, clusterId uuid.UUID, osdId string, params map[string]interface{}) (bool, error) {
+func (c Salt) UpdateOSD(mon string, clusterId uuid.UUID, osdId string, params map[string]interface{}, ctxt string) (bool, error) {
 	return true, nil
 
 }
-func (c Salt) GetOSD(mon string, clusterId uuid.UUID, osdId string) (backend.CephOSD, error) {
+
+func (c Salt) GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt string) (backend.CephOSD, error) {
 
 	return backend.CephOSD{}, nil
 }
 
-func (c Salt) GetMonitors(mon string, clusterId uuid.UUID) ([]string, error) {
+func (c Salt) GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error) {
 	return []string{}, nil
 }

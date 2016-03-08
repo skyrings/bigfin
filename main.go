@@ -53,7 +53,6 @@ func main() {
 		panic(fmt.Sprintf("log init failed. %s", err))
 	}
 
-	//conf.LoadAppConfiguration("/etc/skyring/skyring.conf")
 	if err := db.InitDBSession(config.DBConfig); err != nil {
 		logger.Get().Fatalf("Unable to initialize DB. error: %v", err)
 	}

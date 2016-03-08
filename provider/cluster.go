@@ -230,8 +230,8 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 
 					// Create default EC profiles
 					t.UpdateStatus("Creating default EC profiles")
-					if ok, err := CreateDefaultECProfiles(monnode.Hostname, *cluster_uuid); !ok || err != nil {
-						logger.Get().Error("Error creating default EC profiles for cluster: %s. error: %v", request.Name, err)
+					if ok, err := CreateDefaultECProfiles(ctxt, monnode.Hostname, *cluster_uuid); !ok || err != nil {
+						logger.Get().Error("%s-Error creating default EC profiles for cluster: %s. error: %v", ctxt, request.Name, err)
 						t.UpdateStatus("Could not create default EC profile")
 					}
 
@@ -243,6 +243,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 		}
 	}
 	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-CreateCluster", asyncTask, 7000*time.Second, nil, nil, nil); err != nil {
+		logger.Get().Error("%s - Task creation failed for create cluster %s. error: %v", ctxt, request.Name, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Task creation failed for create cluster %s", request.Name))
 		return err
 	} else {
@@ -451,17 +452,19 @@ func getNodes(clusterNodes []models.ClusterNode) (map[uuid.UUID]models.Node, err
 }
 
 func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResponse) error {
+	ctxt := req.RpcRequestContext
+
 	cluster_id_str := req.RpcRequestVars["cluster-id"]
 	cluster_id, err := uuid.Parse(cluster_id_str)
 	if err != nil {
-		logger.Get().Error("Error parsing the cluster id: %s. error: %v", cluster_id_str, err)
+		logger.Get().Error("%s-Error parsing the cluster id: %s. error: %v", ctxt, cluster_id_str, err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s. error: %v", cluster_id_str, err))
 		return err
 	}
 
 	var new_nodes []models.ClusterNode
 	if err := json.Unmarshal(req.RpcRequestData, &new_nodes); err != nil {
-		logger.Get().Error("Unbale to parse the request. error: %v", err)
+		logger.Get().Error("%s-Unbale to parse the request. error: %v", ctxt, err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unbale to parse the request. error: %v", err))
 		return err
 	}
@@ -469,7 +472,7 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 	// Get corresponding nodes from DB
 	nodes, err := getNodes(new_nodes)
 	if err != nil {
-		logger.Get().Error("Error getting the nodes from DB for cluster: %v. error: %v", *cluster_id, err)
+		logger.Get().Error("%s-Error getting the nodes from DB for cluster: %v. error: %v", ctxt, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error getting the nodes from DB. error: %v", err))
 		return err
 	}
@@ -479,7 +482,7 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
 	var cluster models.Cluster
 	if err := coll.Find(bson.M{"clusterid": *cluster_id}).One(&cluster); err != nil {
-		logger.Get().Error("Error getting cluster details for %v. error: %v", *cluster_id, err)
+		logger.Get().Error("%s-Error getting cluster details for %v. error: %v", ctxt, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting cluster details. error: %v", err))
 		return nil
 	}
@@ -487,7 +490,7 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 	// Get the cluster and public IPs for nodes
 	node_ips, err := nodeIPs(cluster.Networks, nodes)
 	if err != nil {
-		logger.Get().Error("Node IP does not fall in provided subnets for cluster: %v. error: %v", *cluster_id, err)
+		logger.Get().Error("%s-Node IP does not fall in provided subnets for cluster: %v. error: %v", ctxt, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Node IP does fall in provided subnets. error: %v", err))
 		return nil
 	}
@@ -510,7 +513,7 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 			coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 			nodeid, err := uuid.Parse(new_node.NodeId)
 			if err != nil {
-				logger.Get().Error("Error parsing the node id: %s while expand cluster: %v. error: %v", new_node.NodeId, *cluster_id, err)
+				logger.Get().Error("%s-Error parsing the node id: %s while expand cluster: %v. error: %v", new_node.NodeId, ctxt, *cluster_id, err)
 				*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the node id: %s", new_node.NodeId))
 				return err
 			}
@@ -519,7 +522,7 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 			// and the same already being checked below
 			_ = coll.Find(bson.M{"clusterid": *cluster_id, "nodeid": *nodeid}).One(&monNode)
 			if monNode.Hostname != "" {
-				logger.Get().Error("Mon %v already exists for cluster: %v", *nodeid, *cluster_id)
+				logger.Get().Error("%s-Mon %v already exists for cluster: %v", ctxt, *nodeid, *cluster_id)
 				*resp = utils.WriteResponse(http.StatusInternalServerError, "The mon node already available")
 				return errors.New(fmt.Sprintf("Mon %v already exists for cluster: %v", *nodeid, *cluster_id))
 			}
@@ -544,7 +547,7 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 							"clusterid":  *cluster_id,
 							"clusterip4": node_ips[node.NodeId]["cluster"],
 							"publicip4":  node_ips[node.NodeId]["public"]}}); err != nil {
-						utils.FailTask(fmt.Sprintf("Error updating node %v post cluster exoansion for cluster: %v", node.NodeId, *cluster_id), err, t)
+						utils.FailTask(fmt.Sprintf("Error updating node %v post cluster exoansion for cluster: %v", node.NodeId, *cluster_id), fmt.Errorf("%s-%v", ctxt, err), t)
 						return
 					}
 				}
@@ -553,7 +556,7 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 					t.UpdateStatus("Adding mons")
 					for _, mon := range mons {
 						if ret_val, err := salt_backend.AddMon(cluster.Name, []backend.Mon{mon}, ""); err != nil || !ret_val {
-							utils.FailTask(fmt.Sprintf("Error adding mons while expand cluster: %v", *cluster_id), err, t)
+							utils.FailTask(fmt.Sprintf("Error adding mons while expand cluster: %v", *cluster_id), fmt.Errorf("%s-%v", ctxt, err), t)
 							return
 						}
 					}
@@ -562,7 +565,7 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 				// Start and persist the mons
 				ret_val, err := startAndPersistMons(*cluster_id, mons, "")
 				if err != nil || !ret_val {
-					utils.FailTask(fmt.Sprintf("Error start/persist mons while expand cluster: %v", *cluster_id), err, t)
+					utils.FailTask(fmt.Sprintf("Error start/persist mons while expand cluster: %v", *cluster_id), fmt.Errorf("%s-%v", ctxt, err), t)
 					return
 				}
 
@@ -570,13 +573,13 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 				t.UpdateStatus("Getting updated nodes for OSD creation")
 				updated_nodes, err := getNodes(new_nodes)
 				if err != nil {
-					utils.FailTask(fmt.Sprintf("Error getting updated nodes while expand cluster: %v", *cluster_id), err, t)
+					utils.FailTask(fmt.Sprintf("Error getting updated nodes while expand cluster: %v", *cluster_id), fmt.Errorf("%s-%v", ctxt, err), t)
 					return
 				}
 				t.UpdateStatus("Adding OSDs")
 				failedOSDs, succeededOSDs := addOSDs(*cluster_id, cluster.Name, updated_nodes, new_nodes, t, "")
 				if len(succeededOSDs) == 0 {
-					utils.FailTask(fmt.Sprintf("Failed to add all OSDs while expand cluster: %v", *cluster_id), err, t)
+					utils.FailTask(fmt.Sprintf("Failed to add all OSDs while expand cluster: %v", *cluster_id), fmt.Errorf("%s-%v", ctxt, err), t)
 					return
 				}
 				if len(failedOSDs) != 0 {
@@ -587,8 +590,8 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 					t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", osds))
 				}
 				t.UpdateStatus("Recalculating pgnum/pgpnum")
-				if ok := RecalculatePgnum(*cluster_id, t); !ok {
-					logger.Get().Warning("Could not re-calculate pgnum/pgpnum for cluster: %v", *cluster_id)
+				if ok := RecalculatePgnum(ctxt, *cluster_id, t); !ok {
+					logger.Get().Warning("%s-Could not re-calculate pgnum/pgpnum for cluster: %v", ctxt, *cluster_id)
 				}
 				t.UpdateStatus("Success")
 				t.Done(models.TASK_STATUS_SUCCESS)
@@ -598,7 +601,7 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 	}
 
 	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-ExpandCluster", asyncTask, 7000*time.Second, nil, nil, nil); err != nil {
-		logger.Get().Error("Task creation failed for exoand cluster: %v. error: %v", *cluster_id, err)
+		logger.Get().Error("%s-Task creation failed for exoand cluster: %v. error: %v", ctxt, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for cluster expansion")
 		return err
 	} else {
@@ -609,10 +612,12 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 }
 
 func (s *CephProvider) GetClusterStatus(req models.RpcRequest, resp *models.RpcResponse) error {
+	ctxt := req.RpcRequestContext
+
 	cluster_id_str := req.RpcRequestVars["cluster-id"]
 	cluster_id, err := uuid.Parse(cluster_id_str)
 	if err != nil {
-		logger.Get().Error("Error parsing the cluster id: %s. error: %v", cluster_id_str, err)
+		logger.Get().Error("%s-Error parsing the cluster id: %s. error: %v", ctxt, cluster_id_str, err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
 		return err
 	}
@@ -622,15 +627,14 @@ func (s *CephProvider) GetClusterStatus(req models.RpcRequest, resp *models.RpcR
 	var cluster models.Cluster
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
 	if err := coll.Find(bson.M{"clusterid": *cluster_id}).One(&cluster); err != nil {
-		logger.Get().Error("Error fetching details of cluster: %v. error: %v", *cluster_id, err)
+		logger.Get().Error("%s-Error fetching details of cluster: %v. error: %v", ctxt, *cluster_id, err)
 		return err
 	}
 
-	status, err := cluster_status(*cluster_id, cluster.Name, "")
+	status, err := cluster_status(*cluster_id, cluster.Name, ctxt)
 	if err != nil {
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("error: %v", err))
 	} else {
-		//*resp = utils.WriteResponse(http.StatusOK, status.String())
 		intStatus := int(status)
 		*resp = utils.WriteResponseWithData(http.StatusOK, "", []byte(strconv.Itoa(intStatus)))
 	}
@@ -646,7 +650,7 @@ func cluster_status(clusterId uuid.UUID, clusterName string, ctxt string) (model
 	}
 
 	// Get the cluser status
-	status, err := salt_backend.GetClusterStatus(monnode.Hostname, clusterId, clusterName)
+	status, err := salt_backend.GetClusterStatus(monnode.Hostname, clusterId, clusterName, ctxt)
 	if err != nil {
 		logger.Get().Error("%s-Could not get up status of cluster: %v. error: %v", ctxt, clusterName, err)
 		return models.CLUSTER_STATUS_UNKNOWN, err
@@ -658,21 +662,21 @@ func cluster_status(clusterId uuid.UUID, clusterName string, ctxt string) (model
 	}
 }
 
-func RecalculatePgnum(clusterId uuid.UUID, t *task.Task) bool {
+func RecalculatePgnum(ctxt string, clusterId uuid.UUID, t *task.Task) bool {
 	// Get storage pools
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	var storages []models.Storage
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
 	if err := coll.Find(bson.M{"clusterid": clusterId}).All(&storages); err != nil {
-		utils.FailTask(fmt.Sprintf("Error getting storage pools for cluster: %v", clusterId), err, t)
+		utils.FailTask(fmt.Sprintf("Error getting storage pools for cluster: %v", clusterId), fmt.Errorf("%s-%v", ctxt, err), t)
 		return false
 	}
 
 	t.UpdateStatus("Getting a mon from cluster")
 	monnode, err := GetRandomMon(clusterId)
 	if err != nil {
-		utils.FailTask(fmt.Sprintf("Error getting mon node for cluster: %v", clusterId), err, t)
+		utils.FailTask(fmt.Sprintf("Error getting mon node for cluster: %v", clusterId), fmt.Errorf("%s-%v", ctxt, err), t)
 		return false
 	}
 
@@ -683,7 +687,7 @@ func RecalculatePgnum(clusterId uuid.UUID, t *task.Task) bool {
 		pgNum := DerivePgNum(clusterId, storage.Size, storage.Replicas)
 		currentPgNum, err := strconv.Atoi(storage.Options["pgnum"])
 		if err != nil {
-			utils.FailTask(fmt.Sprintf("Error getting details of pool: %s for cluster: %v", storage.Name, clusterId), err, t)
+			utils.FailTask(fmt.Sprintf("Error getting details of pool: %s for cluster: %v", storage.Name, clusterId), fmt.Errorf("%s-%v", ctxt, err), t)
 			return false
 		}
 		if pgNum == uint(currentPgNum) {
@@ -692,7 +696,7 @@ func RecalculatePgnum(clusterId uuid.UUID, t *task.Task) bool {
 		}
 		id, err := strconv.Atoi(storage.Options["id"])
 		if err != nil {
-			utils.FailTask(fmt.Sprintf("Error getting details of pool: %s for cluster: %v", storage.Name, clusterId), err, t)
+			utils.FailTask(fmt.Sprintf("Error getting details of pool: %s for cluster: %v", storage.Name, clusterId), fmt.Errorf("%s-%v", ctxt, err), t)
 			return false
 		}
 		// Update the PG Num for the cluster
@@ -701,7 +705,7 @@ func RecalculatePgnum(clusterId uuid.UUID, t *task.Task) bool {
 			"pg_num":  int(pgNum),
 			"pgp_num": int(pgNum),
 		}
-		ok, err := cephapi_backend.UpdatePool(monnode.Hostname, clusterId, id, poolData)
+		ok, err := cephapi_backend.UpdatePool(monnode.Hostname, clusterId, id, poolData, ctxt)
 		if err != nil || !ok {
 			t.UpdateStatus(fmt.Sprintf("Could not update pgnum/pgnum for pool: %s of cluster: %v", storage.Name, clusterId))
 		}
@@ -717,7 +721,7 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 		return err
 	}
 
-	fetchedOSDs, err := cephapi_backend.GetOSDs(monnode.Hostname, clusterId)
+	fetchedOSDs, err := cephapi_backend.GetOSDs(monnode.Hostname, clusterId, ctxt)
 	if err != nil {
 		logger.Get().Error("%s-Error getting OSD details for cluster: %v. error: %v", ctxt, clusterId, err)
 		return err
