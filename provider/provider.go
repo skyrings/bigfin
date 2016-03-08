@@ -88,13 +88,13 @@ func GetMons(param bson.M) (models.Nodes, error) {
 	return mons, nil
 }
 
-func CreateDefaultECProfiles(mon string, clusterId uuid.UUID) (bool, error) {
+func CreateDefaultECProfiles(ctxt string, mon string, clusterId uuid.UUID) (bool, error) {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	var cluster models.Cluster
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
 	if err := coll.Find(bson.M{"clusterid": clusterId}).One(&cluster); err != nil {
-		logger.Get().Error("Error getting cluster details for %v. error: %v", clusterId, err)
+		logger.Get().Error("%s-Error getting cluster details for %v. error: %v", ctxt, clusterId, err)
 		return false, err
 	}
 	var cmdMap map[string]string = map[string]string{
@@ -104,12 +104,12 @@ func CreateDefaultECProfiles(mon string, clusterId uuid.UUID) (bool, error) {
 	}
 
 	for k, v := range cmdMap {
-		ok, _, err := cephapi_backend.ExecCmd(mon, clusterId, v)
+		ok, _, err := cephapi_backend.ExecCmd(mon, clusterId, v, ctxt)
 		if err != nil || !ok {
-			logger.Get().Error("Error creating EC profile for %s. error: %v", k, err)
+			logger.Get().Error("%s-Error creating EC profile for %s. error: %v", ctxt, k, err)
 			continue
 		} else {
-			logger.Get().Debug("Added EC profile for %s", k)
+			logger.Get().Debug("%s-Added EC profile for %s", ctxt, k)
 		}
 	}
 	return true, nil

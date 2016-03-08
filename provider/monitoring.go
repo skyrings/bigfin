@@ -44,7 +44,7 @@ func InitMonitoringManager() error {
 	return nil
 }
 
-func initMonitoringRoutines() error {
+func initMonitoringRoutines(ctxt string) error {
 	/*
 		sync.WaitGroup can be used if it is required to do something after all go routines complete.
 		For ex: pushing to db can be done after all go-routines complete.
@@ -53,12 +53,12 @@ func initMonitoringRoutines() error {
 	var errors string
 	wg.Add(len(monitoringRoutines))
 	for _, iFunc := range monitoringRoutines {
-		if function, ok := iFunc.(func() (map[string]map[string]string, error)); ok {
-			go func() {
+		if function, ok := iFunc.(func(string) (map[string]map[string]string, error)); ok {
+			go func(ctxt string) {
 				defer wg.Done()
-				response, err := function()
+				response, err := function(ctxt)
 				if err != nil {
-					logger.Get().Error(err.Error())
+					logger.Get().Error("%s-%v", ctxt, err.Error())
 					errors = errors + err.Error()
 				}
 				if response != nil {
@@ -68,11 +68,11 @@ func initMonitoringRoutines() error {
 					*/
 					err := pushTimeSeriesData(response)
 					if err != nil {
-						logger.Get().Error(err.Error())
+						logger.Get().Error("%s-%v", ctxt, err.Error())
 						errors = errors + err.Error()
 					}
 				}
-			}()
+			}(ctxt)
 		} else {
 			continue
 		}
@@ -83,41 +83,43 @@ func initMonitoringRoutines() error {
 }
 
 func (s *CephProvider) MonitorCluster(req models.RpcRequest, resp *models.RpcResponse) error {
+	ctxt := req.RpcRequestContext
+
 	cluster_id_str, ok := req.RpcRequestVars["cluster-id"]
 	var monnode *models.Node
 	if !ok {
-		logger.Get().Error("Incorrect cluster id: %s", cluster_id_str)
+		logger.Get().Error("%s-Incorrect cluster id: %s", ctxt, cluster_id_str)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Incorrect cluster id: %s", cluster_id_str))
 		return fmt.Errorf("Incorrect cluster id: %s", cluster_id_str)
 	}
 	cluster_id, err := uuid.Parse(cluster_id_str)
 	if err != nil {
-		logger.Get().Error("Error parsing the cluster id: %s. Error: %v", cluster_id_str, err)
+		logger.Get().Error("%s-Error parsing the cluster id: %s. Error: %v", ctxt, cluster_id_str, err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s.Error: %v", cluster_id_str, err))
 		return fmt.Errorf("Error parsing the cluster id: %s.Error: %v", cluster_id_str, err)
 	}
 	cluster, err = getCluster(*cluster_id)
 	if err != nil {
-		logger.Get().Error("Unable to get cluster with id %v.Err %v", cluster_id, err.Error())
+		logger.Get().Error("%s-Unable to get cluster with id %v.Err %v", ctxt, cluster_id, err.Error())
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unable to get cluster with id %v.Err %v", cluster_id, err.Error()))
 		return fmt.Errorf("Unable to get cluster with id %v.Err %v", cluster_id, err.Error())
 	}
 	monnode, err = GetRandomMon(*cluster_id)
 	if err != nil {
-		logger.Get().Error("Unable to pick a random mon from cluster %v.Error: %v", cluster.Name, err.Error())
+		logger.Get().Error("%s-Unable to pick a random mon from cluster %v.Error: %v", ctxt, cluster.Name, err.Error())
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unable to pick a random mon from cluster %v.Error: %v", cluster.Name, err.Error()))
 		return fmt.Errorf("Unable to pick a random mon from cluster %v.Error: %v", cluster.Name, err.Error())
 	}
 	monName = (*monnode).Hostname
 	nodes, err = getClusterNodesById(cluster_id)
 	if err != nil {
-		logger.Get().Error("Unable to fetch nodes of cluster %v.Error: %v", cluster.Name, err.Error())
+		logger.Get().Error("%s-Unable to fetch nodes of cluster %v.Error: %v", ctxt, cluster.Name, err.Error())
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unable to fetch nodes of cluster %v.Error: %v", cluster.Name, err.Error()))
 		return fmt.Errorf("Unable to fetch nodes of cluster %v.Error: %v", cluster.Name, err.Error())
 	}
-	err = initMonitoringRoutines()
+	err = initMonitoringRoutines(ctxt)
 	if err != nil {
-		logger.Get().Error("Error: %v", err.Error())
+		logger.Get().Error("%s-Error: %v", ctxt, err.Error())
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error: %v", err.Error()))
 		return fmt.Errorf("Error: %v", err.Error())
 	}
@@ -167,15 +169,15 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 	bytes, marshalErr := json.Marshal(result)
 	if marshalErr != nil {
 		*resp = utils.WriteResponseWithData(http.StatusInternalServerError, err_str, []byte{})
-		return fmt.Errorf("Failed to marshal %v.Error %v", result, marshalErr)
+		return fmt.Errorf("%s-Failed to marshal %v.Error %v", ctxt, result, marshalErr)
 	}
 	*resp = utils.WriteResponseWithData(httpStatusCode, err_str, bytes)
 	return fmt.Errorf("%v", err_str)
 }
 
-func FetchOSDStats() (map[string]map[string]string, error) {
+func FetchOSDStats(ctxt string) (map[string]map[string]string, error) {
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
-	statistics, statsFetchErr := salt_backend.GetOSDDetails(monName, cluster.Name)
+	statistics, statsFetchErr := salt_backend.GetOSDDetails(monName, cluster.Name, ctxt)
 	if statsFetchErr != nil {
 		return nil, fmt.Errorf("Unable to fetch cluster stats from mon %v of cluster %v.Error: %v", monName, cluster.Name, statsFetchErr)
 	}
@@ -278,13 +280,13 @@ func getOsds(clusterId uuid.UUID) (slus []models.StorageLogicalUnit, err error) 
 	return slus, nil
 }
 
-func FetchClusterStats() (map[string]map[string]string, error) {
+func FetchClusterStats(ctxt string) (map[string]map[string]string, error) {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
 
-	statistics, statsFetchErr := salt_backend.GetClusterStats(monName, cluster.Name)
+	statistics, statsFetchErr := salt_backend.GetClusterStats(monName, cluster.Name, ctxt)
 	if statsFetchErr != nil {
 		return nil, fmt.Errorf("Unable to fetch cluster stats from mon %v of cluster %v.Error: %v", monName, cluster.Name, statsFetchErr)
 	}
@@ -303,7 +305,7 @@ func FetchClusterStats() (map[string]map[string]string, error) {
 		percentUsed = (float64(statistics.Used*100) / float64(statistics.Total))
 	}
 	if err := updateCluster(bson.M{"clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"usage": models.Utilization{Used: statistics.Used, Total: statistics.Total, PercentUsed: percentUsed}}}); err != nil {
-		logger.Get().Error("Updating the cluster statistics to db for the cluster %v failed.Error %v", cluster.Name, err.Error())
+		logger.Get().Error("%s-Updating the cluster statistics to db for the cluster %v failed.Error %v", ctxt, cluster.Name, err.Error())
 	}
 
 	collection := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
@@ -316,16 +318,16 @@ func FetchClusterStats() (map[string]map[string]string, error) {
 		}
 		dbUpdateError := collection.Update(bson.M{"clusterid": cluster.ClusterId, "name": poolStat.Name}, bson.M{"$set": bson.M{"usage": models.Utilization{Used: used, Total: total, PercentUsed: percentUsed}}})
 		if dbUpdateError != nil {
-			logger.Get().Error("Failed to update utilization of pool %v of cluster %v to db.Error %v", poolStat.Name, cluster.Name, dbUpdateError)
+			logger.Get().Error("%s-Failed to update utilization of pool %v of cluster %v to db.Error %v", ctxt, poolStat.Name, cluster.Name, dbUpdateError)
 		}
 	}
 
 	return metrics, nil
 }
 
-func FetchObjectCount() (map[string]map[string]string, error) {
+func FetchObjectCount(ctxt string) (map[string]map[string]string, error) {
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
-	statistics, statsFetchErr := salt_backend.GetObjectCount(monName, cluster.Name)
+	statistics, statsFetchErr := salt_backend.GetObjectCount(monName, cluster.Name, ctxt)
 	if statsFetchErr != nil {
 		return nil, fmt.Errorf("Unable to fetch object count from mon %v of cluster %v.Error: %v", monName, cluster.Name, statsFetchErr)
 	}
@@ -340,15 +342,15 @@ func FetchObjectCount() (map[string]map[string]string, error) {
 	metrics[metric_name] = map[string]string{timeStampStr: fmt.Sprintf("%v", objectCnt)}
 
 	if err := updateCluster(bson.M{"clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"objectcnt": map[string]int64{bigfin_models.NUMBER_OF_OBJECTS: objectCnt, bigfin_models.NUMBER_OF_DEGRADED_OBJECTS: objectErrCnt}}}); err != nil {
-		logger.Get().Error("Updating the object count to db for the cluster %v failed.Error %v", cluster.Name, err.Error())
+		logger.Get().Error("%s-Updating the object count to db for the cluster %v failed.Error %v", ctxt, cluster.Name, err.Error())
 	}
 
 	return metrics, nil
 }
 
-func FetchPGSummary() (map[string]map[string]string, error) {
+func FetchPGSummary(ctxt string) (map[string]map[string]string, error) {
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
-	statistics, statsFetchErr := cephapi_backend.GetPGSummary(monName, cluster.ClusterId)
+	statistics, statsFetchErr := cephapi_backend.GetPGSummary(monName, cluster.ClusterId, ctxt)
 	if statsFetchErr != nil {
 		return nil, fmt.Errorf("Unable to fetch PG Details from mon %v of cluster %v.Error: %v", monName, cluster.Name, statsFetchErr)
 	}

@@ -88,7 +88,7 @@ func (s *CephProvider) SyncBlockDevices(req models.RpcRequest, resp *models.RpcR
 		// Get the block devices of the pool
 		cmd := fmt.Sprintf("rbd ls %s --cluster %s --format=json", pool.Name, cluster.Name)
 		var blkDevices []string
-		ok, out, err := cephapi_backend.ExecCmd(monnode.Hostname, *cluster_id, cmd)
+		ok, out, err := cephapi_backend.ExecCmd(monnode.Hostname, *cluster_id, cmd, ctxt)
 		if !ok || err != nil {
 			logger.Get().Error("%s-Error getting block devices for pool: %s on cluster: %s. error: %v", ctxt, pool.Name, cluster.Name, err)
 			continue
@@ -101,7 +101,7 @@ func (s *CephProvider) SyncBlockDevices(req models.RpcRequest, resp *models.RpcR
 		for _, blkDevice := range blkDevices {
 			cmd := fmt.Sprintf("rbd --cluster %s --image %s -p %s info --format=json", cluster.Name, blkDevice, pool.Name)
 			var blkDeviceDet backend.BlockDevice
-			ok, out, err := cephapi_backend.ExecCmd(monnode.Hostname, *cluster_id, cmd)
+			ok, out, err := cephapi_backend.ExecCmd(monnode.Hostname, *cluster_id, cmd, ctxt)
 			if !ok || err != nil {
 				logger.Get().Error("%s-Error getting information of block device: %s of pool: %s on cluster: %s. error: %v", ctxt, blkDevice, pool.Name, cluster.Name, err)
 				continue
@@ -220,7 +220,7 @@ func syncOsds(clusterId uuid.UUID, ctxt string) error {
 		return err
 	}
 
-	osds, err := cephapi_backend.GetOSDs(monnode.Hostname, clusterId)
+	osds, err := cephapi_backend.GetOSDs(monnode.Hostname, clusterId, ctxt)
 	if err != nil {
 		logger.Get().Error("%s-Error getting OSDs list for cluster: %v. error: %v", ctxt, clusterId, err)
 		return err

@@ -52,39 +52,39 @@ var (
 	}
 )
 
-func calamari_server_start_handler(event models.Event) error {
+func calamari_server_start_handler(event models.Event, ctxt string) error {
 	return nil
 }
 
-func ceph_server_add_handler(event models.Event) error {
+func ceph_server_add_handler(event models.Event, ctxt string) error {
 	return nil
 }
 
-func ceph_server_reboot_handler(event models.Event) error {
+func ceph_server_reboot_handler(event models.Event, ctxt string) error {
 	return nil
 }
 
-func ceph_server_package_change_handler(event models.Event) error {
+func ceph_server_package_change_handler(event models.Event, ctxt string) error {
 	return nil
 }
 
-func ceph_server_late_reporting_handler(event models.Event) error {
+func ceph_server_late_reporting_handler(event models.Event, ctxt string) error {
 	return nil
 }
 
-func ceph_server_contact_regained_handler(event models.Event) error {
+func ceph_server_contact_regained_handler(event models.Event, ctxt string) error {
 	return nil
 }
 
-func ceph_cluster_late_reporting_handler(event models.Event) error {
+func ceph_cluster_late_reporting_handler(event models.Event, ctxt string) error {
 	return nil
 }
 
-func ceph_cluster_contact_regained_handler(event models.Event) error {
+func ceph_cluster_contact_regained_handler(event models.Event, ctxt string) error {
 	return nil
 }
 
-func ceph_osd_property_changed_handler(event models.Event) error {
+func ceph_osd_property_changed_handler(event models.Event, ctxt string) error {
 	if strings.HasPrefix(event.Message, "OSD") && strings.HasSuffix(event.Message, "added to the cluster map") {
 		sessionCopy := db.GetDatastore().Copy()
 		defer sessionCopy.Close()
@@ -92,12 +92,12 @@ func ceph_osd_property_changed_handler(event models.Event) error {
 		osdname := fmt.Sprintf("osd.%s", event.Tags["service_id"])
 		osduuid, err := uuid.Parse(event.Tags["osd_uuid"])
 		if err != nil {
-			logger.Get().Error("Error parsing the uuid for slu: %s. error: %v", osdname, err)
+			logger.Get().Error("%s-Error parsing the uuid for slu: %s. error: %v", ctxt, osdname, err)
 			return errors.New(fmt.Sprintf("Error parsing the uuid for slu: %s. error: %v", osdname, err))
 		}
 		clusteruuid, err := uuid.Parse(event.Tags["fsid"])
 		if err != nil {
-			logger.Get().Error("Error parsing the cluster uuid for slu: %s. error: %v", osdname, err)
+			logger.Get().Error("%s-Error parsing the cluster uuid for slu: %s. error: %v", ctxt, osdname, err)
 			return errors.New(fmt.Sprintf("Error parsing the cluster uuid for slu: %s. error: %v", osdname, err))
 		}
 		var updated bool
@@ -107,7 +107,7 @@ func ceph_osd_property_changed_handler(event models.Event) error {
 					time.Sleep(5 * time.Second)
 					continue
 				}
-				logger.Get().Error("Error updating the uuid for slu: %s. error: %v", osdname, err)
+				logger.Get().Error("%s-Error updating the uuid for slu: %s. error: %v", ctxt, osdname, err)
 				return errors.New(fmt.Sprintf("Error updating the uuid for slu: %s. error: %v", osdname, err))
 			} else {
 				updated = true
@@ -115,38 +115,38 @@ func ceph_osd_property_changed_handler(event models.Event) error {
 			}
 		}
 		if !updated {
-			logger.Get().Error("Sluid update failed for: %s", osdname)
+			logger.Get().Error("%s-Sluid update failed for: %s", ctxt, osdname)
 		} else {
-			logger.Get().Info("Updated sluid for: %s", osdname)
+			logger.Get().Info("%s-Updated sluid for: %s", ctxt, osdname)
 		}
 	}
 	return nil
 }
 
-func ceph_mon_property_changed_handler(event models.Event) error {
+func ceph_mon_property_changed_handler(event models.Event, ctxt string) error {
 	return nil
 }
 
-func update_cluster_status(clusterStatus int, event models.Event) error {
+func update_cluster_status(clusterStatus int, event models.Event, ctxt string) error {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
 	if err := coll.Update(bson.M{"clusterid": event.ClusterId}, bson.M{"$set": bson.M{"status": clusterStatus}}); err != nil {
-		logger.Get().Error("Error updating the status of cluster: %v. error: %v", event.ClusterId, err)
+		logger.Get().Error("%s-Error updating the status of cluster: %v. error: %v", ctxt, event.ClusterId, err)
 		return err
 	}
 	return nil
 }
 
-func ceph_cluster_health_changed(event models.Event) error {
+func ceph_cluster_health_changed(event models.Event, ctxt string) error {
 	cluster, err := getCluster(event.ClusterId)
 	if err != nil {
-		logger.Get().Error("Error getting the  cluster: %v. error: %v", event.ClusterId, err)
+		logger.Get().Error("%s-Error getting the  cluster: %v. error: %v", ctxt, event.ClusterId, err)
 		return err
 	}
 	if cluster.State == models.CLUSTER_STATE_ACTIVE {
 		status := strings.SplitAfter(event.Message, " ")[len(strings.SplitAfter(event.Message, " "))-1]
-		if err := update_cluster_status(cluster_status_in_enum[status], event); err != nil {
+		if err := update_cluster_status(cluster_status_in_enum[status], event, ctxt); err != nil {
 			return err
 		}
 	}
@@ -154,10 +154,11 @@ func ceph_cluster_health_changed(event models.Event) error {
 }
 
 func (s *CephProvider) ProcessEvent(req models.RpcRequest, resp *models.RpcResponse) error {
+	ctxt := req.RpcRequestContext
 	var e models.Event
 
 	if err := json.Unmarshal(req.RpcRequestData, &e); err != nil {
-		logger.Get().Error("Unbale to parse the request. error: %v", err)
+		logger.Get().Error("%s-Unbale to parse the request. error: %v", ctxt, err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unbale to parse the request. error: %v", err))
 		return err
 	}
@@ -165,14 +166,14 @@ func (s *CephProvider) ProcessEvent(req models.RpcRequest, resp *models.RpcRespo
 	for tag, handler := range handlermap {
 		if match, err := filepath.Match(tag, e.Tag); err == nil {
 			if match {
-				if err := handler.(func(models.Event) error)(e); err != nil {
+				if err := handler.(func(models.Event, string) error)(e, ctxt); err != nil {
 					*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Event Handling Failed for event: %s", err))
-					logger.Get().Error("Event Handling Failed for event: %s. error: %v", e.Tag, err)
+					logger.Get().Error("%s-Event Handling Failed for event: %s. error: %v", ctxt, e.Tag, err)
 					return err
 				}
-				if err := event.Persist_event(e); err != nil {
+				if err := event.Persist_event(e, ctxt); err != nil {
 					*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Could not persist the event to DB: %s", err))
-					logger.Get().Error("Could not persist the event: %s to DB. error: %v", e.Tag, err)
+					logger.Get().Error("%s-Could not persist the event: %s to DB. error: %v", ctxt, e.Tag, err)
 					return err
 				} else {
 					*resp = utils.WriteResponse(http.StatusOK, "")
@@ -181,11 +182,11 @@ func (s *CephProvider) ProcessEvent(req models.RpcRequest, resp *models.RpcRespo
 			}
 		} else {
 			*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error while mapping handler: %s", err))
-			logger.Get().Error("Error while maping handler for event: %s. error: %v", e.Tag, err)
+			logger.Get().Error("%s-Error while maping handler for event: %s. error: %v", ctxt, e.Tag, err)
 			return err
 		}
 	}
-	logger.Get().Warning("Handler not defined for event %s", e.Tag)
+	logger.Get().Warning("%s-Handler not defined for event %s", ctxt, e.Tag)
 	*resp = utils.WriteResponse(http.StatusNotImplemented, fmt.Sprintf("Handler not defined for event %s", e.Tag))
 	return nil
 }
