@@ -96,7 +96,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 		}
 	}
 	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-CreateStorage", asyncTask, 120*time.Second, nil, nil, nil); err != nil {
-		logger.Get().Error("Task creation failed for create storage %s on cluster: %v. error: %v", request.Name, *cluster_id, err)
+		logger.Get().Error("%s-Task creation failed for create storage %s on cluster: %v. error: %v", ctxt, request.Name, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for storage creation")
 		return err
 	} else {
@@ -185,7 +185,7 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 
 	ok := true
 	if request.Type == models.STORAGE_TYPE_ERASURE_CODED {
-		ok, err := validECProfile(monnode.Hostname, cluster, request.Options["ecprofile"])
+		ok, err := validECProfile(ctxt, monnode.Hostname, cluster, request.Options["ecprofile"])
 		if err != nil {
 			utils.FailTask("", fmt.Errorf("%s - Error checking validity of ec profile value. error: %v", ctxt, err), t)
 			return nil, false
@@ -204,16 +204,16 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 			return nil, false
 		}
 		cmd := fmt.Sprintf("ceph --cluster %s osd pool create %s %d %d erasure %s", cluster.Name, request.Name, uint(pgNum), uint(pgNum), request.Options["ecprofile"])
-		ok, _, err = cephapi_backend.ExecCmd(monnode.Hostname, clusterId, cmd)
+		ok, _, err = cephapi_backend.ExecCmd(monnode.Hostname, clusterId, cmd, ctxt)
 		time.Sleep(10 * time.Second)
 	} else {
-		ok, err = cephapi_backend.CreatePool(request.Name, monnode.Hostname, cluster.Name, uint(pgNum), request.Replicas, quotaMaxObjects, quotaMaxBytes)
+		ok, err = cephapi_backend.CreatePool(request.Name, monnode.Hostname, cluster.Name, uint(pgNum), request.Replicas, quotaMaxObjects, quotaMaxBytes, ctxt)
 	}
 	if err != nil || !ok {
 		utils.FailTask(fmt.Sprintf("Create pool %s failed on cluster: %s", request.Name, cluster.Name), fmt.Errorf("%s - %v", ctxt, err), t)
 		return nil, false
 	} else {
-		pools, err := cephapi_backend.GetPools(monnode.Hostname, clusterId)
+		pools, err := cephapi_backend.GetPools(monnode.Hostname, clusterId, ctxt)
 		if err != nil {
 			utils.FailTask("Error getting created pools", fmt.Errorf("%s - %v", ctxt, err), t)
 			return nil, false
@@ -267,9 +267,9 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 	}
 }
 
-func validECProfile(mon string, cluster models.Cluster, ecprofile string) (bool, error) {
+func validECProfile(ctxt string, mon string, cluster models.Cluster, ecprofile string) (bool, error) {
 	cmd := fmt.Sprintf("ceph osd erasure-code-profile ls --cluster %s --format=json", cluster.Name)
-	ok, out, err := cephapi_backend.ExecCmd(mon, cluster.ClusterId, cmd)
+	ok, out, err := cephapi_backend.ExecCmd(mon, cluster.ClusterId, cmd, ctxt)
 	var fetchedProfiles []string
 	if !ok || err != nil {
 		return false, err
@@ -339,16 +339,17 @@ func avg_osd_size(slus []models.StorageLogicalUnit) uint64 {
 }
 
 func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcResponse) error {
+	ctxt := req.RpcRequestContext
 	cluster_id_str := req.RpcRequestVars["cluster-id"]
 	cluster_id, err := uuid.Parse(cluster_id_str)
 	if err != nil {
-		logger.Get().Error("Error parsing the cluster id: %s. error: %v", cluster_id_str, err)
+		logger.Get().Error("%s-Error parsing the cluster id: %s. error: %v", ctxt, cluster_id_str, err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
 		return err
 	}
 	monnode, err := GetRandomMon(*cluster_id)
 	if err != nil {
-		logger.Get().Error("Error getting a mon node in cluster: %v. error: %v", *cluster_id, err)
+		logger.Get().Error("%s-Error getting a mon node in cluster: %v. error: %v", ctxt, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting a mon node in cluster. error: %v", err))
 		return err
 	}
@@ -359,15 +360,15 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 	var cluster models.Cluster
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
 	if err := coll.Find(bson.M{"clusterid": *cluster_id}).One(&cluster); err != nil {
-		logger.Get().Error("Error getting details for cluster: %v. error: %v", *cluster_id, err)
+		logger.Get().Error("%s-Error getting details for cluster: %v. error: %v", ctxt, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting cluster details. error: %v", err))
 		return err
 	}
 
 	// Get the pools for the cluster
-	pools, err := cephapi_backend.GetPools(monnode.Hostname, *cluster_id)
+	pools, err := cephapi_backend.GetPools(monnode.Hostname, *cluster_id, ctxt)
 	if err != nil {
-		logger.Get().Error("Error getting storages for cluster: %s. error: %v", cluster.Name, err)
+		logger.Get().Error("%s-Error getting storages for cluster: %s. error: %v", ctxt, cluster.Name, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting storages. error: %v", err))
 		return err
 	}
@@ -402,14 +403,15 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 		ok, out, err := cephapi_backend.ExecCmd(
 			monnode.Hostname,
 			*cluster_id,
-			fmt.Sprintf("ceph --cluster %s osd pool get %s erasure_code_profile --format=json", cluster.Name, pool.Name))
+			fmt.Sprintf("ceph --cluster %s osd pool get %s erasure_code_profile --format=json", cluster.Name, pool.Name),
+			ctxt)
 		if err != nil || !ok {
 			storage.Type = models.STORAGE_TYPE_REPLICATED
-			logger.Get().Warning("Error getting EC profile details of pool: %s of cluster: %s", pool.Name, cluster.Name)
+			logger.Get().Warning("%s-Error getting EC profile details of pool: %s of cluster: %s", ctxt, pool.Name, cluster.Name)
 		} else {
 			var ecprofileDet ECProfileDet
 			if err := json.Unmarshal([]byte(out), &ecprofileDet); err != nil {
-				logger.Get().Warning("Error parsing EC profile details of pool: %s of cluster: %s", pool.Name, cluster.Name)
+				logger.Get().Warning("%s-Error parsing EC profile details of pool: %s of cluster: %s", ctxt, pool.Name, cluster.Name)
 			} else {
 				storage.Type = models.STORAGE_TYPE_ERASURE_CODED
 				options["ecprofile"] = ecprofileDet.ECProfile
@@ -420,7 +422,7 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 	}
 	result, err := json.Marshal(storages)
 	if err != nil {
-		logger.Get().Error("Error forming the output for storage list for cluster: %s. error: %v", cluster.Name, err)
+		logger.Get().Error("%s-Error forming the output for storage list for cluster: %s. error: %v", ctxt, cluster.Name, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error forming the output. error: %v", err))
 		return err
 	}
@@ -510,7 +512,7 @@ func (s *CephProvider) RemoveStorage(req models.RpcRequest, resp *models.RpcResp
 		}
 	}
 	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-DeleteStorage", asyncTask, 120*time.Second, nil, nil, nil); err != nil {
-		logger.Get().Error("Task creation failed for delete storage on cluster: %v. error: %v", *cluster_id, err)
+		logger.Get().Error("%s-Task creation failed for delete storage on cluster: %v. error: %v", ctxt, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for storage deletion")
 		return err
 	} else {

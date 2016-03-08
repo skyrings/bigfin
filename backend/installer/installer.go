@@ -54,27 +54,27 @@ func (c Installer) AddOSD(clusterName string, osd backend.OSD, ctxt string) (map
 	return map[string][]string{}, nil
 }
 
-func (c Installer) CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64) (bool, error) {
+func (c Installer) CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64, ctxt string) (bool, error) {
 	return true, nil
 }
 
-func (c Installer) ListPoolNames(mon string, clusterName string) ([]string, error) {
+func (c Installer) ListPoolNames(mon string, clusterName string, ctxt string) ([]string, error) {
 	return []string{}, nil
 }
 
-func (c Installer) GetClusterStatus(mon string, clusterName string) (status string, err error) {
+func (c Installer) GetClusterStatus(mon string, clusterId uuid.UUID, clusterName string, ctxt string) (status string, err error) {
 	return "", nil
 }
 
-func (c Installer) GetClusterStats(mon string, clusterName string) (backend.ClusterUtilization, error) {
+func (c Installer) GetClusterStats(mon string, clusterName string, ctxt string) (backend.ClusterUtilization, error) {
 	return backend.ClusterUtilization{}, nil
 }
 
-func (c Installer) GetPools(mon string, clusterId uuid.UUID) ([]backend.CephPool, error) {
+func (c Installer) GetPools(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CephPool, error) {
 	return []backend.CephPool{}, nil
 }
 
-func (c Installer) UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool map[string]interface{}) (bool, error) {
+func (c Installer) UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool map[string]interface{}, ctxt string) (bool, error) {
 	return true, nil
 }
 
@@ -82,30 +82,30 @@ func (c Installer) RemovePool(mon string, clusterId uuid.UUID, clusterName strin
 	return true, nil
 }
 
-func (c Installer) GetOSDDetails(mon string, clusterName string) (osds []backend.OSDDetails, err error) {
+func (c Installer) GetOSDDetails(mon string, clusterName string, ctxt string) (osds []backend.OSDDetails, err error) {
 	return []backend.OSDDetails{}, nil
 }
 
-func (c Installer) GetObjectCount(mon string, clusterName string) (map[string]int64, error) {
+func (c Installer) GetObjectCount(mon string, clusterName string, ctxt string) (map[string]int64, error) {
 	return map[string]int64{}, nil
 }
 
-func (c Installer) GetPGSummary(mon string, clusterId uuid.UUID) (backend.PgSummary, error) {
+func (c Installer) GetPGSummary(mon string, clusterId uuid.UUID, ctxt string) (backend.PgSummary, error) {
 	return backend.PgSummary{}, nil
 }
 
-func (c Installer) ExecCmd(mon string, clusterId uuid.UUID, cmd string) (bool, string, error) {
+func (c Installer) ExecCmd(mon string, clusterId uuid.UUID, cmd string, ctxt string) (bool, string, error) {
 	return true, "", nil
 }
 
-func (c Installer) GetOSDs(mon string, clusterId uuid.UUID) ([]backend.CephOSD, error) {
+func (c Installer) GetOSDs(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CephOSD, error) {
 	return []backend.CephOSD{}, nil
 }
 
-func (c Installer) UpdateOSD(mon string, clusterId uuid.UUID, osdId string, params map[string]interface{}) (bool, error) {
+func (c Installer) UpdateOSD(mon string, clusterId uuid.UUID, osdId string, params map[string]interface{}, ctxt string) (bool, error) {
 	return true, nil
 }
 
-func (c Installer) GetOSD(mon string, clusterId uuid.UUID, osdId string) (backend.CephOSD, error) {
+func (c Installer) GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt string) (backend.CephOSD, error) {
 	return backend.CephOSD{}, nil
 }

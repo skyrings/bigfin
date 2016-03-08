@@ -257,7 +257,7 @@ def _add_ceph_mon_pillar_data(mon_id_map, cluster_name, monitors):
     return pillar_data
 
 
-def CreateCluster(cluster_name, fsid, minions, ctxt):
+def CreateCluster(cluster_name, fsid, minions, ctxt=""):
     # convert list of minions to below dict
     # {MINION_ID: {'public_ip': IP_ADDRESS,
     #              'cluster_ip': IP_ADDRESS}, ...}
@@ -324,7 +324,7 @@ def CreateCluster(cluster_name, fsid, minions, ctxt):
     return True
 
 
-def AddMon(cluster_name, minions, ctxt):
+def AddMon(cluster_name, minions, ctxt=""):
     # convert list of minions to below dict
     # {MINION_ID: {'public_ip': IP_ADDRESS,
     #              'cluster_ip': IP_ADDRESS}, ...}
@@ -380,7 +380,7 @@ def AddMon(cluster_name, minions, ctxt):
     return True
 
 
-def StartMon(monitors, ctxt):
+def StartMon(monitors, ctxt=""):
     out = run_state(local, monitors, 'start_ceph_mon', expr_form='list')
     if out:
         log.error("%s-start_mon failed to %s. error=%s" %
@@ -390,7 +390,7 @@ def StartMon(monitors, ctxt):
     return True
 
 
-def AddOSD(cluster_name, minions, ctxt):
+def AddOSD(cluster_name, minions, ctxt=""):
     # convert minions dict to below dict
     # {MINION_ID: {'public_ip': IP_ADDRESS,
     #              'cluster_ip': IP_ADDRESS,
@@ -501,29 +501,29 @@ def AddOSD(cluster_name, minions, ctxt):
     return osd_map
 
 
-def CreatePool(pool_name, monitor, cluster_name, pg_num=0):
+def CreatePool(pool_name, monitor, cluster_name, pg_num=0, ctxt=""):
     out = local.cmd(monitor, 'ceph.createPool',
                     [cluster_name, pool_name, pg_num])
 
     if out.get(monitor, {}).get('retcode') == 0:
         return True
 
-    log.error("create_pool failed. error=%s" % out)
+    log.error("%s-create_pool failed. error=%s" % (ctxt, out))
     raise Exception("create_pool failed. error=%s" % out)
 
 
-def ListPool(monitor, cluster_name):
+def ListPool(monitor, cluster_name, ctxt=""):
     out = local.cmd(monitor, 'ceph.getPoolList', [cluster_name])
 
     if out.get(monitor, {}).get('retcode') == 0:
         stdout = out.get(monitor, {}).get('stdout')
         return [pool['poolname'] for pool in json.loads(stdout)]
 
-    log.error("list_pool failed. error=%s" % out)
+    log.error("%s-list_pool failed. error=%s" % (ctxt, out))
     raise Exception("list_pool failed. error=%s" % out)
 
 
-def RemovePool(monitor, cluster, pool, ctxt):
+def RemovePool(monitor, cluster, pool, ctxt=""):
     out = local.cmd(monitor, 'ceph.removePool', [cluster, pool])
     if out.get(monitor, {}).get('retcode') == 0:
         return True
@@ -532,20 +532,20 @@ def RemovePool(monitor, cluster, pool, ctxt):
     raise Exception("Remove pool failed. error=%s", out)
 
 
-def GetClusterStatus(monitor, cluster_name):
+def GetClusterStatus(monitor, cluster_name, ctxt=""):
     out = local.cmd(monitor, 'ceph.getClusterStatus', [cluster_name])
     if out[monitor] != '':
         return out[monitor]
 
-    log.error("ceph cluster status failed. error=%s", out)
+    log.error("%s-ceph cluster status failed. error=%s", (ctxt, out))
     raise Exception("ceph cluster status failed. error=%s" % out)
 
 
-def GetClusterStats(monitor, cluster_name):
+def GetClusterStats(monitor, cluster_name, ctxt=""):
     ret_val = {}
     out = local.cmd(monitor, "ceph.getClusterStats", [cluster_name])
     if not out:
-        log.error("Failed to get cluster statistics from %s", monitor)
+        log.error("%s-Failed to get cluster statistics from %s", (ctxt, monitor))
         raise Exception("Failed to get cluster statistics from %s" % monitor)
     stats = ast.literal_eval(out[monitor])
     ret_val["Used"] = stats["stats"]["total_used_bytes"]
@@ -563,7 +563,7 @@ def GetClusterStats(monitor, cluster_name):
     return ret_val
 
 
-def GetObjectCount(monitor, cluster_name):
+def GetObjectCount(monitor, cluster_name, ctxt=""):
     res = local.cmd(monitor, "ceph.getObjectCount", [cluster_name])
     object_cnt = {}
     if res:
@@ -576,11 +576,11 @@ def GetObjectCount(monitor, cluster_name):
         object_cnt["num_objects"] = num_objects
         object_cnt["num_objects_degraded"] = num_objects_degraded
         return object_cnt
-    log.error("Object Count failed. error=%s", out)
+    log.error("%s-Object Count failed. error=%s", (ctxt, out))
     raise Exception("Object Count failed. error=%s" % out)
 
 
-def GetOSDDetails(monitor, cluster_name):
+def GetOSDDetails(monitor, cluster_name, ctxt=""):
     '''
     returns a list of osd details in a dictonary
     [{'Name' : 'Name of the osd device',
@@ -593,12 +593,12 @@ def GetOSDDetails(monitor, cluster_name):
     rv = []
     out = local.cmd('%s' % monitor, 'ceph.getOSDDetails', [cluster_name])
     if not out:
-        log.error("Failed to get cluster statistics from %s" % monitor)
+        log.error("%s-Failed to get cluster statistics from %s" % (ctxt, monitor))
         raise Exception("Failed to get cluster statistics from %s" % monitor)
     try:
         dist = ast.literal_eval(out[monitor])
     except SyntaxError as err:
-        log.error("Failed to get OSD utilization details from mon %s, error=%s" % (monitor, out[monitor]))
+        log.error("%s-Failed to get OSD utilization details from mon %s, error=%s" % (ctxt, monitor, out[monitor]))
         raise Exception("Failed to get OSD utilization details from mon %s, error:%s" % (monitor, err))
 
     if dist.has_key('nodes'):

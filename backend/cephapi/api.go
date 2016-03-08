@@ -55,7 +55,7 @@ func (c CephApi) AddOSD(clusterName string, osd backend.OSD, ctxt string) (map[s
 	return map[string][]string{}, nil
 }
 
-func (c CephApi) CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64) (bool, error) {
+func (c CephApi) CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64, ctxt string) (bool, error) {
 	// Get the cluster id
 	cluster_id, err := cluster_id(clusterName)
 	if err != nil {
@@ -89,17 +89,18 @@ func (c CephApi) CreatePool(name string, mon string, clusterName string, pgnum u
 	}
 }
 
-func (c CephApi) ListPoolNames(mon string, clusterName string) ([]string, error) {
+func (c CephApi) ListPoolNames(mon string, clusterName string, ctxt string) ([]string, error) {
 	return []string{}, nil
 }
 
-func (c CephApi) GetClusterStatus(mon string, clusterName string) (status string, err error) {
+func (c CephApi) GetClusterStatus(mon string, clusterId uuid.UUID, clusterName string, ctxt string) (status string, err error) {
 	return "", nil
 }
 
-func (c CephApi) GetClusterStats(mon string, clusterName string) (backend.ClusterUtilization, error) {
+func (c CephApi) GetClusterStats(mon string, clusterName string, ctxt string) (backend.ClusterUtilization, error) {
 	return backend.ClusterUtilization{}, nil
 }
+
 func New() backend.Backend {
 	api := new(CephApi)
 	api.LoadRoutes()
@@ -182,7 +183,7 @@ func route_request(route CephApiRoute, mon string, body io.Reader) (*http.Respon
 	return nil, errors.New(fmt.Sprintf("Invalid method type: %s", route.Method))
 }
 
-func (c CephApi) GetPools(mon string, clusterId uuid.UUID) ([]backend.CephPool, error) {
+func (c CephApi) GetPools(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CephPool, error) {
 	// Replace cluster id in route pattern
 	getPoolsRoute := CEPH_API_ROUTES["GetPools"]
 	getPoolsRoute.Pattern = strings.Replace(getPoolsRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
@@ -201,7 +202,7 @@ func (c CephApi) GetPools(mon string, clusterId uuid.UUID) ([]backend.CephPool, 
 	return pools, nil
 }
 
-func (c CephApi) UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool map[string]interface{}) (bool, error) {
+func (c CephApi) UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool map[string]interface{}, ctxt string) (bool, error) {
 	// Replace cluster id in route pattern
 	updatePoolRoute := CEPH_API_ROUTES["UpdatePool"]
 	updatePoolRoute.Pattern = strings.Replace(updatePoolRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
@@ -236,20 +237,20 @@ func (c CephApi) RemovePool(mon string, clusterId uuid.UUID, clusterName string,
 	}
 }
 
-func (c CephApi) GetOSDDetails(mon string, clusterName string) (osds []backend.OSDDetails, err error) {
+func (c CephApi) GetOSDDetails(mon string, clusterName string, ctxt string) (osds []backend.OSDDetails, err error) {
 	return []backend.OSDDetails{}, nil
 }
 
-func (c CephApi) GetObjectCount(mon string, clusterName string) (map[string]int64, error) {
+func (c CephApi) GetObjectCount(mon string, clusterName string, ctxt string) (map[string]int64, error) {
 	return map[string]int64{}, nil
 }
 
-func (c CephApi) GetPGSummary(mon string, clusterId uuid.UUID) (backend.PgSummary, error) {
+func (c CephApi) GetPGSummary(mon string, clusterId uuid.UUID, ctxt string) (backend.PgSummary, error) {
 
 	// Replace cluster id in route pattern
-	createPoolRoute := CEPH_API_ROUTES["PGStatistics"]
-	createPoolRoute.Pattern = strings.Replace(createPoolRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
-	resp, err := route_request(createPoolRoute, mon, bytes.NewBuffer([]byte{}))
+	pgStatsRoute := CEPH_API_ROUTES["PGStatistics"]
+	pgStatsRoute.Pattern = strings.Replace(pgStatsRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+	resp, err := route_request(pgStatsRoute, mon, bytes.NewBuffer([]byte{}))
 	var pgsummary backend.PgSummary
 	if err != nil {
 		return pgsummary, err
@@ -264,17 +265,17 @@ func (c CephApi) GetPGSummary(mon string, clusterId uuid.UUID) (backend.PgSummar
 	return pgsummary, err
 }
 
-func (c CephApi) ExecCmd(mon string, clusterId uuid.UUID, cmd string) (bool, string, error) {
+func (c CephApi) ExecCmd(mon string, clusterId uuid.UUID, cmd string, ctxt string) (bool, string, error) {
 	// Replace cluster id in route pattern
-	createPoolRoute := CEPH_API_ROUTES["ExecCmd"]
-	createPoolRoute.Pattern = strings.Replace(createPoolRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+	execCmdRoute := CEPH_API_ROUTES["ExecCmd"]
+	execCmdRoute.Pattern = strings.Replace(execCmdRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
 	command := map[string][]string{"command": strings.Split(cmd, " ")}
 	buf, err := json.Marshal(command)
 	if err != nil {
 		return false, "", errors.New(fmt.Sprintf("Error forming request body. error: %v", err))
 	}
 	body := bytes.NewBuffer(buf)
-	resp, err := route_request(createPoolRoute, mon, body)
+	resp, err := route_request(execCmdRoute, mon, body)
 	if err != nil || resp.StatusCode != http.StatusOK {
 		return false, "", errors.New(fmt.Sprintf("Failed to execute command: %s. error: %v", cmd, err))
 	} else {
@@ -294,7 +295,7 @@ func (c CephApi) ExecCmd(mon string, clusterId uuid.UUID, cmd string) (bool, str
 	}
 }
 
-func (c CephApi) GetOSDs(mon string, clusterId uuid.UUID) ([]backend.CephOSD, error) {
+func (c CephApi) GetOSDs(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CephOSD, error) {
 	// Replace cluster id in route pattern
 	getOsdsRoute := CEPH_API_ROUTES["GetOSDs"]
 	getOsdsRoute.Pattern = strings.Replace(getOsdsRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
@@ -313,7 +314,7 @@ func (c CephApi) GetOSDs(mon string, clusterId uuid.UUID) ([]backend.CephOSD, er
 	return osds, nil
 }
 
-func (c CephApi) UpdateOSD(mon string, clusterId uuid.UUID, osdId string, params map[string]interface{}) (bool, error) {
+func (c CephApi) UpdateOSD(mon string, clusterId uuid.UUID, osdId string, params map[string]interface{}, ctxt string) (bool, error) {
 	// Replace cluster id in route pattern
 	updateOsdRoute := CEPH_API_ROUTES["UpdateOSD"]
 	updateOsdRoute.Pattern = strings.Replace(updateOsdRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
@@ -333,7 +334,7 @@ func (c CephApi) UpdateOSD(mon string, clusterId uuid.UUID, osdId string, params
 	}
 }
 
-func (c CephApi) GetOSD(mon string, clusterId uuid.UUID, osdId string) (backend.CephOSD, error) {
+func (c CephApi) GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt string) (backend.CephOSD, error) {
 	getOsdRoute := CEPH_API_ROUTES["GetOSD"]
 	getOsdRoute.Pattern = strings.Replace(getOsdRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
 	getOsdRoute.Pattern = strings.Replace(getOsdRoute.Pattern, "{osd-id}", osdId, 1)
