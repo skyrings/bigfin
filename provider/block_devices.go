@@ -26,6 +26,7 @@ import (
 	"net/http"
 	"time"
 
+	bigfin_conf "github.com/skyrings/bigfin/conf"
 	bigfin_task "github.com/skyrings/bigfin/tools/task"
 )
 
@@ -113,7 +114,7 @@ func (s *CephProvider) CreateBlockDevice(req models.RpcRequest, resp *models.Rpc
 			}
 		}
 	}
-	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-CreateBlockDevice", asyncTask, 120*time.Second, nil, nil, nil); err != nil {
+	if taskId, err := bigfin_task.GetTaskManager().Run(fmt.Sprintf("%s-Create Block Device: %s", bigfin_conf.ProviderName, request.Name), asyncTask, 120*time.Second, nil, nil, nil); err != nil {
 		logger.Get().Error("%s - Task creation failed for create block device %s on cluster: %v. error: %v", ctxt, request.Name, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for block device creation")
 		return err
@@ -235,7 +236,7 @@ func (s *CephProvider) DeleteBlockDevice(req models.RpcRequest, resp *models.Rpc
 			}
 		}
 	}
-	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-DeleteBlockDevice", asyncTask, 120*time.Second, nil, nil, nil); err != nil {
+	if taskId, err := bigfin_task.GetTaskManager().Run(fmt.Sprintf("%s-Delete Block Device", bigfin_conf.ProviderName), asyncTask, 120*time.Second, nil, nil, nil); err != nil {
 		logger.Get().Error("%s - Task creation failed for delete block device %v on cluster: %v. error: %v", ctxt, *blockdevice_id, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for block device deletion")
 		return err
@@ -338,7 +339,7 @@ func (s *CephProvider) ResizeBlockDevice(req models.RpcRequest, resp *models.Rpc
 			}
 		}
 	}
-	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-ResizeBlockDevice", asyncTask, 120*time.Second, nil, nil, nil); err != nil {
+	if taskId, err := bigfin_task.GetTaskManager().Run(fmt.Sprintf("%s-Resize Block Device", bigfin_conf.ProviderName), asyncTask, 120*time.Second, nil, nil, nil); err != nil {
 		logger.Get().Error("%s - Task creation failed for resize block device %v on cluster: %v. error: %v", ctxt, *blockdevice_id, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for block device resize")
 		return err
