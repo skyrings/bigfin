@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "5a72e520_0d56b9d2",
+        "filename": "provider/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1006236
+      },
+      "writtenOn": "2016-03-09T06:25:22Z",
+      "side": 1,
+      "message": "can we pass the context to handler ? this is not being used currently(till calamari fixes the events) I can update it later, while we handle that.",
+      "range": {
+        "startLine": 169,
+        "startChar": 14,
+        "endLine": 169,
+        "endChar": 51
+      },
+      "revId": "e0396f50ffdf7e4da17591f94e50ccf070c60777",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
