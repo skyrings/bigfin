@@ -826,7 +826,12 @@ func RecalculatePgnum(clusterId uuid.UUID, t *task.Task) bool {
 		if storage.Name == "rbd" {
 			continue
 		}
-		pgNum := DerivePgNum(clusterId, storage.Size, storage.Replicas)
+		var pgNum uint
+		if storage.Type == models.STORAGE_TYPE_ERASURE_CODED {
+			pgNum = DerivePgNum(clusterId, storage.Size, ec_pool_sizes[storage.Options["ecprofile"]])
+		} else {
+			pgNum = DerivePgNum(clusterId, storage.Size, storage.Replicas)
+		}
 		currentPgNum, err := strconv.Atoi(storage.Options["pgnum"])
 		if err != nil {
 			utils.FailTask(fmt.Sprintf("Error getting details of pool: %s for cluster: %v", storage.Name, clusterId), err, t)

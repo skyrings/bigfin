@@ -36,6 +36,13 @@ const (
 	MAX_UTILIZATION_PCNT = 80
 )
 
+var ec_pool_sizes = map[string]int{
+	"default": 3,
+	"k4m2":    6,
+	"k6m3":    9,
+	"k8m4":    12,
+}
+
 func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResponse) error {
 	ctxt := req.RpcRequestContext
 	var request models.AddStorageRequest
@@ -154,15 +161,6 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 	}
 
 	t.UpdateStatus("Creating pool")
-	// Invoke backend api to create pool
-	var pgNum uint
-	if request.Options["pgnum"] != "" {
-		val, _ := strconv.ParseUint(request.Options["pgnum"], 10, 32)
-		pgNum = uint(val)
-	} else {
-		pgNum = DerivePgNum(clusterId, request.Size, request.Replicas)
-	}
-
 	// Get quota related details if quota enabled
 	// If quota enabled, looks for quota config values
 	var quotaMaxObjects int
@@ -183,26 +181,39 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 		}
 	}
 
+	// Invoke backend api to create pool
+	var pgNum uint
+	if request.Options["pgnum"] != "" {
+		val, _ := strconv.ParseUint(request.Options["pgnum"], 10, 32)
+		pgNum = uint(val)
+	} else {
+		if request.Type == models.STORAGE_TYPE_ERASURE_CODED {
+			ok, err := validECProfile(monnode.Hostname, cluster, request.Options["ecprofile"])
+			if err != nil {
+				utils.FailTask("", fmt.Errorf("%s - Error checking validity of ec profile value. error: %v", ctxt, err), t)
+				return nil, false
+			}
+			if !ok {
+				utils.FailTask(
+					"",
+					fmt.Errorf(
+						"%s-Invalid EC profile value: %s passed for pool: %s creation on cluster: %s. error: %v",
+						ctxt,
+						request.Options["ecprofile"],
+						request.Name,
+						cluster.Name,
+						err),
+					t)
+				return nil, false
+			}
+			pgNum = DerivePgNum(clusterId, request.Size, ec_pool_sizes[request.Options["ecprofile"]])
+		} else {
+			pgNum = DerivePgNum(clusterId, request.Size, request.Replicas)
+		}
+	}
+
 	ok := true
 	if request.Type == models.STORAGE_TYPE_ERASURE_CODED {
-		ok, err := validECProfile(monnode.Hostname, cluster, request.Options["ecprofile"])
-		if err != nil {
-			utils.FailTask("", fmt.Errorf("%s - Error checking validity of ec profile value. error: %v", ctxt, err), t)
-			return nil, false
-		}
-		if !ok {
-			utils.FailTask(
-				"",
-				fmt.Errorf(
-					"%s-Invalid EC profile value: %s passed for pool: %s creation on cluster: %s. error: %v",
-					ctxt,
-					request.Options["ecprofile"],
-					request.Name,
-					cluster.Name,
-					err),
-				t)
-			return nil, false
-		}
 		cmd := fmt.Sprintf("ceph --cluster %s osd pool create %s %d %d erasure %s", cluster.Name, request.Name, uint(pgNum), uint(pgNum), request.Options["ecprofile"])
 		ok, _, err = cephapi_backend.ExecCmd(monnode.Hostname, clusterId, cmd)
 		time.Sleep(10 * time.Second)
