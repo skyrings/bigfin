@@ -357,7 +357,7 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 							break
 						}
 						osdName := osds[storageNode.Hostname][0]
-						var options = make(map[string]string)
+						var options = make(map[string]interface{})
 						options["node"] = osd.Node
 						options["publicip4"] = osd.PublicIP4
 						options["clusterip4"] = osd.ClusterIP4
@@ -777,7 +777,7 @@ func (s *CephProvider) SyncStorageLogicalUnitParams(req models.RpcRequest, resp 
 		return err
 	}
 
-	if err := syncOsdStatus(*cluster_id, ctxt); err != nil {
+	if err := SyncOsdStatus(*cluster_id, ctxt); err != nil {
 		logger.Get().Error("%s-Error syncing the OSD status. Err: %v", ctxt, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error syncing the OSD status. Err: %v", err))
 		return err
@@ -873,6 +873,11 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 		logger.Get().Error("%s-Error getting OSD details for cluster: %v. error: %v", ctxt, clusterId, err)
 		return err
 	}
+	pgSummary, err := cephapi_backend.GetPGSummary(monnode.Hostname, clusterId, ctxt)
+	if err != nil {
+		logger.Get().Error("%s-Error getting pg summary for cluster: %v. error: %v", ctxt, clusterId, err)
+		return err
+	}
 
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
@@ -889,10 +894,12 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 				state := mapOsdState(fetchedOSD.In)
 				slu.Options["in"] = strconv.FormatBool(fetchedOSD.In)
 				slu.Options["up"] = strconv.FormatBool(fetchedOSD.Up)
+				slu.Options["pgsummary"] = pgSummary.ByOSD[strconv.Itoa(fetchedOSD.Id)]
 				slu.State = state
 				slu.Status = status
 				slu.SluId = fetchedOSD.Uuid
-				if err := coll.Update(bson.M{"name": slu.Name, "clusterid": clusterId}, slu); err != nil {
+				if err := coll.Update(
+					bson.M{"name": slu.Name, "clusterid": clusterId}, slu); err != nil {
 					logger.Get().Error("%s-Error updating the details for slu: %s. error: %v", ctxt, slu.Name, err)
 					return err
 				}
@@ -903,7 +910,7 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 	return nil
 }
 
-func syncOsdStatus(clusterId uuid.UUID, ctxt string) error {
+func SyncOsdStatus(clusterId uuid.UUID, ctxt string) error {
 
 	// Get a random mon node
 	monnode, err := GetRandomMon(clusterId)
@@ -915,6 +922,11 @@ func syncOsdStatus(clusterId uuid.UUID, ctxt string) error {
 	fetchedOSDs, err := cephapi_backend.GetOSDs(monnode.Hostname, clusterId, ctxt)
 	if err != nil {
 		logger.Get().Error("%s-Error getting OSD details for cluster: %v. error: %v", ctxt, clusterId, err)
+		return err
+	}
+	pgSummary, err := cephapi_backend.GetPGSummary(monnode.Hostname, clusterId, ctxt)
+	if err != nil {
+		logger.Get().Error("%s-Error getting pg summary for cluster: %v. error: %v", ctxt, clusterId, err)
 		return err
 	}
 
@@ -936,9 +948,12 @@ func syncOsdStatus(clusterId uuid.UUID, ctxt string) error {
 		state := mapOsdState(fetchedOSD.In)
 		slu.Options["in"] = strconv.FormatBool(fetchedOSD.In)
 		slu.Options["up"] = strconv.FormatBool(fetchedOSD.Up)
+		slu.Options["pgsummary"] = pgSummary.ByOSD[strconv.Itoa(fetchedOSD.Id)]
 		slu.State = state
 		slu.Status = status
-		if err := coll.Update(bson.M{"sluid": fetchedOSD.Uuid, "clusterid": clusterId}, bson.M{"$set": bson.M{"status": status, "state": state}}); err != nil {
+		if err := coll.Update(
+			bson.M{"sluid": fetchedOSD.Uuid, "clusterid": clusterId},
+			bson.M{"$set": bson.M{"status": status, "state": state, "options": slu.Options}}); err != nil {
 			if err != mgo.ErrNotFound {
 				logger.Get().Error("%s-Error updating the status for slu: %s. error: %v", ctxt, fetchedOSD.Uuid.String(), err)
 				return err
