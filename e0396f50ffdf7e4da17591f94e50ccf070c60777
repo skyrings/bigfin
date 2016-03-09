@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "5a72e520_0d77993b",
+        "filename": "backend/salt/salt.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-09T08:39:04Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "5a72e520_6d300d9f",
+      "range": {
+        "startLine": 142,
+        "startChar": 72,
+        "endLine": 142,
+        "endChar": 76
+      },
+      "revId": "e0396f50ffdf7e4da17591f94e50ccf070c60777",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_0d56b9d2",
         "filename": "provider/events.go",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2016-03-09T06:25:22Z",
       "side": 1,
       "message": "can we pass the context to handler ? this is not being used currently(till calamari fixes the events) I can update it later, while we handle that.",
+      "range": {
+        "startLine": 169,
+        "startChar": 14,
+        "endLine": 169,
+        "endChar": 51
+      },
+      "revId": "e0396f50ffdf7e4da17591f94e50ccf070c60777",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "5a72e520_2d729549",
+        "filename": "provider/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 169,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-09T08:39:04Z",
+      "side": 1,
+      "message": "Done. Also lets keep the changes as is so that later when we enable calamri event, we dont need to take care this explicitly.",
+      "parentUuid": "5a72e520_0d56b9d2",
       "range": {
         "startLine": 169,
         "startChar": 14,
