@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "5a72e520_6d300d9f",
+        "filename": "backend/salt/salt.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 142,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-09T07:01:35Z",
+      "side": 1,
+      "message": "Probably we need to add changes to saltwrapper.py also? The python side may break otherwise?",
+      "range": {
+        "startLine": 142,
+        "startChar": 72,
+        "endLine": 142,
+        "endChar": 76
+      },
+      "revId": "e0396f50ffdf7e4da17591f94e50ccf070c60777",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "5a72e520_0d56b9d2",
         "filename": "provider/events.go",
         "patchSetId": 1
