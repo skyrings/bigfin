@@ -89,6 +89,12 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 					createBlockDevices(ctxt, monnode.Hostname, cluster, *poolId, request, t)
 				}
 
+				t.UpdateStatus("Syncing SLUs")
+				if err := SyncOsdStatus(*cluster_id, ctxt); err != nil {
+					utils.FailTask("Error syncing SLUs", err, t)
+					return
+				}
+
 				t.UpdateStatus("Success")
 				t.Done(models.TASK_STATUS_SUCCESS)
 				return
@@ -505,6 +511,13 @@ func (s *CephProvider) RemoveStorage(req models.RpcRequest, resp *models.RpcResp
 						return
 					}
 				}
+
+				t.UpdateStatus("Syncing SLUs")
+				if err := SyncOsdStatus(*cluster_id, ctxt); err != nil {
+					utils.FailTask("Error syncing SLUs", err, t)
+					return
+				}
+
 				t.UpdateStatus("Success")
 				t.Done(models.TASK_STATUS_SUCCESS)
 				return
