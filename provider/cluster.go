@@ -245,7 +245,13 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 			}
 		}
 	}
-	if taskId, err := bigfin_task.GetTaskManager().Run(fmt.Sprintf("%s-Create Cluster: %s", bigfin_conf.ProviderName, request.Name), asyncTask, 7000*time.Second, nil, nil, nil); err != nil {
+	if taskId, err := bigfin_task.GetTaskManager().Run(
+		bigfin_conf.ProviderName,
+		"CEPH-CreateCluster",
+		asyncTask,
+		nil,
+		nil,
+		nil); err != nil {
 		logger.Get().Error("%s - Task creation failed for create cluster %s. error: %v", ctxt, request.Name, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Task creation failed for create cluster %s", request.Name))
 		return err
@@ -584,7 +590,13 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 		}
 	}
 
-	if taskId, err := bigfin_task.GetTaskManager().Run(fmt.Sprintf("%s-Expand Cluster", bigfin_conf.ProviderName), asyncTask, 7000*time.Second, nil, nil, nil); err != nil {
+	if taskId, err := bigfin_task.GetTaskManager().Run(
+		bigfin_conf.ProviderName,
+		"CEPH-ExpandCluster",
+		asyncTask,
+		nil,
+		nil,
+		nil); err != nil {
 		logger.Get().Error("%s-Task creation failed for exoand cluster: %v. error: %v", ctxt, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for cluster expansion")
 		return err
@@ -734,7 +746,13 @@ func (s *CephProvider) UpdateStorageLogicalUnitParams(req models.RpcRequest, res
 			}
 		}
 	}
-	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-UpdateOSD", asyncTask, 120*time.Second, nil, nil, nil); err != nil {
+	if taskId, err := bigfin_task.GetTaskManager().Run(
+		bigfin_conf.ProviderName,
+		"CEPH-UpdateOSD",
+		asyncTask,
+		nil,
+		nil,
+		nil); err != nil {
 		logger.Get().Error("Task creation failed for update OSD %s on cluster: %v. error: %v", *slu_id, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for update OSD")
 		return err
