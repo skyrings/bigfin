@@ -26,6 +26,7 @@ import (
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/task"
 	"github.com/skyrings/skyring-common/tools/uuid"
+	"github.com/skyrings/skyring-common/utils"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
@@ -56,7 +57,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 	}
 
 	// Get corresponding nodes from DB
-	nodes, err := getNodes(request.Nodes)
+	nodes, err := util.GetNodes(request.Nodes)
 	if err != nil {
 		logger.Get().Error("%s-Error getting nodes from DB while create cluster %s. error: %v", ctxt, request.Name, err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error getting nodes from DB. error: %v", err))
@@ -80,7 +81,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 	}
 	var mons []backend.Mon
 	for _, req_node := range request.Nodes {
-		if utils.StringInSlice("MON", req_node.NodeType) {
+		if util.StringInSlice("MON", req_node.NodeType) {
 			var mon backend.Mon
 			nodeid, _ := uuid.Parse(req_node.NodeId)
 			mon.Node = nodes[*nodeid].Hostname
@@ -179,7 +180,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 
 					// Add OSDs
 					t.UpdateStatus("Getting updated nodes list for OSD creation")
-					updated_nodes, err := getNodes(request.Nodes)
+					updated_nodes, err := util.GetNodes(request.Nodes)
 					if err != nil {
 						utils.FailTask(fmt.Sprintf("%s-Error getting updated nodes list post create cluster %s", ctxt, request.Name), err, t)
 						setClusterState(*cluster_uuid, models.CLUSTER_STATE_FAILED, ctxt)
@@ -330,7 +331,7 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 		slus          = make(map[string]models.StorageLogicalUnit)
 	)
 	for _, requestNode := range requestNodes {
-		if utils.StringInSlice(models.NODE_TYPE_OSD, requestNode.NodeType) {
+		if util.StringInSlice(models.NODE_TYPE_OSD, requestNode.NodeType) {
 			var updatedStorageDisks []models.Disk
 			uuid, err := uuid.Parse(requestNode.NodeId)
 			if err != nil {
@@ -433,25 +434,6 @@ func persistOSD(slu models.StorageLogicalUnit, t *task.Task, ctxt string) (bool,
 	return true, nil
 }
 
-func getNodes(clusterNodes []models.ClusterNode) (map[uuid.UUID]models.Node, error) {
-	sessionCopy := db.GetDatastore().Copy()
-	defer sessionCopy.Close()
-	var nodes = make(map[uuid.UUID]models.Node)
-	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
-	for _, clusterNode := range clusterNodes {
-		uuid, err := uuid.Parse(clusterNode.NodeId)
-		if err != nil {
-			return nodes, errors.New(fmt.Sprintf("Error parsing node id: %v", clusterNode.NodeId))
-		}
-		var node models.Node
-		if err := coll.Find(bson.M{"nodeid": *uuid}).One(&node); err != nil {
-			return nodes, err
-		}
-		nodes[node.NodeId] = node
-	}
-	return nodes, nil
-}
-
 func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResponse) error {
 	ctxt := req.RpcRequestContext
 
@@ -471,7 +453,7 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 	}
 
 	// Get corresponding nodes from DB
-	nodes, err := getNodes(new_nodes)
+	nodes, err := util.GetNodes(new_nodes)
 	if err != nil {
 		logger.Get().Error("%s-Error getting the nodes from DB for cluster: %v. error: %v", ctxt, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error getting the nodes from DB. error: %v", err))
@@ -498,7 +480,7 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 
 	var mons []backend.Mon
 	for _, new_node := range new_nodes {
-		if utils.StringInSlice("MON", new_node.NodeType) {
+		if util.StringInSlice("MON", new_node.NodeType) {
 			var mon backend.Mon
 			nodeid, _ := uuid.Parse(new_node.NodeId)
 			mon.Node = nodes[*nodeid].Hostname
@@ -510,7 +492,7 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 
 	// If mon node already exists for the cluster, error out
 	for _, new_node := range new_nodes {
-		if utils.StringInSlice("MON", new_node.NodeType) {
+		if util.StringInSlice("MON", new_node.NodeType) {
 			coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 			nodeid, err := uuid.Parse(new_node.NodeId)
 			if err != nil {
@@ -572,7 +554,7 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 
 				// Add OSDs
 				t.UpdateStatus("Getting updated nodes for OSD creation")
-				updated_nodes, err := getNodes(new_nodes)
+				updated_nodes, err := util.GetNodes(new_nodes)
 				if err != nil {
 					utils.FailTask(fmt.Sprintf("Error getting updated nodes while expand cluster: %v", *cluster_id), fmt.Errorf("%s-%v", ctxt, err), t)
 					return
