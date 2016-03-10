@@ -60,15 +60,6 @@ func WriteAsyncResponse(taskId uuid.UUID, msg string, result []byte) models.RpcR
 	return response
 }
 
-func StringInSlice(value string, slice []string) bool {
-	for _, item := range slice {
-		if value == item {
-			return true
-		}
-	}
-	return false
-}
-
 func RandomNum(min, max int) int {
 	rand.Seed(time.Now().Unix())
 	return rand.Intn(max-min) + min

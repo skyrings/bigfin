@@ -38,7 +38,7 @@ func main() {
 		panic(fmt.Sprintf("Reading configurations failed. error: %v", err))
 	}
 
-	bigfin_conf.SystemConfig = config
+	conf.SystemConfig = config
 
 	// Initialize the logger
 	level, err := logging.LogLevel(config.Logging.Level.String())
