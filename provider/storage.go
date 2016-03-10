@@ -27,6 +27,7 @@ import (
 	"strconv"
 	"time"
 
+	bigfin_conf "github.com/skyrings/bigfin/conf"
 	bigfin_task "github.com/skyrings/bigfin/tools/task"
 )
 
@@ -95,7 +96,13 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 			}
 		}
 	}
-	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-CreateStorage", asyncTask, 120*time.Second, nil, nil, nil); err != nil {
+	if taskId, err := bigfin_task.GetTaskManager().Run(
+		bigfin_conf.ProviderName,
+		"CEPH-CreateStorage",
+		asyncTask,
+		nil,
+		nil,
+		nil); err != nil {
 		logger.Get().Error("%s-Task creation failed for create storage %s on cluster: %v. error: %v", ctxt, request.Name, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for storage creation")
 		return err
@@ -511,7 +518,13 @@ func (s *CephProvider) RemoveStorage(req models.RpcRequest, resp *models.RpcResp
 			}
 		}
 	}
-	if taskId, err := bigfin_task.GetTaskManager().Run("CEPH-DeleteStorage", asyncTask, 120*time.Second, nil, nil, nil); err != nil {
+	if taskId, err := bigfin_task.GetTaskManager().Run(
+		bigfin_conf.ProviderName,
+		"CEPH-DeleteStorage",
+		asyncTask,
+		nil,
+		nil,
+		nil); err != nil {
 		logger.Get().Error("%s-Task creation failed for delete storage on cluster: %v. error: %v", ctxt, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, "Task creation failed for storage deletion")
 		return err
