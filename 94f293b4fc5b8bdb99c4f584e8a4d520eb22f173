@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_446d2e04",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 902,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-10T06:12:56Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_e41c5ac4",
+      "range": {
+        "startLine": 902,
+        "startChar": 5,
+        "endLine": 902,
+        "endChar": 60
+      },
+      "revId": "94f293b4fc5b8bdb99c4f584e8a4d520eb22f173",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_a4698227",
         "filename": "provider/storage.go",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2016-03-10T04:23:29Z",
       "side": 1,
       "message": "why to sync the status during create/del storage?",
+      "range": {
+        "startLine": 92,
+        "startChar": 4,
+        "endLine": 96,
+        "endChar": 5
+      },
+      "revId": "94f293b4fc5b8bdb99c4f584e8a4d520eb22f173",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_64722ae7",
+        "filename": "provider/storage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-10T06:12:56Z",
+      "side": 1,
+      "message": "After creation/deletion of the pools, the pg summary changes so we should sync it immediately..",
+      "parentUuid": "3a6ff13c_a4698227",
       "range": {
         "startLine": 92,
         "startChar": 4,
