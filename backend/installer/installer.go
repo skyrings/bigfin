@@ -14,6 +14,7 @@ package installer
 
 import (
 	"github.com/skyrings/bigfin/backend"
+	"github.com/skyrings/skyring-common/conf"
 	"github.com/skyrings/skyring-common/provisioner"
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/uuid"
@@ -29,9 +30,10 @@ var installer provisioner.Provisioner
 func New() (backend.Backend, error) {
 	installerapi := new(Installer)
 	//Initilaize the provisioner
-	installer, err := provisioner.InitializeProvisioner(bigfin_conf.SystemConfig.Provisioners[bigfin_conf.ProviderName])
+	installer, err := provisioner.InitializeProvisioner(conf.SystemConfig.Provisioners[bigfin_conf.ProviderName])
 	if err != nil {
-		logger.Get().Error("Unable to initialize the provisioner, skipping the provider:%v", bigfin_conf.SystemConfig.Provisioners[bigfin_conf.ProviderName])
+		logger.Get().Error("Unable to initialize the provisioner, skipping the provider:%v",
+			conf.SystemConfig.Provisioners[bigfin_conf.ProviderName])
 		return installerapi, err
 	}
 	logger.Get().Debug("Installer:%v", installer)
