@@ -52,6 +52,12 @@ func (c *CephApi) LoadRoutes() {
 			Version: 2,
 		},
 		{
+			Name:    "GetPGErrorCount",
+			Pattern: "cluster/{cluster-fsid}//health_counters?format=json",
+			Method:  "GET",
+			Version: 1,
+		},
+		{
 			Name:    "GetOSD",
 			Pattern: "cluster/{cluster-fsid}/osd?id__in[]={osd-id}&format=json",
 			Method:  "GET",

@@ -173,6 +173,7 @@ func (s *CephProvider) GetClusterSummary(req models.RpcRequest, resp *models.Rpc
 		err_str = fmt.Sprintf("Error getting the storage list error: %v", sorageFetchErr)
 		logger.Get().Error("%s - Error getting the storage list error: %v", ctxt, sorageFetchErr)
 	} else {
+		pgNum := make(map[string]int)
 		var pg_count uint64
 		for _, storage := range storages {
 			if pgnum, ok := storage.Options["pgnum"]; ok {
@@ -180,7 +181,19 @@ func (s *CephProvider) GetClusterSummary(req models.RpcRequest, resp *models.Rpc
 				pg_count = pg_count + val
 			}
 		}
-		result["pgnum"] = pg_count
+		pgNum[models.TOTAL] = pg_count
+		mon, monErr := GetRandomMon(*clusterId)
+		if monErr != nil {
+			err_str = err_str + fmt.Sprintf("%s - Failed to get the mon from cluster %v", ctxt, *clusterId)
+		} else {
+			pgErrorCount, pgErrorCountError := cephapi_backend.GetPGErrorCount(mon string, *n, ctxt)
+			if pgErrorCountError != nil {
+				err_str = err_str + fmt.Sprintf("%s - Failed to fetch the number of pgs in critical state from cluster %v", ctxt, *clusterId)
+			} else {
+				pgNum[models.STATUS_ERR] = pgErrorCount
+			}
+			result["pgnum"] = pgNum
+		}
 	}
 
 	result[bigfin_models.OBJECTS] = map[string]interface{}{bigfin_models.NUMBER_OF_OBJECTS: cluster.ObjectCount[bigfin_models.NUMBER_OF_OBJECTS], bigfin_models.NUMBER_OF_DEGRADED_OBJECTS: cluster.ObjectCount[bigfin_models.NUMBER_OF_DEGRADED_OBJECTS]}
