@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a6ff13c_1e37fdb1",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-11T06:30:32Z",
+      "side": 1,
+      "message": "I think its a good idea to even get this data also from cluster rather than depending on the DB to avoid the stale data related issues",
+      "range": {
+        "startLine": 178,
+        "startChar": 2,
+        "endLine": 183,
+        "endChar": 3
+      },
+      "revId": "ed3c1c9c764ed94242e355da6eee7d2d7bc973ed",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
