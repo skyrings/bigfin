@@ -42,6 +42,10 @@ func (c Installer) CreateCluster(clusterName string, fsid uuid.UUID, mons []back
 	return true, nil
 }
 
+func (c Installer) GetPGCount(mon string, clusterId uuid.UUID, ctxt string) (map[string]uint64, error) {
+	return 0, nil
+}
+
 func (c Installer) AddMon(clusterName string, mons []backend.Mon, ctxt string) (bool, error) {
 	return true, nil
 }

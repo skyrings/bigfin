@@ -245,6 +245,70 @@ func (c CephApi) GetObjectCount(mon string, clusterName string, ctxt string) (ma
 	return map[string]int64{}, nil
 }
 
+func (c CephApi) GetPGCount(mon string, clusterId uuid.UUID, ctxt string) (map[string]uint64, error) {
+	pgStatsRoute := CEPH_API_ROUTES["GetPGErrorCount"]
+	pgStatsRoute.Pattern = strings.Replace(pgStatsRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+	resp, err := route_request(pgStatsRoute, mon, bytes.NewBuffer([]byte{}))
+	var pgSummary map[string]interface{}
+	if err != nil {
+		return 0, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return 0, err
+	}
+	if err := json.Unmarshal(respBody, &pgSummary); err != nil {
+		return 0, err
+	}
+	pgMap, pgMapOk := pgSummary["pg"].(map[string]interface{})
+	if !pgMapOk {
+		return 0, fmt.Errorf("%s - Failed to fetch number of pgs in error for the cluster %v", ctxt, clusterId)
+	}
+
+	pgCount := make(map[string]uint64)
+
+	/*
+		Error Pg Count
+	*/
+	errPgCount, errPgCountOk := pgMap["critical"].(map[string]interface{})
+	if !errPgCountOk {
+		return 0, fmt.Errorf("%s - Failed to fetch number of pgs in error for the cluster %v", ctxt, clusterId)
+	}
+	iErrPgCount, iErrPgCountOk := errPgCount["count"].(uint64)
+	if !iErrPgCountOk {
+		return 0, fmt.Errorf("%s - Failed to fetch number of pgs in error for the cluster %v", ctxt, clusterId)
+	}
+	pgCount[skyringmodels.STATUS_ERR] = iErrPgCount
+
+	/*
+		Warning Pg Count
+	*/
+	warnPgCount, warnPgCountOk := pgMap["warn"].(map[string]interface{})
+	if !warnPgCountOk {
+		return 0, fmt.Errorf("%s - Failed to fetch number of pgs in warning for the cluster %v", ctxt, clusterId)
+	}
+	iWarnPgCount, iWarnPgCountOk := warnPgCount["count"].(uint64)
+	if !iWarnPgCountOk {
+		return 0, fmt.Errorf("%s - Failed to fetch number of pgs in warning for the cluster %v", ctxt, clusterId)
+	}
+	pgCount[skyringmodels.STATUS_WARN] = iWarnPgCount
+
+	/*
+		Clean Pg Count
+	*/
+	cleanPgCount, cleanPgCountOk := pgMap["ok"].(map[string]interface{})
+	if !cleanPgCountOk {
+		return 0, fmt.Errorf("%s - Failed to fetch number of clean pgs for the cluster %v", ctxt, clusterId)
+	}
+	iCleanPgCount, iCleanPgCountOk := cleanPgCount["count"].(uint64)
+	if !iCleanPgCountOk {
+		return 0, fmt.Errorf("%s - Failed to fetch number of clean pgs for the cluster %v", ctxt, clusterId)
+	}
+	pgCount[skyringmodels.STATUS_OK] = iCleanPgCount
+
+	return pgCount, nil
+}
+
 func (c CephApi) GetPGSummary(mon string, clusterId uuid.UUID, ctxt string) (backend.PgSummary, error) {
 
 	// Replace cluster id in route pattern
