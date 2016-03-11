@@ -245,6 +245,74 @@ func (c CephApi) GetObjectCount(mon string, clusterName string, ctxt string) (ma
 	return map[string]int64{}, nil
 }
 
+func GetPgStatusBasedCount(status string, clusterId uuid.UUID, pgMap map[string]interface{}) (uint64, error) {
+	pgCount, pgCountOk := pgMap[status].(map[string]interface{})
+	if !pgCountOk {
+		return 0, fmt.Errorf("Failed to fetch number of pgs in error for the cluster %v", clusterId)
+	}
+	ipgCount, ipgCountOk := pgCount["count"].(uint64)
+	if !ipgCountOk {
+		return 0, fmt.Errorf("Failed to fetch number of pgs in error for the cluster %v", clusterId)
+	}
+	return ipgCount, nil
+}
+
+func (c CephApi) GetPGCount(mon string, clusterId uuid.UUID, ctxt string) (map[string]uint64, error) {
+	pgStatsRoute := CEPH_API_ROUTES["GetPGErrorCount"]
+	pgStatsRoute.Pattern = strings.Replace(pgStatsRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+	resp, err := route_request(pgStatsRoute, mon, bytes.NewBuffer([]byte{}))
+	var pgSummary map[string]interface{}
+	if err != nil {
+		return nil, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+	if err := json.Unmarshal(respBody, &pgSummary); err != nil {
+		return nil, err
+	}
+	pgMap, pgMapOk := pgSummary["pg"].(map[string]interface{})
+	if !pgMapOk {
+		return nil, fmt.Errorf("%s - Failed to fetch number of pgs in error for the cluster %v", ctxt, clusterId)
+	}
+
+	pgCount := make(map[string]uint64)
+
+	var errPgCountError error
+	var warnPgCountError error
+	var okPgCountError error
+
+	/*
+		Error Pg Count
+	*/
+
+	pgCount[skyringmodels.STATUS_ERR], errPgCountError = GetPgStatusBasedCount("critical", clusterId, pgMap)
+	if errPgCountError != nil {
+		return nil, fmt.Errorf("%s - Err: %v", ctxt, errPgCountError)
+	}
+
+	/*
+		Warning Pg Count
+	*/
+
+	pgCount[skyringmodels.STATUS_WARN], warnPgCountError = GetPgStatusBasedCount("warn", clusterId, pgMap)
+	if warnPgCountError != nil {
+		return nil, fmt.Errorf("%s - Err: %v", ctxt, warnPgCountError)
+	}
+
+	/*
+		Clean Pg Count
+	*/
+
+	pgCount[skyringmodels.STATUS_OK], okPgCountError = GetPgStatusBasedCount("ok", clusterId, pgMap)
+	if okPgCountError != nil {
+		return nil, fmt.Errorf("%s - Err: %v", ctxt, okPgCountError)
+	}
+
+	return pgCount, nil
+}
+
 func (c CephApi) GetPGSummary(mon string, clusterId uuid.UUID, ctxt string) (backend.PgSummary, error) {
 
 	// Replace cluster id in route pattern
