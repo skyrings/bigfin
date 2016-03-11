@@ -167,6 +167,10 @@ func New() backend.Backend {
 	return new(Salt)
 }
 
+func (s Salt) GetPGCount(mon string, clusterId uuid.UUID, ctxt string) (map[string]uint64, error) {
+	return nil, nil
+}
+
 func (s Salt) GetOSDDetails(mon string, clusterName string, ctxt string) (osds []backend.OSDDetails, err error) {
 	mutex.Lock()
 	defer mutex.Unlock()
