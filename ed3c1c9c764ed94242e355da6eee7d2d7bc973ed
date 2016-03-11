@@ -22,6 +22,30 @@
       "revId": "ed3c1c9c764ed94242e355da6eee7d2d7bc973ed",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_b91c4315",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 183,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-11T14:38:00Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_1e37fdb1",
+      "range": {
+        "startLine": 178,
+        "startChar": 2,
+        "endLine": 183,
+        "endChar": 3
+      },
+      "revId": "ed3c1c9c764ed94242e355da6eee7d2d7bc973ed",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
