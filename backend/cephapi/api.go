@@ -245,6 +245,36 @@ func (c CephApi) GetObjectCount(mon string, clusterName string, ctxt string) (ma
 	return map[string]int64{}, nil
 }
 
+func (c CephApi) GetPGErrorCount(mon string, clusterId uuid.UUID, ctxt string) (uint64, error) {
+	pgStatsRoute := CEPH_API_ROUTES["GetPGErrorCount"]
+	pgStatsRoute.Pattern = strings.Replace(pgStatsRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+	resp, err := route_request(pgStatsRoute, mon, bytes.NewBuffer([]byte{}))
+	var pgSummary map[string]interface{}
+	if err != nil {
+		return 0, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return 0, err
+	}
+	if err := json.Unmarshal(respBody, &pgSummary); err != nil {
+		return 0, err
+	}
+	pgMap, pgMapOk := pgSummary["pg"].(map[string]interface{})
+	if !pgMapOk {
+		return 0, fmt.Errorf("%s - Failed to fetch number of pgs in error for the cluster %v", ctxt, clusterId)
+	}
+	errPgCount, errPgCountOk := pgMap["critical"].(map[string]interface{})
+	if !errPgCountOk {
+		return 0, fmt.Errorf("%s - Failed to fetch number of pgs in error for the cluster %v", ctxt, clusterId)
+	}
+	iErrPgCount, iErrPgCountOk := errPgCount["count"].(uint64)
+	if !iErrPgCountOk {
+		return 0, fmt.Errorf("%s - Failed to fetch number of pgs in error for the cluster %v", ctxt, clusterId)
+	}
+	return iErrPgCount, nil
+}
+
 func (c CephApi) GetPGSummary(mon string, clusterId uuid.UUID, ctxt string) (backend.PgSummary, error) {
 
 	// Replace cluster id in route pattern
