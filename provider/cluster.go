@@ -123,6 +123,10 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 				cluster.State = models.CLUSTER_STATE_CREATING
 				cluster.AlmStatus = models.ALARM_STATUS_CLEARED
 				cluster.AutoExpand = !request.DisableAutoExpand
+				cluster.Monitoring = models.MonitoringState{
+					Plugins:    utils.GetProviderSpecificDefaultThresholdValues(),
+					StaleNodes: []string{},
+				}
 
 				cluster.MonitoringInterval = request.MonitoringInterval
 				if cluster.MonitoringInterval == 0 {
