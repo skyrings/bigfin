@@ -153,6 +153,26 @@ func ceph_cluster_health_changed(event models.Event, ctxt string) error {
 	return nil
 }
 
+func HandleEvent(e models.Event, ctxt string) (err error, statusCode int) {
+	for tag, handler := range handlermap {
+		if match, err := filepath.Match(tag, e.Tag); err == nil {
+			if match {
+				if err = handler.(func(models.Event, string) error)(e, ctxt); err != nil {
+					return fmt.Errorf("Event Handling Failed for event: %s. error: %v", e.Tag, err), http.StatusInternalServerError
+				}
+				if err = event.Persist_event(e, ctxt); err != nil {
+					return fmt.Errorf("Could not persist the event: %s to DB. error: %v", e.Tag, err), http.StatusInternalServerError
+				} else {
+					return nil, http.StatusOK
+				}
+			}
+		} else {
+			return fmt.Errorf("Error while maping handler for event: %s. error: %v", e.Tag, err), http.StatusInternalServerError
+		}
+	}
+	return fmt.Errorf("Handler not defined for event %s", e.Tag), http.StatusNotImplemented
+}
+
 func (s *CephProvider) ProcessEvent(req models.RpcRequest, resp *models.RpcResponse) error {
 	ctxt := req.RpcRequestContext
 	var e models.Event
@@ -163,30 +183,17 @@ func (s *CephProvider) ProcessEvent(req models.RpcRequest, resp *models.RpcRespo
 		return err
 	}
 
-	for tag, handler := range handlermap {
-		if match, err := filepath.Match(tag, e.Tag); err == nil {
-			if match {
-				if err := handler.(func(models.Event, string) error)(e, ctxt); err != nil {
-					*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Event Handling Failed for event: %s", err))
-					logger.Get().Error("%s-Event Handling Failed for event: %s. error: %v", ctxt, e.Tag, err)
-					return err
-				}
-				if err := event.Persist_event(e, ctxt); err != nil {
-					*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Could not persist the event to DB: %s", err))
-					logger.Get().Error("%s-Could not persist the event: %s to DB. error: %v", ctxt, e.Tag, err)
-					return err
-				} else {
-					*resp = utils.WriteResponse(http.StatusOK, "")
-					return nil
-				}
-			}
+	err, statusCode := HandleEvent(e, ctxt)
+	var err_str string
+	if err != nil {
+		err_str = err.Error()
+		if statusCode == http.StatusNotImplemented {
+			logger.Get().Warning("%v", err)
 		} else {
-			*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error while mapping handler: %s", err))
-			logger.Get().Error("%s-Error while maping handler for event: %s. error: %v", ctxt, e.Tag, err)
-			return err
+			logger.Get().Error("%v", err)
 		}
 	}
-	logger.Get().Warning("%s-Handler not defined for event %s", ctxt, e.Tag)
-	*resp = utils.WriteResponse(http.StatusNotImplemented, fmt.Sprintf("Handler not defined for event %s", e.Tag))
-	return nil
+
+	*resp = utils.WriteResponse(statusCode, err_str)
+	return err
 }
