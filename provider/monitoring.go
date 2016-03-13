@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/skyrings/bigfin/backend"
 	bigfin_models "github.com/skyrings/bigfin/bigfinmodels"
+	"github.com/skyrings/bigfin/conf"
 	"github.com/skyrings/bigfin/utils"
-	"github.com/skyrings/skyring-common/conf"
 	"github.com/skyrings/skyring-common/db"
 	"github.com/skyrings/skyring-common/models"
 	skyring_monitoring "github.com/skyrings/skyring-common/monitoring"
@@ -80,6 +80,109 @@ func initMonitoringRoutines(ctxt string) error {
 
 	wg.Wait()
 	return nil
+}
+
+func getEntityIdFromNameAndUtilizationType(utilizationType string, resourceName string) (*uuid.UUID, error) {
+	switch utilizationType {
+	case skyring_monitoring.CLUSTER_UTILIZATION:
+		return &(cluster.ClusterId), nil
+	case skyring_monitoring.SLU_UTILIZATION:
+		var slu models.StorageLogicalUnit
+		err := getEntity(cluster.ClusterId, resourceName, models.COLL_NAME_STORAGE_LOGICAL_UNITS, &slu)
+		if err != nil {
+			return nil, fmt.Errorf("Could not fetch osd with name %v in cluster %v.Error %v", resourceName, cluster.Name, err)
+		}
+		return &(slu.SluId), nil
+	case skyring_monitoring.STORAGE_UTILIZATION:
+		var storage models.Storage
+		err := getEntity(cluster.ClusterId, resourceName, models.COLL_NAME_STORAGE, &storage)
+		if err != nil {
+			return nil, fmt.Errorf("Could not fetch pool with name %v in cluster %v", storage.Name, cluster.Name)
+		}
+		return &(storage.StorageId), nil
+	}
+	return nil, fmt.Errorf("Unsupported utilization type %v", utilizationType)
+}
+
+func getEntity(clusterId uuid.UUID, resourceName string, collectionName string, entity interface{}) error {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	collection := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(collectionName)
+	if err := collection.Find(bson.M{"clusterid": clusterId, "name": resourceName}).One(entity); err != nil {
+		return err
+	}
+	return nil
+}
+
+/*
+	utilization ==> type of utlization i.e, slu_utilization or cluster_utilization or storage_utilization or storage_profile_utilization
+	utilizations ==> {resource_id : utilization_value}
+*/
+func AnalyseThresholdBreach(ctxt string, utilizationType string, resourceName string, resourceUtilization float64) {
+	var event models.NodeEvent
+	var thresholdBreachType string
+	timeStamp := time.Now()
+	plugin := cluster.Monitoring.Plugins[skyring_monitoring.GetPluginIndex(utilizationType, cluster.Monitoring.Plugins)]
+	var thresholdBreach bool
+	nonOverridableThreshold := skyring_monitoring.CRITICAL
+	var applicableConfig skyring_monitoring.PluginConfig
+	var thresholdVal float64
+
+	var entityIdentifier string
+	entityId, entityIdFetchError := getEntityIdFromNameAndUtilizationType(utilizationType, resourceName)
+	if entityIdFetchError != nil {
+		logger.Get().Error("%s - Error fetching the id for %v in cluster %v", ctxt, resourceName, cluster.Name)
+		return
+	}
+	entityIdentifier = (*entityId).String()
+
+	for _, config := range plugin.Configs {
+		if config.Category == skyring_monitoring.THRESHOLD {
+			thresholdValue, thresholdValError := strconv.ParseFloat(config.Value, 64)
+			if thresholdValError != nil {
+				logger.Get().Error("%s - %v-%v configuration for %v in cluster %v could not be converted.Err %v\n",
+					ctxt, config.Category, config.Type, plugin.Name, cluster.Name, thresholdValError)
+			}
+
+			if resourceUtilization > thresholdValue {
+				thresholdBreachType = config.Type
+				applicableConfig = config
+				thresholdVal = thresholdValue
+				thresholdBreach = true
+			}
+
+			if thresholdBreachType == nonOverridableThreshold {
+				break
+			}
+		}
+	}
+
+	if thresholdBreach {
+		event = models.Event{
+			Timestamp: timeStamp,
+			Node:      cluster.Name,
+			ClusterId: cluster.ClusterId,
+			NodeId:    cluster.ClusterId,
+			Tag: fmt.Sprintf("skyring/bigfin/cluster/%v/threshold/%v/%v",
+				cluster.ClusterId, plugin.Name, strings.ToUpper(applicableConfig.Type)),
+			Tags: map[string]string{
+				models.CURRENT_VALUE:   strconv.FormatFloat(resourceUtilization, 'E', -1, 64),
+				models.ENTITY_ID:       entityIdentifier,
+				models.PLUGIN:          plugin.Name,
+				models.THRESHOLD_TYPE:  strings.ToUpper(applicableConfig.Type),
+				models.THRESHOLD_VALUE: strconv.FormatFloat(thresholdVal, 'E', -1, 64),
+			},
+			Message: fmt.Sprintf("%v of cluster %v with value %v breached %v threshold of value %v",
+				plugin.Name, cluster.Name, resourceUtilization, strings.ToUpper(applicableConfig.Type),
+				thresholdVal),
+			Severity: strings.ToUpper(applicableConfig.Type),
+		}
+		if err, _ := HandleEvent(event); err != nil {
+			logger.Get().Error("%s - Threshold breach with details detected but could not be handled. Threshold: %v", ctxt, event)
+		}
+		//Dispatch the threshold breach event
+		logger.Get().Error("%s - Threshold breach detected. Threshold: %v", ctxt, event)
+	}
 }
 
 func (s *CephProvider) MonitorCluster(req models.RpcRequest, resp *models.RpcResponse) error {
@@ -297,6 +400,7 @@ func FetchOSDStats(ctxt string) (map[string]map[string]string, error) {
 		if dbUpdateErr := updateDB(bson.M{"name": osd.Name, "clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"usage": usage}}, models.COLL_NAME_STORAGE_LOGICAL_UNITS); dbUpdateErr != nil {
 			logger.Get().Error("%s - Error updating the osd details of %v of cluster %v.Err %v", ctxt, osd.Name, cluster.Name, dbUpdateErr)
 		}
+		go AnalyseThresholdBreach(ctxt, skyring_monitoring.SLU_UTILIZATION, osd.Name, float64(osd.UsagePercent))
 	}
 
 	storageProfileStats, storageProfileStatsErr := FetchStorageProfileUtilizations(ctxt, statistics)
@@ -426,6 +530,8 @@ func FetchClusterStats(ctxt string) (map[string]map[string]string, error) {
 		logger.Get().Error("%s-Updating the cluster statistics to db for the cluster %v failed.Error %v", ctxt, cluster.Name, err.Error())
 	}
 
+	go AnalyseThresholdBreach(ctxt, skyring_monitoring.CLUSTER_UTILIZATION, cluster.Name, percentUsed)
+
 	collection := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
 	for _, poolStat := range statistics.Pools {
 		used := poolStat.Used
@@ -433,6 +539,7 @@ func FetchClusterStats(ctxt string) (map[string]map[string]string, error) {
 		percentUsed := 0.0
 		if total != 0 {
 			percentUsed = (float64(used*100) / float64(total))
+			go AnalyseThresholdBreach(ctxt, skyring_monitoring.STORAGE_UTILIZATION, poolStat.Name, percentUsed)
 		}
 		dbUpdateError := collection.Update(bson.M{"clusterid": cluster.ClusterId, "name": poolStat.Name}, bson.M{"$set": bson.M{"usage": models.Utilization{Used: used, Total: total, PercentUsed: percentUsed}}})
 		if dbUpdateError != nil {
