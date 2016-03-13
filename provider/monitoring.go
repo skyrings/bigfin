@@ -12,6 +12,7 @@ import (
 	skyring_monitoring "github.com/skyrings/skyring-common/monitoring"
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/uuid"
+	"github.com/skyrings/skyring-common/utils"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"strconv"
@@ -20,19 +21,16 @@ import (
 	"time"
 )
 
-var (
-	MonitoringManager skyring_monitoring.MonitoringManagerInterface
-	cluster           models.Cluster
-	nodes             models.Nodes
-	monName           string
-)
-
 var monitoringRoutines = []interface{}{
 	FetchOSDStats,
 	FetchClusterStats,
 	FetchObjectCount,
 	FetchPGSummary,
 }
+
+var (
+	MonitoringManager skyring_monitoring.MonitoringManagerInterface
+)
 
 func InitMonitoringManager() error {
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
@@ -44,7 +42,7 @@ func InitMonitoringManager() error {
 	return nil
 }
 
-func initMonitoringRoutines(ctxt string) error {
+func initMonitoringRoutines(ctxt string, cluster models.Cluster, nodes models.Nodes, monName string) error {
 	/*
 		sync.WaitGroup can be used if it is required to do something after all go routines complete.
 		For ex: pushing to db can be done after all go-routines complete.
@@ -53,10 +51,10 @@ func initMonitoringRoutines(ctxt string) error {
 	var errors string
 	wg.Add(len(monitoringRoutines))
 	for _, iFunc := range monitoringRoutines {
-		if function, ok := iFunc.(func(string) (map[string]map[string]string, error)); ok {
-			go func(ctxt string) {
+		if function, ok := iFunc.(func(string, models.Cluster, models.Nodes, string) (map[string]map[string]string, error)); ok {
+			go func(ctxt string, cluster models.Cluster, nodes models.Nodes, monName string) {
 				defer wg.Done()
-				response, err := function(ctxt)
+				response, err := function(ctxt, cluster, nodes, monName)
 				if err != nil {
 					logger.Get().Error("%s-%v", ctxt, err.Error())
 					errors = errors + err.Error()
@@ -66,13 +64,13 @@ func initMonitoringRoutines(ctxt string) error {
 					 The stats are being pushed as they are obtained because each of them can potentially have different intervals of schedule
 					 in which case the respective routines would sleep for the said interval making the push to wait longer.
 					*/
-					err := pushTimeSeriesData(response)
+					err := pushTimeSeriesData(response, cluster.Name)
 					if err != nil {
 						logger.Get().Error("%s-%v", ctxt, err.Error())
 						errors = errors + err.Error()
 					}
 				}
-			}(ctxt)
+			}(ctxt, cluster, nodes, monName)
 		} else {
 			continue
 		}
@@ -98,7 +96,7 @@ func (s *CephProvider) MonitorCluster(req models.RpcRequest, resp *models.RpcRes
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s.Error: %v", cluster_id_str, err))
 		return fmt.Errorf("Error parsing the cluster id: %s.Error: %v", cluster_id_str, err)
 	}
-	cluster, err = getCluster(*cluster_id)
+	cluster, err := getCluster(*cluster_id)
 	if err != nil {
 		logger.Get().Error("%s-Unable to get cluster with id %v.Err %v", ctxt, cluster_id, err.Error())
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unable to get cluster with id %v.Err %v", cluster_id, err.Error()))
@@ -110,14 +108,14 @@ func (s *CephProvider) MonitorCluster(req models.RpcRequest, resp *models.RpcRes
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unable to pick a random mon from cluster %v.Error: %v", cluster.Name, err.Error()))
 		return fmt.Errorf("Unable to pick a random mon from cluster %v.Error: %v", cluster.Name, err.Error())
 	}
-	monName = (*monnode).Hostname
-	nodes, err = getClusterNodesById(cluster_id)
+	monName := (*monnode).Hostname
+	nodes, err := getClusterNodesById(cluster_id)
 	if err != nil {
 		logger.Get().Error("%s-Unable to fetch nodes of cluster %v.Error: %v", ctxt, cluster.Name, err.Error())
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unable to fetch nodes of cluster %v.Error: %v", cluster.Name, err.Error()))
 		return fmt.Errorf("Unable to fetch nodes of cluster %v.Error: %v", cluster.Name, err.Error())
 	}
-	err = initMonitoringRoutines(ctxt)
+	err = initMonitoringRoutines(ctxt, cluster, nodes, monName)
 	if err != nil {
 		logger.Get().Error("%s-Error: %v", ctxt, err.Error())
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error: %v", err.Error()))
@@ -278,7 +276,7 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 	return fmt.Errorf("%v", err_str)
 }
 
-func FetchOSDStats(ctxt string) (map[string]map[string]string, error) {
+func FetchOSDStats(ctxt string, cluster models.Cluster, nodes models.Nodes, monName string) (map[string]map[string]string, error) {
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
 	statistics, statsFetchErr := salt_backend.GetOSDDetails(monName, cluster.Name, ctxt)
 	if statsFetchErr != nil {
@@ -297,9 +295,19 @@ func FetchOSDStats(ctxt string) (map[string]map[string]string, error) {
 		if dbUpdateErr := updateDB(bson.M{"name": osd.Name, "clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"usage": usage}}, models.COLL_NAME_STORAGE_LOGICAL_UNITS); dbUpdateErr != nil {
 			logger.Get().Error("%s - Error updating the osd details of %v of cluster %v.Err %v", ctxt, osd.Name, cluster.Name, dbUpdateErr)
 		}
+		event, isRaiseEvent, err := util.AnalyseThresholdBreach(ctxt, skyring_monitoring.SLU_UTILIZATION, osd.Name, float64(osd.UsagePercent), cluster)
+		if err != nil {
+			logger.Get().Error("%s - Failed to analyse threshold breach for osd utilization of %v.Error %v", ctxt, osd.Name, err)
+			continue
+		}
+		if isRaiseEvent {
+			if err, _ := HandleEvent(event, ctxt); err != nil {
+				logger.Get().Error("%s - Threshold: %v.Error %v", ctxt, event, err)
+			}
+		}
 	}
 
-	storageProfileStats, storageProfileStatsErr := FetchStorageProfileUtilizations(ctxt, statistics)
+	storageProfileStats, storageProfileStatsErr := FetchStorageProfileUtilizations(ctxt, statistics, cluster)
 	if storageProfileStatsErr != nil {
 		return metrics, fmt.Errorf("Failed to fetch storage profile utilizations for cluster %v.Error %v", cluster.Name, storageProfileStatsErr)
 	}
@@ -309,7 +317,7 @@ func FetchOSDStats(ctxt string) (map[string]map[string]string, error) {
 	return metrics, nil
 }
 
-func FetchStorageProfileUtilizations(ctxt string, osdDetails []backend.OSDDetails) (statsToPush map[string]map[string]string, err error) {
+func FetchStorageProfileUtilizations(ctxt string, osdDetails []backend.OSDDetails, cluster models.Cluster) (statsToPush map[string]map[string]string, err error) {
 	statsToPush = make(map[string]map[string]string)
 	cluster.StorageProfileUsage = make(map[string]models.Utilization)
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
@@ -392,13 +400,13 @@ func getOsds(clusterId uuid.UUID) (slus []models.StorageLogicalUnit, err error) 
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
-	if err := coll.Find(bson.M{"clusterid": cluster.ClusterId}).All(&slus); err != nil {
-		return nil, fmt.Errorf("Error getting the slus for cluster: %v. error: %v", cluster.Name, err)
+	if err := coll.Find(bson.M{"clusterid": clusterId}).All(&slus); err != nil {
+		return nil, fmt.Errorf("Error getting the slus for cluster: %v. error: %v", clusterId, err)
 	}
 	return slus, nil
 }
 
-func FetchClusterStats(ctxt string) (map[string]map[string]string, error) {
+func FetchClusterStats(ctxt string, cluster models.Cluster, nodes models.Nodes, monName string) (map[string]map[string]string, error) {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 
@@ -426,6 +434,16 @@ func FetchClusterStats(ctxt string) (map[string]map[string]string, error) {
 		logger.Get().Error("%s-Updating the cluster statistics to db for the cluster %v failed.Error %v", ctxt, cluster.Name, err.Error())
 	}
 
+	event, isRaiseEvent, err := util.AnalyseThresholdBreach(ctxt, skyring_monitoring.CLUSTER_UTILIZATION, cluster.Name, percentUsed, cluster)
+	if err != nil {
+		logger.Get().Error("%s - Failed to analyse threshold breach for cluster utilization of %v.Error %v", ctxt, cluster.Name, err)
+	}
+	if isRaiseEvent {
+		if err, _ := HandleEvent(event, ctxt); err != nil {
+			logger.Get().Error("%s - Threshold: %v.Error %v", ctxt, event, err)
+		}
+	}
+
 	collection := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
 	for _, poolStat := range statistics.Pools {
 		used := poolStat.Used
@@ -433,6 +451,16 @@ func FetchClusterStats(ctxt string) (map[string]map[string]string, error) {
 		percentUsed := 0.0
 		if total != 0 {
 			percentUsed = (float64(used*100) / float64(total))
+			event, isRaiseEvent, err := util.AnalyseThresholdBreach(ctxt, skyring_monitoring.STORAGE_UTILIZATION, poolStat.Name, percentUsed, cluster)
+			if err != nil {
+				logger.Get().Error("%s - Failed to analyse threshold breach for pool utilization of %v.Error %v", ctxt, poolStat.Name, err)
+				continue
+			}
+			if isRaiseEvent {
+				if err, _ := HandleEvent(event, ctxt); err != nil {
+					logger.Get().Error("%s - Threshold: %v.Error %v", ctxt, event, err)
+				}
+			}
 		}
 		dbUpdateError := collection.Update(bson.M{"clusterid": cluster.ClusterId, "name": poolStat.Name}, bson.M{"$set": bson.M{"usage": models.Utilization{Used: used, Total: total, PercentUsed: percentUsed}}})
 		if dbUpdateError != nil {
@@ -443,7 +471,7 @@ func FetchClusterStats(ctxt string) (map[string]map[string]string, error) {
 	return metrics, nil
 }
 
-func FetchObjectCount(ctxt string) (map[string]map[string]string, error) {
+func FetchObjectCount(ctxt string, cluster models.Cluster, nodes models.Nodes, monName string) (map[string]map[string]string, error) {
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
 	statistics, statsFetchErr := salt_backend.GetObjectCount(monName, cluster.Name, ctxt)
 	if statsFetchErr != nil {
@@ -466,7 +494,7 @@ func FetchObjectCount(ctxt string) (map[string]map[string]string, error) {
 	return metrics, nil
 }
 
-func FetchPGSummary(ctxt string) (map[string]map[string]string, error) {
+func FetchPGSummary(ctxt string, cluster models.Cluster, nodes models.Nodes, monName string) (map[string]map[string]string, error) {
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
 	statistics, statsFetchErr := cephapi_backend.GetPGSummary(monName, cluster.ClusterId, ctxt)
 	if statsFetchErr != nil {
@@ -494,7 +522,7 @@ func FetchPGSummary(ctxt string) (map[string]map[string]string, error) {
 	return metrics, nil
 }
 
-func pushTimeSeriesData(metrics map[string]map[string]string) error {
+func pushTimeSeriesData(metrics map[string]map[string]string, clusterName string) error {
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
 	if metrics == nil {
 		return fmt.Errorf("The metrics are nil")
@@ -503,7 +531,7 @@ func pushTimeSeriesData(metrics map[string]map[string]string) error {
 		return fmt.Errorf("Monitoring manager was not initialized successfully")
 	}
 	if err := MonitoringManager.PushToDb(metrics, monitoringConfig.Hostname, monitoringConfig.DataPushPort); err != nil {
-		return fmt.Errorf("Failed to push statistics of cluster %v to db.Error: %v", cluster.Name, err)
+		return fmt.Errorf("Failed to push statistics of cluster %v to db.Error: %v", clusterName, err)
 	}
 	return nil
 }
