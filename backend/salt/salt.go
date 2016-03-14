@@ -107,6 +107,19 @@ func (s Salt) CreatePool(name string, mon string, clusterName string, pgnum uint
 	return false, err
 }
 
+func (s Salt) CreateECPool(
+	name string,
+	mon string,
+	clusterName string,
+	pgnum uint,
+	replicas int,
+	quotaMaxObjects int,
+	quotaMaxBytes uint64,
+	ecProfile string,
+	ctxt string) (bool, error) {
+	return true, nil
+}
+
 func (s Salt) ListPoolNames(mon string, clusterName string, ctxt string) (names []string, err error) {
 	mutex.Lock()
 	defer mutex.Unlock()

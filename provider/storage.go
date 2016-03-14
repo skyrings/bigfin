@@ -221,11 +221,29 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 
 	ok := true
 	if request.Type == models.STORAGE_TYPE_ERASURE_CODED {
-		cmd := fmt.Sprintf("ceph --cluster %s osd pool create %s %d %d erasure %s", cluster.Name, request.Name, uint(pgNum), uint(pgNum), request.Options["ecprofile"])
-		ok, _, err = cephapi_backend.ExecCmd(monnode.Hostname, clusterId, cmd, ctxt)
-		time.Sleep(10 * time.Second)
+		// cmd := fmt.Sprintf("ceph --cluster %s osd pool create %s %d %d erasure %s", cluster.Name, request.Name, uint(pgNum), uint(pgNum), request.Options["ecprofile"])
+		// ok, _, err = cephapi_backend.ExecCmd(monnode.Hostname, clusterId, cmd, ctxt)
+		// time.Sleep(10 * time.Second)
+		ok, err = cephapi_backend.CreateECPool(
+			request.Name,
+			monnode.Hostname,
+			cluster.Name,
+			uint(pgNum),
+			request.Replicas,
+			quotaMaxObjects,
+			quotaMaxBytes,
+			request.Options["ecprofile"],
+			ctxt)
 	} else {
-		ok, err = cephapi_backend.CreatePool(request.Name, monnode.Hostname, cluster.Name, uint(pgNum), request.Replicas, quotaMaxObjects, quotaMaxBytes, ctxt)
+		ok, err = cephapi_backend.CreatePool(
+			request.Name,
+			monnode.Hostname,
+			cluster.Name,
+			uint(pgNum),
+			request.Replicas,
+			quotaMaxObjects,
+			quotaMaxBytes,
+			ctxt)
 	}
 	if err != nil || !ok {
 		utils.FailTask(fmt.Sprintf("Create pool %s failed on cluster: %s", request.Name, cluster.Name), fmt.Errorf("%s - %v", ctxt, err), t)
