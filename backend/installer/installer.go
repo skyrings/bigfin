@@ -64,6 +64,19 @@ func (c Installer) CreatePool(name string, mon string, clusterName string, pgnum
 	return true, nil
 }
 
+func (c Installer) CreateECPool(
+	name string,
+	mon string,
+	clusterName string,
+	pgnum uint,
+	replicas int,
+	quotaMaxObjects int,
+	quotaMaxBytes uint64,
+	ecProfile string,
+	ctxt string) (bool, error) {
+	return true, nil
+}
+
 func (c Installer) ListPoolNames(mon string, clusterName string, ctxt string) ([]string, error) {
 	return []string{}, nil
 }

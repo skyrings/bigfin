@@ -90,6 +90,51 @@ func (c CephApi) CreatePool(name string, mon string, clusterName string, pgnum u
 	}
 }
 
+func (c CephApi) CreateECPool(
+	name string,
+	mon string,
+	clusterName string,
+	pgnum uint,
+	replicas int,
+	quotaMaxObjects int,
+	quotaMaxBytes uint64,
+	ecProfile string,
+	ctxt string) (bool, error) {
+	// Get the cluster id
+	cluster_id, err := cluster_id(clusterName)
+	if err != nil {
+		return false, errors.New(fmt.Sprintf("Could not get id for cluster: %s. error: %v", clusterName, err))
+	}
+
+	// Replace cluster id in route pattern
+	createPoolRoute := CEPH_API_ROUTES["CreatePool"]
+	createPoolRoute.Pattern = strings.Replace(createPoolRoute.Pattern, "{cluster-fsid}", cluster_id, 1)
+
+	pool := map[string]interface{}{
+		"name":                 name,
+		"size":                 replicas,
+		"quota_max_objects":    quotaMaxObjects,
+		"quota_max_bytes":      quotaMaxBytes,
+		"pg_num":               int(pgnum),
+		"pgp_num":              int(pgnum),
+		"type":                 "erasure",
+		"erasure_code_profile": ecProfile,
+	}
+
+	buf, err := json.Marshal(pool)
+	if err != nil {
+		return false, errors.New(fmt.Sprintf("Error forming request body. error: %v", err))
+	}
+	body := bytes.NewBuffer(buf)
+	resp, err := route_request(createPoolRoute, mon, body)
+	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted) {
+		return false, errors.New(fmt.Sprintf("Failed to create pool: %s for cluster: %s. error: %v", name, clusterName, err))
+	} else {
+		ok, err := syncRequestStatus(mon, resp)
+		return ok, err
+	}
+}
+
 func (c CephApi) ListPoolNames(mon string, clusterName string, ctxt string) ([]string, error) {
 	return []string{}, nil
 }
