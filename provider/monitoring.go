@@ -289,6 +289,10 @@ func FetchOSDStats(ctxt string) (map[string]map[string]string, error) {
 		metrics[metric_name+skyring_monitoring.FREE_SPACE] = map[string]string{timeStampStr: strconv.FormatUint(osd.Available, 10)}
 		metrics[metric_name+skyring_monitoring.USED_SPACE] = map[string]string{timeStampStr: strconv.FormatUint(osd.Used, 10)}
 		metrics[metric_name+skyring_monitoring.PERCENT_USED] = map[string]string{timeStampStr: strconv.FormatUint(osd.UsagePercent, 10)}
+		usage := models.Utilization{Used: int64(osd.Available), Total: int64(osd.Available + osd.Used), PercentUsed: float64(osd.UsagePercent)}
+		if dbUpdateErr := updateDB(bson.M{"name": osd.Name}, bson.M{"$set": bson.M{"usage": usage}}, models.COLL_NAME_STORAGE_LOGICAL_UNITS); dbUpdateErr != nil {
+			logger.Get().Error("Error updating the osd details of %v of cluster %v.Err %v", osd.Name, cluster.Name, dbUpdateErr)
+		}
 	}
 
 	storageProfileStats, storageProfileStatsErr := FetchStorageProfileUtilizations(statistics)
@@ -351,17 +355,28 @@ func FetchStorageProfileUtilizations(osdDetails []backend.OSDDetails) (statsToPu
 		}
 	}
 
-	if err := updateCluster(bson.M{"clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"storageprofileusage": cluster.StorageProfileUsage}}); err != nil {
+	if err := updateDB(bson.M{"clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"storageprofileusage": cluster.StorageProfileUsage}}, models.COLL_NAME_STORAGE_CLUSTERS); err != nil {
 		logger.Get().Error("Updating the storage profile statistics to db for the cluster %v failed.Error %v", cluster.Name, err.Error())
 	}
 
 	return statsToPush, nil
 }
 
-func updateCluster(query interface{}, update interface{}) error {
+func updateDB(query interface{}, update interface{}, collectionName string) error {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
-	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(collectionName)
+	dbUpdateError := coll.Update(query, update)
+	if dbUpdateError != nil {
+		return dbUpdateError
+	}
+	return nil
+}
+
+func updateOSD(query interface{}, update interface{}) error {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
 	dbUpdateError := coll.Update(query, update)
 	if dbUpdateError != nil {
 		return dbUpdateError
@@ -403,7 +418,7 @@ func FetchClusterStats(ctxt string) (map[string]map[string]string, error) {
 	if statistics.Total != 0 {
 		percentUsed = (float64(statistics.Used*100) / float64(statistics.Total))
 	}
-	if err := updateCluster(bson.M{"clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"usage": models.Utilization{Used: statistics.Used, Total: statistics.Total, PercentUsed: percentUsed}}}); err != nil {
+	if err := updateDB(bson.M{"clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"usage": models.Utilization{Used: statistics.Used, Total: statistics.Total, PercentUsed: percentUsed}}}, models.COLL_NAME_STORAGE_CLUSTERS); err != nil {
 		logger.Get().Error("%s-Updating the cluster statistics to db for the cluster %v failed.Error %v", ctxt, cluster.Name, err.Error())
 	}
 
@@ -440,7 +455,7 @@ func FetchObjectCount(ctxt string) (map[string]map[string]string, error) {
 	metric_name := monitoringConfig.CollectionName + "." + cluster.Name + "." + skyring_monitoring.NO_OF_OBJECT
 	metrics[metric_name] = map[string]string{timeStampStr: fmt.Sprintf("%v", objectCnt)}
 
-	if err := updateCluster(bson.M{"clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"objectcount": map[string]int64{bigfin_models.NUMBER_OF_OBJECTS: objectCnt, bigfin_models.NUMBER_OF_DEGRADED_OBJECTS: objectErrCnt}}}); err != nil {
+	if err := updateDB(bson.M{"clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"objectcount": map[string]int64{bigfin_models.NUMBER_OF_OBJECTS: objectCnt, bigfin_models.NUMBER_OF_DEGRADED_OBJECTS: objectErrCnt}}}, models.COLL_NAME_STORAGE_CLUSTERS); err != nil {
 		logger.Get().Error("%s-Updating the object count to db for the cluster %v failed.Error %v", ctxt, cluster.Name, err.Error())
 	}
 
