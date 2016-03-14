@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a6ff13c_faace68e",
+        "filename": "backend/cephapi/api.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 281,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-14T09:35:47Z",
+      "side": 1,
+      "message": "This logic seems to be repeated below as well. Can you write a function and invoke all 3 places..",
+      "range": {
+        "startLine": 273,
+        "startChar": 1,
+        "endLine": 281,
+        "endChar": 48
+      },
+      "revId": "2b2866e58790c8e82c33c3c2b6adb9c7cbf5afb1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_1aaaa270",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 180,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-14T09:35:47Z",
+      "side": 1,
+      "message": "I feel its good to define constants for these as I see being used in different places..",
+      "range": {
+        "startLine": 180,
+        "startChar": 18,
+        "endLine": 180,
+        "endChar": 26
+      },
+      "revId": "2b2866e58790c8e82c33c3c2b6adb9c7cbf5afb1",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
