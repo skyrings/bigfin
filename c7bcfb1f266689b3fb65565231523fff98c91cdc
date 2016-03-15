@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a6ff13c_5f888522",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-15T11:01:12Z",
+      "side": 1,
+      "message": "This should be outside the forloop",
+      "range": {
+        "startLine": 106,
+        "startChar": 4,
+        "endLine": 107,
+        "endChar": 29
+      },
+      "revId": "c7bcfb1f266689b3fb65565231523fff98c91cdc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_dfcd5588",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-15T11:01:12Z",
+      "side": 1,
+      "message": "if the first MON fails, we are not going to add other mons?\nAlso if that happens, we never return and we are in an infinite loop?",
+      "range": {
+        "startLine": 143,
+        "startChar": 4,
+        "endLine": 143,
+        "endChar": 16
+      },
+      "revId": "c7bcfb1f266689b3fb65565231523fff98c91cdc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_3fee69ed",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-15T11:01:12Z",
+      "side": 1,
+      "message": "this should be inside if len(mons) \u003e 1 {",
+      "range": {
+        "startLine": 147,
+        "startChar": 5,
+        "endLine": 147,
+        "endChar": 32
+      },
+      "revId": "c7bcfb1f266689b3fb65565231523fff98c91cdc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_bfb099f5",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-15T11:01:12Z",
+      "side": 1,
+      "message": "if the succeeded mons \u003d\u003d0 , shouldnot proceed further",
+      "range": {
+        "startLine": 163,
+        "startChar": 5,
+        "endLine": 163,
+        "endChar": 6
+      },
+      "revId": "c7bcfb1f266689b3fb65565231523fff98c91cdc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_ff78512d",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 181,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-15T11:01:12Z",
+      "side": 1,
+      "message": "should we add all the nodes or successful nodes only?",
+      "range": {
+        "startLine": 168,
+        "startChar": 5,
+        "endLine": 181,
+        "endChar": 6
+      },
+      "revId": "c7bcfb1f266689b3fb65565231523fff98c91cdc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_df3e3529",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 631,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-15T11:01:12Z",
+      "side": 1,
+      "message": "should we update the node details only if successful or always?",
+      "range": {
+        "startLine": 617,
+        "startChar": 4,
+        "endLine": 631,
+        "endChar": 5
+      },
+      "revId": "c7bcfb1f266689b3fb65565231523fff98c91cdc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
