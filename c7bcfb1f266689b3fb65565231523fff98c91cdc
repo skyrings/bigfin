@@ -120,6 +120,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_e521a2b5",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 143,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-15T17:13:16Z",
+      "side": 1,
+      "message": "So in skyring core side there is a check to pass at least one mon node while cluster creation.\nAlso aboce salt_backend.CreateCluster() call is with first mon from the list, and below for loop start from second mon onwards.\nSo if CreateCluster fails we are returning already above and below from second mon onwards if some mons fail we just keep recording.",
+      "parentUuid": "3a6ff13c_a5b5eace",
+      "range": {
+        "startLine": 143,
+        "startChar": 4,
+        "endLine": 143,
+        "endChar": 16
+      },
+      "revId": "c7bcfb1f266689b3fb65565231523fff98c91cdc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_3fee69ed",
         "filename": "provider/cluster.go",
         "patchSetId": 2
@@ -226,6 +250,30 @@
       "side": 1,
       "message": "we need to change the logic of returning if first MON fails",
       "parentUuid": "3a6ff13c_7f654144",
+      "range": {
+        "startLine": 163,
+        "startChar": 5,
+        "endLine": 163,
+        "endChar": 6
+      },
+      "revId": "c7bcfb1f266689b3fb65565231523fff98c91cdc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_052f9ea2",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 163,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-15T17:13:16Z",
+      "side": 1,
+      "message": "Replied in above comment..",
+      "parentUuid": "3a6ff13c_45dd1614",
       "range": {
         "startLine": 163,
         "startChar": 5,
