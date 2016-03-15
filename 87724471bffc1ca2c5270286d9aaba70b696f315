@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a6ff13c_1fad2d89",
+        "filename": "backend/cephapi/routes.go",
+        "patchSetId": 8
+      },
+      "lineNbr": 58,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-15T10:52:24Z",
+      "side": 1,
+      "message": "Verify with latest calamari make sure with Gregory that its not going to be deprecated :)",
+      "range": {
+        "startLine": 58,
+        "startChar": 3,
+        "endLine": 58,
+        "endChar": 13
+      },
+      "revId": "87724471bffc1ca2c5270286d9aaba70b696f315",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
