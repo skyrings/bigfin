@@ -2,6 +2,23 @@
   "comments": [
     {
       "key": {
+        "uuid": "3a6ff13c_bc5d07ec",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 293,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-15T05:48:50Z",
+      "side": 1,
+      "message": "Add cluster id also in search criterion as osd with same name can exist across clusters",
+      "revId": "c030fa65cdf2cdb808baa29f39c4ca7756c2cf27",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_16ad1a89",
         "filename": "provider/monitoring.go",
         "patchSetId": 2
@@ -13,6 +30,30 @@
       "writtenOn": "2016-03-14T17:51:42Z",
       "side": 1,
       "message": "Are we using this func? do we really need this func, instead can use the updateDb itself?",
+      "range": {
+        "startLine": 376,
+        "startChar": 5,
+        "endLine": 376,
+        "endChar": 61
+      },
+      "revId": "c030fa65cdf2cdb808baa29f39c4ca7756c2cf27",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_7c638fb1",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 376,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-15T05:48:50Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_16ad1a89",
       "range": {
         "startLine": 376,
         "startChar": 5,
