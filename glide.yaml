@@ -14,3 +14,5 @@ import:
   version: 4d04138ffef2791c479c0c8bbffc30b34081b8d9
 - package: github.com/marpaia/graphite-golang
   version: bea0c295debd84f9c80050cea3c6aeb3dd448f7c
+- package: github.com/parnurzeal/gorequest
+  version: 91b42fce877cc6af96c45818665a4c615cc5f4ee
