@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a6ff13c_1fdb6d1c",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 369,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-15T11:03:48Z",
+      "side": 1,
+      "message": "%s/query/filter/g",
+      "range": {
+        "startLine": 369,
+        "startChar": 14,
+        "endLine": 369,
+        "endChar": 19
+      },
+      "revId": "3970581ce9d916f75ebbd6f74563e28191d864c3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
