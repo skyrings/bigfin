@@ -22,6 +22,30 @@
       "revId": "ec3500d5ee48444a779247891c6dcaad7624a6b7",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_dff8f5c6",
+        "filename": "conf/conf.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-15T10:28:58Z",
+      "side": 0,
+      "message": "Yes, Not required. Its available skyring-common which we can use",
+      "parentUuid": "3a6ff13c_1cad3b89",
+      "range": {
+        "startLine": 3,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 1
+      },
+      "revId": "ec3500d5ee48444a779247891c6dcaad7624a6b7",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
