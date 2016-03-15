@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a6ff13c_fcc05f7e",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 118,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-15T05:12:48Z",
+      "side": 1,
+      "message": "Does this make necessary that all the entities should have a field \"clusterid\" and \"name\"? How do we ensure this?",
+      "range": {
+        "startLine": 118,
+        "startChar": 59,
+        "endLine": 118,
+        "endChar": 63
+      },
+      "revId": "f436c3f7a8466e3ee662c117051e2c6c7798f04b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
