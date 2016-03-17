@@ -28,6 +28,7 @@ import (
 
 	bigfin_conf "github.com/skyrings/bigfin/conf"
 	bigfin_task "github.com/skyrings/bigfin/tools/task"
+	skyring_util "github.com/skyrings/skyring-common/utils"
 )
 
 const (
@@ -41,6 +42,15 @@ var ec_pool_sizes = map[string]int{
 	"k4m2":    6,
 	"k6m3":    9,
 	"k8m4":    12,
+}
+
+var validConfigs = []string{
+	"name",
+	"quota_max_objects",
+	"quota_max_bytes",
+	"size",
+	"pg_num",
+	"pgp_num",
 }
 
 func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResponse) error {
@@ -572,5 +582,135 @@ func (s *CephProvider) RemoveStorage(req models.RpcRequest, resp *models.RpcResp
 	} else {
 		*resp = utils.WriteAsyncResponse(taskId, fmt.Sprintf("Task Created for delete storage on cluster: %v", *cluster_id), []byte{})
 	}
+	return nil
+}
+
+func (s *CephProvider) UpdateStorage(req models.RpcRequest, resp *models.RpcResponse) error {
+	ctxt := req.RpcRequestContext
+	cluster_id_str := req.RpcRequestVars["cluster-id"]
+	cluster_id, err := uuid.Parse(cluster_id_str)
+	if err != nil {
+		logger.Get().Error(
+			"%s - Error parsing the cluster id: %s. error: %v",
+			ctxt,
+			cluster_id_str,
+			err)
+		*resp = utils.WriteResponse(
+			http.StatusBadRequest,
+			fmt.Sprintf(
+				"Error parsing the cluster id: %s",
+				cluster_id_str))
+		return err
+	}
+	storage_id_str := req.RpcRequestVars["storage-id"]
+	storage_id, err := uuid.Parse(storage_id_str)
+	if err != nil {
+		logger.Get().Error(
+			"%s - Error parsing the storage id: %s. error: %v",
+			ctxt,
+			storage_id_str,
+			err)
+		*resp = utils.WriteResponse(
+			http.StatusBadRequest,
+			fmt.Sprintf(
+				"Error parsing the storage id: %s",
+				storage_id_str))
+		return err
+	}
+	var request map[string]interface{}
+	if err := json.Unmarshal(req.RpcRequestData, &request); err != nil {
+		logger.Get().Error(
+			"%s - Unbale to parse the request. error: %v",
+			ctxt,
+			err)
+		*resp = utils.WriteResponse(
+			http.StatusBadRequest,
+			fmt.Sprintf(
+				"Unbale to parse the request. error: %v",
+				err))
+		return err
+	}
+
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+	var storage models.Storage
+	if err := coll.Find(bson.M{"storageid": *storage_id}).One(&storage); err != nil {
+		logger.Get().Error(
+			"%s - Error getting detals of storage: %v on cluster: %v. error: %v",
+			ctxt,
+			*storage_id,
+			*cluster_id,
+			err)
+		*resp = utils.WriteResponse(
+			http.StatusInternalServerError,
+			fmt.Sprintf(
+				"Error getting the details of storage: %v",
+				*storage_id))
+		return err
+	}
+	id, err := strconv.Atoi(storage.Options["id"])
+	if err != nil {
+		logger.Get().Error(
+			"%s - Error getting id of the pool: %v of cluster: %v. error: %v",
+			ctxt,
+			*storage_id,
+			*cluster_id,
+			err)
+		*resp = utils.WriteResponse(
+			http.StatusInternalServerError,
+			fmt.Sprintf(
+				"Error getting id of the pool: %v",
+				*storage_id))
+		return err
+	}
+	for key := range request {
+		if ok := skyring_util.StringInSlice(key, validConfigs); !ok {
+			logger.Get().Error(
+				"%s - Invalid configuration: %s mentioned for storage: %v of cluster: %v. error: %v",
+				ctxt,
+				key,
+				*storage_id,
+				*cluster_id,
+				err)
+			*resp = utils.WriteResponse(
+				http.StatusInternalServerError,
+				fmt.Sprintf(
+					"Invalid configuration %s mentioned for storage: %v",
+					key,
+					*storage_id))
+			return err
+		}
+	}
+	monnode, err := GetRandomMon(*cluster_id)
+	if err != nil {
+		logger.Get().Error(
+			"%s - Error getting mon node from cluster: %v. error :%v",
+			ctxt,
+			*cluster_id,
+			err)
+		*resp = utils.WriteResponse(
+			http.StatusInternalServerError,
+			fmt.Sprintf(
+				"Error getting mon node from cluster: %v",
+				*cluster_id))
+		return err
+	}
+	ok, err := cephapi_backend.UpdatePool(monnode.Hostname, *cluster_id, id, request, ctxt)
+	if err != nil || !ok {
+		logger.Get().Error(
+			"%s - Error setting the configurations for storage: %v on cluster: %v. error: %v",
+			ctxt,
+			*storage_id,
+			*cluster_id,
+			err)
+		*resp = utils.WriteResponse(
+			http.StatusInternalServerError,
+			fmt.Sprintf(
+				"Error setting the configurations for storage: %v",
+				*storage_id))
+		return err
+	}
+	*resp = utils.WriteResponse(http.StatusOK, "Done")
 	return nil
 }
