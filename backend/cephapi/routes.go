@@ -99,6 +99,12 @@ func (c *CephApi) LoadRoutes() {
 			Method:  "POST",
 			Version: 2,
 		},
+		{
+			Name:    "GetClusterConfig",
+			Pattern: "cluster/{cluster-fsid}/sync_object/config?format=json",
+			Method:  "GET",
+			Version: 2,
+		},
 	}
 	for _, route := range routes {
 		CEPH_API_ROUTES[route.Name] = route

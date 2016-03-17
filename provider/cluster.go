@@ -874,6 +874,71 @@ func (s *CephProvider) SyncStorageLogicalUnitParams(req models.RpcRequest, resp 
 
 }
 
+func (s *CephProvider) GetClusterConfig(req models.RpcRequest, resp *models.RpcResponse) error {
+	ctxt := req.RpcRequestContext
+
+	cluster_id_str := req.RpcRequestVars["cluster-id"]
+	cluster_id, err := uuid.Parse(cluster_id_str)
+	if err != nil {
+		logger.Get().Error(
+			"%s-Error parsing the cluster id: %s. error: %v",
+			ctxt,
+			cluster_id_str,
+			err)
+		*resp = utils.WriteResponse(
+			http.StatusBadRequest,
+			fmt.Sprintf(
+				"Error parsing the cluster id: %s",
+				cluster_id_str))
+		return err
+	}
+
+	monnode, err := GetRandomMon(*cluster_id)
+	if err != nil {
+		logger.Get().Error(
+			"%s-Error getting a mon from cluster: %v. error: %v",
+			ctxt,
+			*cluster_id,
+			err)
+		*resp = utils.WriteResponse(
+			http.StatusInternalServerError,
+			fmt.Sprintf(
+				"Error getting a mon from cluster: %v",
+				*cluster_id))
+		return err
+	}
+	configs, err := cephapi_backend.GetClusterConfig(monnode.Hostname, *cluster_id, ctxt)
+	if err != nil {
+		logger.Get().Error(
+			"%s-Error getting config details of cluster: %v. error: %v",
+			ctxt,
+			*cluster_id,
+			err)
+		*resp = utils.WriteResponse(
+			http.StatusInternalServerError,
+			fmt.Sprintf(
+				"Error getting config details of cluster: %v",
+				*cluster_id))
+		return err
+	}
+	result, err := json.Marshal(configs)
+	if err != nil {
+		logger.Get().Error(
+			"%s-Error forming the output for config details of cluster: %s. error: %v",
+			ctxt,
+			cluster.Name,
+			err)
+		*resp = utils.WriteResponse(
+			http.StatusInternalServerError,
+			fmt.Sprintf(
+				"Error forming the output. error: %v",
+				err))
+		return err
+	}
+	*resp = utils.WriteResponseWithData(http.StatusOK, "", result)
+	return nil
+}
+
 func cluster_status(clusterId uuid.UUID, clusterName string, ctxt string) (models.ClusterStatus, error) {
 	// Pick a random mon from the list
 	monnode, err := GetRandomMon(clusterId)

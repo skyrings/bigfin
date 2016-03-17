@@ -230,3 +230,7 @@ func (c Salt) GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt string)
 
 	return backend.CephOSD{}, nil
 }
+
+func (c Salt) GetClusterConfig(mon string, clusterId uuid.UUID, ctxt string) (map[string]string, error) {
+	return map[string]string{}, nil
+}

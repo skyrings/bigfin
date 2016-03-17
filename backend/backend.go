@@ -82,6 +82,7 @@ type Backend interface {
 	GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt string) (CephOSD, error)
 	UpdateOSD(mon string, clusterId uuid.UUID, osdId string, params map[string]interface{}, ctxt string) (bool, error)
 	GetPGCount(mon string, clusterId uuid.UUID, ctxt string) (map[string]uint64, error)
+	GetClusterConfig(mon string, clusterId uuid.UUID, ctxt string) (map[string]string, error)
 }
 
 type OSDDetails struct {

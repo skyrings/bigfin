@@ -471,3 +471,22 @@ func (c CephApi) GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt stri
 		return backend.CephOSD{}, errors.New("Couldn't retrieve the specified OSD")
 	}
 }
+
+func (c CephApi) GetClusterConfig(mon string, clusterId uuid.UUID, ctxt string) (map[string]string, error) {
+	getClusterConfigRoute := CEPH_API_ROUTES["GetClusterConfig"]
+	getClusterConfigRoute.Pattern = strings.Replace(getClusterConfigRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+
+	resp, err := route_request(getClusterConfigRoute, mon, bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return map[string]string{}, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return map[string]string{}, err
+	}
+	var configs map[string]string
+	if err := json.Unmarshal(respBody, &configs); err != nil {
+		return map[string]string{}, err
+	}
+	return configs, nil
+}

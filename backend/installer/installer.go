@@ -128,3 +128,7 @@ func (c Installer) UpdateOSD(mon string, clusterId uuid.UUID, osdId string, para
 func (c Installer) GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt string) (backend.CephOSD, error) {
 	return backend.CephOSD{}, nil
 }
+
+func (c Installer) GetClusterConfig(mon string, clusterId uuid.UUID, ctxt string) (map[string]string, error) {
+	return map[string]string{}, nil
+}
