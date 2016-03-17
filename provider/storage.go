@@ -28,6 +28,7 @@ import (
 
 	bigfin_conf "github.com/skyrings/bigfin/conf"
 	bigfin_task "github.com/skyrings/bigfin/tools/task"
+	skyring_util "github.com/skyrings/skyring-common/utils"
 )
 
 const (
@@ -41,6 +42,12 @@ var ec_pool_sizes = map[string]int{
 	"k4m2":    6,
 	"k6m3":    9,
 	"k8m4":    12,
+}
+
+var validConfigs = []string{
+	"quota_max_objects",
+	"quota_max_bytes",
+	"pg_num",
 }
 
 func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResponse) error {
@@ -284,7 +291,7 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 				storage.QuotaParams = request.QuotaParams
 				options := make(map[string]string)
 				options["id"] = strconv.Itoa(pool.Id)
-				options["pgnum"] = strconv.Itoa(pool.PgNum)
+				options["pg_num"] = strconv.Itoa(pool.PgNum)
 				options["pgp_num"] = strconv.Itoa(pool.PgpNum)
 				options["full"] = strconv.FormatBool(pool.Full)
 				options["hashpspool"] = strconv.FormatBool(pool.HashPsPool)
@@ -433,7 +440,7 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 		}
 		options := make(map[string]string)
 		options["id"] = strconv.Itoa(pool.Id)
-		options["pgnum"] = strconv.Itoa(pool.PgNum)
+		options["pg_num"] = strconv.Itoa(pool.PgNum)
 		options["pgp_num"] = strconv.Itoa(pool.PgpNum)
 		options["full"] = strconv.FormatBool(pool.Full)
 		options["hashpspool"] = strconv.FormatBool(pool.HashPsPool)
@@ -571,6 +578,216 @@ func (s *CephProvider) RemoveStorage(req models.RpcRequest, resp *models.RpcResp
 		return err
 	} else {
 		*resp = utils.WriteAsyncResponse(taskId, fmt.Sprintf("Task Created for delete storage on cluster: %v", *cluster_id), []byte{})
+	}
+	return nil
+}
+
+func (s *CephProvider) UpdateStorage(req models.RpcRequest, resp *models.RpcResponse) error {
+	ctxt := req.RpcRequestContext
+	cluster_id_str := req.RpcRequestVars["cluster-id"]
+	cluster_id, err := uuid.Parse(cluster_id_str)
+	if err != nil {
+		logger.Get().Error(
+			"%s - Error parsing the cluster id: %s. error: %v",
+			ctxt,
+			cluster_id_str,
+			err)
+		*resp = utils.WriteResponse(
+			http.StatusBadRequest,
+			fmt.Sprintf(
+				"Error parsing the cluster id: %s",
+				cluster_id_str))
+		return err
+	}
+	storage_id_str := req.RpcRequestVars["storage-id"]
+	storage_id, err := uuid.Parse(storage_id_str)
+	if err != nil {
+		logger.Get().Error(
+			"%s - Error parsing the storage id: %s. error: %v",
+			ctxt,
+			storage_id_str,
+			err)
+		*resp = utils.WriteResponse(
+			http.StatusBadRequest,
+			fmt.Sprintf(
+				"Error parsing the storage id: %s",
+				storage_id_str))
+		return err
+	}
+	var request models.AddStorageRequest
+	if err := json.Unmarshal(req.RpcRequestData, &request); err != nil {
+		logger.Get().Error(
+			"%s - Unbale to parse the request. error: %v",
+			ctxt,
+			err)
+		*resp = utils.WriteResponse(
+			http.StatusBadRequest,
+			fmt.Sprintf(
+				"Unbale to parse the request. error: %v",
+				err))
+		return err
+	}
+
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+	var storage models.Storage
+	if err := coll.Find(bson.M{"storageid": *storage_id}).One(&storage); err != nil {
+		logger.Get().Error(
+			"%s - Error getting detals of storage: %v on cluster: %v. error: %v",
+			ctxt,
+			*storage_id,
+			*cluster_id,
+			err)
+		*resp = utils.WriteResponse(
+			http.StatusInternalServerError,
+			fmt.Sprintf(
+				"Error getting the details of storage: %v",
+				*storage_id))
+		return err
+	}
+	id, err := strconv.Atoi(storage.Options["id"])
+	if err != nil {
+		logger.Get().Error(
+			"%s - Error getting id of the pool: %v of cluster: %v. error: %v",
+			ctxt,
+			*storage_id,
+			*cluster_id,
+			err)
+		*resp = utils.WriteResponse(
+			http.StatusInternalServerError,
+			fmt.Sprintf(
+				"Error getting id of the pool: %v",
+				*storage_id))
+		return err
+	}
+	asyncTask := func(t *task.Task) {
+		sessionCopy := db.GetDatastore().Copy()
+		defer sessionCopy.Close()
+		coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+		for {
+			select {
+			case <-t.StopCh:
+				return
+			default:
+				t.UpdateStatus("Started ceph provider pool updation: %v", t.ID)
+				if request.Name != "" && (request.Replicas != 0 || len(request.Options) != 0) {
+					utils.FailTask(
+						fmt.Sprintf(
+							"Invalid mix of fields to update for storage: %v of cluster: %v. "+
+								"Name change cannot be mixed with other changes.",
+							*storage_id,
+							*cluster_id),
+						fmt.Errorf("%s-Invalid mix of fields to update", ctxt),
+						t)
+					return
+				}
+				for key := range request.Options {
+					if ok := skyring_util.StringInSlice(key, validConfigs); !ok {
+						utils.FailTask(
+							fmt.Sprintf(
+								"Invalid configuration: %s mentioned for storage: %v of cluster: %v",
+								key,
+								*storage_id,
+								*cluster_id),
+							fmt.Errorf("%s-%v", ctxt, err),
+							t)
+						return
+					}
+				}
+				t.UpdateStatus("Getting a radom mon from cluster")
+				monnode, err := GetRandomMon(*cluster_id)
+				if err != nil {
+					utils.FailTask(
+						fmt.Sprintf(
+							"Error getting mon node from cluster: %v",
+							*cluster_id),
+						fmt.Errorf("%s-%v", ctxt, err),
+						t)
+					return
+				}
+				var updatedFields = make(map[string]interface{})
+				if request.Name != "" {
+					updatedFields["name"] = request.Name
+				}
+				if request.Replicas != 0 {
+					updatedFields["size"] = request.Replicas
+				}
+				for key, value := range request.Options {
+					reqVal, _ := strconv.ParseUint(value, 10, 32)
+					updatedFields[key] = uint(reqVal)
+				}
+				t.UpdateStatus("Updating pool details")
+				ok, err := cephapi_backend.UpdatePool(
+					monnode.Hostname,
+					*cluster_id, id,
+					updatedFields,
+					ctxt)
+				if err != nil || !ok {
+					utils.FailTask(
+						fmt.Sprintf(
+							"Error setting the configurations for storage: %v on cluster: %v",
+							*storage_id,
+							*cluster_id),
+						fmt.Errorf("%s-%v", ctxt, err),
+						t)
+					return
+				}
+				var filter bson.M = make(map[string]interface{})
+				var updates bson.M = make(map[string]interface{})
+				filter["storageid"] = *storage_id
+				filter["clusterid"] = *cluster_id
+				if request.Name != "" {
+					updates["name"] = request.Name
+				}
+				if request.Replicas != 0 {
+					updates["replicas"] = request.Replicas
+				}
+				for key, value := range request.Options {
+					updates[fmt.Sprintf("options.%s", key)] = value
+				}
+				if value, ok := request.Options["pg_num"]; ok {
+					updates["options.pgp_num"] = value
+				}
+				t.UpdateStatus("Persisting pool updates in DB")
+				if err := coll.Update(filter, bson.M{"$set": updates}); err != nil {
+					utils.FailTask(
+						fmt.Sprintf(
+							"Error updating storage entity: %v of cluster: %v",
+							*storage_id,
+							*cluster_id),
+						fmt.Errorf("%s-%v", ctxt, err),
+						t)
+				}
+				t.UpdateStatus("Success")
+				t.Done(models.TASK_STATUS_SUCCESS)
+				return
+			}
+		}
+	}
+	if taskId, err := bigfin_task.GetTaskManager().Run(
+		bigfin_conf.ProviderName,
+		"CEPH-UpdateStorage",
+		asyncTask,
+		nil,
+		nil,
+		nil); err != nil {
+		logger.Get().Error(
+			"%s-Task creation failed for update storage on cluster: %v. error: %v",
+			ctxt,
+			*cluster_id,
+			err)
+		*resp = utils.WriteResponse(
+			http.StatusInternalServerError,
+			"Task creation failed for storage update")
+		return err
+	} else {
+		*resp = utils.WriteAsyncResponse(
+			taskId,
+			fmt.Sprintf(
+				"Task Created for update storage on cluster: %v",
+				*cluster_id),
+			[]byte{})
 	}
 	return nil
 }
