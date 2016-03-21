@@ -1,0 +1,257 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "3a6ff13c_bd888f23",
+        "filename": "bigfinmodels/default_values.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-21T04:30:20Z",
+      "side": 1,
+      "message": "I feel you have got constants defined for these strings already. Use them.",
+      "range": {
+        "startLine": 14,
+        "startChar": 16,
+        "endLine": 14,
+        "endChar": 25
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_7d761740",
+        "filename": "provider/events.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-21T04:30:20Z",
+      "side": 1,
+      "message": "Multi line for better readability..",
+      "range": {
+        "startLine": 161,
+        "startChar": 12,
+        "endLine": 161,
+        "endChar": 61
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_bd8faf22",
+        "filename": "provider/events.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-21T04:30:20Z",
+      "side": 1,
+      "message": "Same as above",
+      "range": {
+        "startLine": 164,
+        "startChar": 12,
+        "endLine": 164,
+        "endChar": 66
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_dd946b39",
+        "filename": "provider/events.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-21T04:30:20Z",
+      "side": 1,
+      "message": "Multi line??",
+      "range": {
+        "startLine": 170,
+        "startChar": 11,
+        "endLine": 170,
+        "endChar": 62
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_fd99276f",
+        "filename": "provider/events.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-21T04:30:20Z",
+      "side": 1,
+      "message": "You may say err.Error() as such here :)",
+      "range": {
+        "startLine": 197,
+        "startChar": 41,
+        "endLine": 197,
+        "endChar": 48
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_1d9fe353",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-21T04:30:20Z",
+      "side": 1,
+      "message": "Multi line?",
+      "range": {
+        "startLine": 94,
+        "startChar": 15,
+        "endLine": 94,
+        "endChar": 78
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_3da3bf9f",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-21T04:30:20Z",
+      "side": 1,
+      "message": "Multi line",
+      "range": {
+        "startLine": 101,
+        "startChar": 15,
+        "endLine": 101,
+        "endChar": 63
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_7dad3788",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-21T04:30:20Z",
+      "side": 1,
+      "message": "Multi line?",
+      "range": {
+        "startLine": 131,
+        "startChar": 3,
+        "endLine": 131,
+        "endChar": 52
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_9daaf36e",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-21T04:30:20Z",
+      "side": 1,
+      "message": "Multi line?",
+      "range": {
+        "startLine": 208,
+        "startChar": 19,
+        "endLine": 208,
+        "endChar": 79
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_bdb6cfda",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-21T04:30:20Z",
+      "side": 1,
+      "message": "As above",
+      "range": {
+        "startLine": 225,
+        "startChar": 10,
+        "endLine": 225,
+        "endChar": 42
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_ddbb8bc2",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-21T04:30:20Z",
+      "side": 1,
+      "message": "As above",
+      "range": {
+        "startLine": 230,
+        "startChar": 11,
+        "endLine": 230,
+        "endChar": 38
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
