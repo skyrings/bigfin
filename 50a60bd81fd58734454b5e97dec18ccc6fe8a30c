@@ -117,6 +117,30 @@
     },
     {
       "key": {
+        "uuid": "3a6ff13c_1dee0389",
+        "filename": "provider/events.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 197,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-21T06:35:15Z",
+      "side": 1,
+      "message": "No the problem is when err is nil(no error case) then err.Error() would fail.\n\nOtherwise we would require again an if else",
+      "parentUuid": "3a6ff13c_fd99276f",
+      "range": {
+        "startLine": 197,
+        "startChar": 41,
+        "endLine": 197,
+        "endChar": 48
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_1d9fe353",
         "filename": "provider/monitoring.go",
         "patchSetId": 10
