@@ -15,6 +15,7 @@ package installer
 import (
 	"github.com/skyrings/bigfin/backend"
 	"github.com/skyrings/skyring-common/conf"
+	"github.com/skyrings/skyring-common/models"
 	"github.com/skyrings/skyring-common/provisioner"
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/uuid"
@@ -118,6 +119,14 @@ func (c Installer) GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt st
 
 func (c Installer) GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error) {
 	return []string{}, nil
+}
+
+func (c Installer) GetCluster(mon string, ctxt string) (backend.CephCluster, error) {
+	return backend.CephCluster{}, nil
+}
+
+func (c Installer) GetClusterNetworks(mon string, clusterId uuid.UUID, ctxt string) (models.ClusterNetworks, error) {
+	return models.ClusterNetworks{}, nil
 }
 
 func (c Installer) GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CephClusterNode, error) {
