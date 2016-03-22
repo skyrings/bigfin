@@ -71,6 +71,15 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 		return err
 	}
 
+	// Validate the cluster nodes
+	if err := validateClusterNodes(nodes, ctxt); err != nil {
+		logger.Get().Error("%s-%v", ctxt, err)
+		*resp = utils.WriteResponse(
+			http.StatusBadRequest,
+			fmt.Sprintf("Error validating nodes. error: %v", err))
+		return err
+	}
+
 	// Get the cluster and public IPs for nodes
 	node_ips, err := nodeIPs(request.Networks, nodes)
 	if err != nil {
@@ -118,7 +127,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 				var cluster models.Cluster
 				cluster.ClusterId = *cluster_uuid
 				cluster.Name = request.Name
-				cluster.CompatVersion = request.CompatVersion
+				cluster.CompatVersion = fmt.Sprintf("%f", bigfin_conf.ProviderConfig.CompatVersion)
 				cluster.Type = request.Type
 				cluster.Status = models.CLUSTER_STATUS_UNKNOWN
 				cluster.WorkLoad = request.WorkLoad
@@ -299,6 +308,22 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 		return err
 	} else {
 		*resp = utils.WriteAsyncResponse(taskId, fmt.Sprintf("Task Created for create cluster: %s", request.Name), []byte{})
+	}
+	return nil
+}
+
+func validateClusterNodes(nodes map[uuid.UUID]models.Node, ctxt string) error {
+	var failedNodes []string
+	for _, node := range nodes {
+		if ok := salt_backend.ParticipatesInCluster(node.Hostname, ctxt); ok {
+			failedNodes = append(failedNodes, node.Hostname)
+		}
+	}
+	if len(failedNodes) > 0 {
+		return fmt.Errorf(
+			"Nodes %v already participating in a cluster."+
+				" New Cluster cannot be created using the node",
+			failedNodes)
 	}
 	return nil
 }

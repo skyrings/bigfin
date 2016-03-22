@@ -537,15 +537,20 @@ def GetClusterStatus(monitor, cluster_name, ctxt=""):
     if out[monitor] != '':
         return out[monitor]
 
-    log.error("%s-ceph cluster status failed. error=%s", (ctxt, out))
+    log.error("%s-ceph cluster status failed. error=%s" % (ctxt, out))
     raise Exception("ceph cluster status failed. error=%s" % out)
+
+
+def ParticipatesInCluster(node, ctxt=""):
+    out = local.cmd(node, 'file.directory_exists', ["/etc/ceph"])
+    return out[node]
 
 
 def GetClusterStats(monitor, cluster_name, ctxt=""):
     ret_val = {}
     out = local.cmd(monitor, "ceph.getClusterStats", [cluster_name])
     if not out:
-        log.error("%s-Failed to get cluster statistics from %s", (ctxt, monitor))
+        log.error("%s-Failed to get cluster statistics from %s" % (ctxt, monitor))
         raise Exception("Failed to get cluster statistics from %s" % monitor)
     stats = ast.literal_eval(out[monitor])
     ret_val["Used"] = stats["stats"]["total_used_bytes"]
@@ -576,7 +581,7 @@ def GetObjectCount(monitor, cluster_name, ctxt=""):
         object_cnt["num_objects"] = num_objects
         object_cnt["num_objects_degraded"] = num_objects_degraded
         return object_cnt
-    log.error("%s-Object Count failed. error=%s", (ctxt, out))
+    log.error("%s-Object Count failed. error=%s" % (ctxt, out))
     raise Exception("Object Count failed. error=%s" % out)
 
 
@@ -617,3 +622,36 @@ def GetOSDDetails(monitor, cluster_name, ctxt=""):
             rv.append(stat)
     return rv
 
+
+def GetPartDeviceDetails(node, partPath, ctxt=""):
+    '''
+    returns structure
+    {"devname":  "devname",
+     "partname": "partname",
+     "fstype":   "fstype",
+     "size":     uint64,
+    }
+    '''
+
+    columes = 'NAME,KNAME,FSTYPE,MOUNTPOINT,UUID,PARTUUID,MODEL,SIZE,TYPE,' \
+              'PKNAME,VENDOR'
+    keys = columes.split(',')
+    lsblk = ("lsblk --all --bytes --noheadings --output='%s' --path --raw" %
+             columes)
+    out = local.cmd([node], 'cmd.run', [lsblk], expr_form='list')
+
+    if not out[node]:
+        return {}
+
+    devlist = map(lambda line: dict(zip(keys, line.split(' '))),
+                  out[node].splitlines())
+
+    dev_info = {}
+    for dev in devlist:
+        if dev['TYPE'] == 'part' and dev['MOUNTPOINT'] == partPath:
+            dev_info["DevName"] = dev["PKNAME"]
+            dev_info["PartName"] = dev["KNAME"]
+            dev_info["FSType"] = dev["FSTYPE"]
+            dev_info["Size"] = long(dev["SIZE"])
+
+    return dev_info

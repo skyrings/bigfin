@@ -37,8 +37,13 @@ func main() {
 	if err := json.Unmarshal([]byte(os.Args[1]), &config); err != nil {
 		panic(fmt.Sprintf("Reading configurations failed. error: %v", err))
 	}
-
 	conf.SystemConfig = config
+
+	var providerConfig conf.ProviderConfig
+	if err := json.Unmarshal([]byte(os.Args[2]), &providerConfig); err != nil {
+		panic(fmt.Sprintf("Reading provider configurations failed. error: %v", err))
+	}
+	bigfin_conf.ProviderConfig = providerConfig
 
 	// Initialize the logger
 	level, err := logging.LogLevel(config.Logging.Level.String())
