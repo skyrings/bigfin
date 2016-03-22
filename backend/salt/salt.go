@@ -16,6 +16,7 @@ package salt
 
 import (
 	"github.com/skyrings/bigfin/backend"
+	"github.com/skyrings/skyring-common/models"
 	"github.com/skyrings/skyring-common/tools/gopy"
 	"github.com/skyrings/skyring-common/tools/uuid"
 	"sync"
@@ -218,6 +219,14 @@ func (c Salt) GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt string)
 
 func (c Salt) GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error) {
 	return []string{}, nil
+}
+
+func (c Salt) GetCluster(mon string, ctxt string) (backend.CephCluster, error) {
+	return backend.CephCluster{}, nil
+}
+
+func (c Salt) GetClusterNetworks(mon string, clusterId uuid.UUID, ctxt string) (models.ClusterNetworks, error) {
+	return models.ClusterNetworks{}, nil
 }
 
 func (c Salt) GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CephClusterNode, error) {
