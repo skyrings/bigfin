@@ -533,6 +533,50 @@ func (c CephApi) GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]st
 	}
 }
 
+func (c CephApi) GetCluster(mon string, ctxt string) (backend.CephCluster, error) {
+	getClusterRoute := CEPH_API_ROUTES["GetCluster"]
+
+	resp, err := route_request(getClusterRoute, mon, bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return backend.CephCluster{}, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return backend.CephCluster{}, err
+	}
+	var clusters []backend.CephCluster
+	if err := json.Unmarshal(respBody, &clusters); err != nil {
+		return backend.CephCluster{}, err
+	}
+	if len(clusters) > 0 {
+		return clusters[0], nil
+	} else {
+		return backend.CephCluster{}, fmt.Errorf("No cluster(s) found")
+	}
+}
+
+func (c CephApi) GetClusterNetworks(mon string, clusterId uuid.UUID, ctxt string) (skyringmodels.ClusterNetworks, error) {
+	getGetClusterNetworksRoute := CEPH_API_ROUTES["GetClusterNetworks"]
+	getGetClusterNetworksRoute.Pattern = strings.Replace(
+		getGetClusterNetworksRoute.Pattern,
+		"{cluster-fsid}",
+		clusterId.String(),
+		1)
+	resp, err := route_request(getGetClusterNetworksRoute, mon, bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return skyringmodels.ClusterNetworks{}, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return skyringmodels.ClusterNetworks{}, err
+	}
+	var clusterNetworks skyringmodels.ClusterNetworks
+	if err := json.Unmarshal(respBody, &clusterNetworks); err != nil {
+		return skyringmodels.ClusterNetworks{}, err
+	}
+	return clusterNetworks, nil
+}
+
 func (c CephApi) GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CephClusterNode, error) {
 	getNodesRoute := CEPH_API_ROUTES["GetNodes"]
 	getNodesRoute.Pattern = strings.Replace(
@@ -580,4 +624,8 @@ func (c CephApi) GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt
 		return backend.MonNodeStatus{}, err
 	}
 	return monStatus, nil
+}
+
+func (c CephApi) ParticipatesInCluster(node string, ctxt string) bool {
+	return false
 }

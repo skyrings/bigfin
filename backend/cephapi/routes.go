@@ -112,6 +112,18 @@ func (c *CephApi) LoadRoutes() {
 			Version: 2,
 		},
 		{
+			Name:    "GetCluster",
+			Pattern: "cluster",
+			Method:  "GET",
+			Version: 2,
+		},
+		{
+			Name:    "GetClusterNetworks",
+			Pattern: "cluster/{cluster-fsid}/sync_object/config?format=json",
+			Method:  "GET",
+			Version: 2,
+		},
+		{
 			Name:    "GetNodes",
 			Pattern: "cluster/{cluster-fsid}/server?format=json",
 			Method:  "GET",

@@ -15,6 +15,7 @@
 package backend
 
 import (
+	"github.com/skyrings/skyring-common/models"
 	"github.com/skyrings/skyring-common/tools/uuid"
 )
 
@@ -125,8 +126,11 @@ type Backend interface {
 	GetPGCount(mon string, clusterId uuid.UUID, ctxt string) (map[string]uint64, error)
 	GetClusterConfig(mon string, clusterId uuid.UUID, ctxt string) (map[string]string, error)
 	GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error)
+	GetCluster(mon string, ctxt string) (CephCluster, error)
+	GetClusterNetworks(mon string, clusterId uuid.UUID, ctxt string) (models.ClusterNetworks, error)
 	GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string) ([]CephClusterNode, error)
 	GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt string) (MonNodeStatus, error)
+	ParticipatesInCluster(node string, ctxt string) bool
 }
 
 type OSDDetails struct {
@@ -181,6 +185,11 @@ type BlockDevice struct {
 	ObjectSize      uint64 `json:"object_size"`
 	BlockNamePrefix string `json:"block_name_prefix"`
 	Format          int    `json:"format"`
+}
+
+type CephCluster struct {
+	Id   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
 }
 
 type CephClusterNode struct {

@@ -16,6 +16,7 @@ package salt
 
 import (
 	"github.com/skyrings/bigfin/backend"
+	"github.com/skyrings/skyring-common/models"
 	"github.com/skyrings/skyring-common/tools/gopy"
 	"github.com/skyrings/skyring-common/tools/uuid"
 	"sync"
@@ -237,10 +238,29 @@ func (c Salt) GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]strin
 	return []string{}, nil
 }
 
+func (c Salt) GetCluster(mon string, ctxt string) (backend.CephCluster, error) {
+	return backend.CephCluster{}, nil
+}
+
+func (c Salt) GetClusterNetworks(mon string, clusterId uuid.UUID, ctxt string) (models.ClusterNetworks, error) {
+	return models.ClusterNetworks{}, nil
+}
+
 func (c Salt) GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CephClusterNode, error) {
 	return []backend.CephClusterNode{}, nil
 }
 
 func (c Salt) GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt string) (backend.MonNodeStatus, error) {
 	return backend.MonNodeStatus{}, nil
+}
+
+func (c Salt) ParticipatesInCluster(node string, ctxt string) bool {
+	mutex.Lock()
+	defer mutex.Unlock()
+	pyobj, err := pyFuncs["ParticipatesInCluster"].Call(node, ctxt)
+	if err == nil {
+		return gopy.Bool(pyobj)
+	}
+
+	return false
 }
