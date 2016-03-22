@@ -199,7 +199,6 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 						utils.FailTask(fmt.Sprintf("%s-Error getting updated nodes list post create cluster %s", ctxt, request.Name), err, t)
 						return
 					}
-					t.UpdateStatus("Adding OSDs")
 					failedOSDs, succeededOSDs := addOSDs(
 						*cluster_uuid,
 						request.Name,
@@ -449,23 +448,25 @@ func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models
 				err)
 		}
 	}
-	t.UpdateStatus("Syncing the OSD status")
-	/*
-	 TODO: Sleep will be removed once the events are vailable
-	 from calamari on OSD status change. Immeadiately after the
-	 the creation the OSD sttaus set to out and down, so wait for
-	 sometime to get the right status
-	*/
-	time.Sleep(60 * time.Second)
-	for count := 0; count < 3; count++ {
-		if err := syncOsdDetails(clusterId, slus, ctxt); err != nil || len(slus) > 0 {
-			logger.Get().Warning(
-				"%s-Error syncing the OSD status. error: %v",
-				ctxt,
-				err)
-			time.Sleep(10 * time.Second)
-		} else {
-			break
+	if len(slus) > 0 {
+		t.UpdateStatus("Syncing the OSD status")
+		/*
+		 TODO: Sleep will be removed once the events are vailable
+		 from calamari on OSD status change. Immeadiately after the
+		 the creation the OSD sttaus set to out and down, so wait for
+		 sometime to get the right status
+		*/
+		time.Sleep(60 * time.Second)
+		for count := 0; count < 3; count++ {
+			if err := syncOsdDetails(clusterId, slus, ctxt); err != nil || len(slus) > 0 {
+				logger.Get().Warning(
+					"%s-Error syncing the OSD status. error: %v",
+					ctxt,
+					err)
+				time.Sleep(10 * time.Second)
+			} else {
+				break
+			}
 		}
 	}
 	return failedOSDs, succeededOSDs
@@ -618,14 +619,16 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 					}
 				}
 				// Start and persist the mons
-				t.UpdateStatus("Starting and persisting mons")
-				ret_val, err := startAndPersistMons(*cluster_id, succeededMons, ctxt)
-				if !ret_val || err != nil {
-					logger.Get().Error(
-						"%s-Error starting/persisting mons. error: %v",
-						ctxt,
-						err)
-					t.UpdateStatus("Failed to start/persist mons")
+				if len(succeededMons) > 0 {
+					t.UpdateStatus("Starting and persisting mons")
+					ret_val, err := startAndPersistMons(*cluster_id, succeededMons, ctxt)
+					if !ret_val || err != nil {
+						logger.Get().Error(
+							"%s-Error starting/persisting mons. error: %v",
+							ctxt,
+							err)
+						t.UpdateStatus("Failed to start/persist mons")
+					}
 				}
 
 				// Add OSDs
@@ -639,7 +642,6 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 						t)
 					return
 				}
-				t.UpdateStatus("Adding OSDs")
 				failedOSDs, succeededOSDs := addOSDs(
 					*cluster_id,
 					cluster.Name,
@@ -661,13 +663,14 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 					}
 					t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", osds))
 				}
-
-				t.UpdateStatus("Recalculating pgnum/pgpnum")
-				if ok := RecalculatePgnum(ctxt, *cluster_id, t); !ok {
-					logger.Get().Warning(
-						"%s-Could not re-calculate pgnum/pgpnum for cluster: %v",
-						ctxt,
-						*cluster_id)
+				if len(succeededOSDs) > 0 {
+					t.UpdateStatus("Recalculating pgnum/pgpnum")
+					if ok := RecalculatePgnum(ctxt, *cluster_id, t); !ok {
+						logger.Get().Warning(
+							"%s-Could not re-calculate pgnum/pgpnum for cluster: %v",
+							ctxt,
+							*cluster_id)
+					}
 				}
 				t.UpdateStatus("Success")
 				t.Done(models.TASK_STATUS_SUCCESS)
