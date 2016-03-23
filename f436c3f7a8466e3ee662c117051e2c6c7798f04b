@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "3a6ff13c_0a77ad03",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 88,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-23T05:55:08Z",
+      "side": 1,
+      "message": "From where this cluster coming from?\nGlobal var might not be good solution as it will cause issues when you operate in multi thread scenario",
+      "range": {
+        "startLine": 88,
+        "startChar": 11,
+        "endLine": 88,
+        "endChar": 28
+      },
+      "revId": "f436c3f7a8466e3ee662c117051e2c6c7798f04b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_fcc05f7e",
         "filename": "provider/monitoring.go",
         "patchSetId": 3
@@ -18,6 +41,29 @@
         "startChar": 59,
         "endLine": 118,
         "endChar": 63
+      },
+      "revId": "f436c3f7a8466e3ee662c117051e2c6c7798f04b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "3a6ff13c_ead7b1bd",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 128,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-23T05:55:08Z",
+      "side": 1,
+      "message": "I think it is appropriate to have this function in common, so that others can use it",
+      "range": {
+        "startLine": 128,
+        "startChar": 5,
+        "endLine": 128,
+        "endChar": 26
       },
       "revId": "f436c3f7a8466e3ee662c117051e2c6c7798f04b",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
