@@ -206,21 +206,22 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 						request.Nodes,
 						t,
 						ctxt)
-					if len(succeededOSDs) == 0 {
-						utils.FailTask(fmt.Sprintf(
-							"%s-Failed adding all OSDs while create cluster %s",
-							ctxt,
-							request.Name),
-							err,
-							t)
-						return
-					}
+
 					if len(failedOSDs) != 0 {
 						var osds []string
 						for _, osd := range failedOSDs {
 							osds = append(osds, fmt.Sprintf("%s:%s", osd.Node, osd.Device))
 						}
 						t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", osds))
+						if len(succeededOSDs) == 0 {
+							utils.FailTask(fmt.Sprintf(
+								"%s-Failed adding all OSDs while create cluster %s",
+								ctxt,
+								request.Name),
+								err,
+								t)
+							return
+						}
 					}
 
 					// Update the cluster status at the last
