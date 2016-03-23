@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_e74ed695",
+        "filename": "bigfinmodels/default_values.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-23T10:14:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da9b358b_e79ff6b2",
+      "range": {
+        "startLine": 8,
+        "startChar": 5,
+        "endLine": 8,
+        "endChar": 47
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_bd888f23",
         "filename": "bigfinmodels/default_values.go",
         "patchSetId": 10
@@ -36,6 +60,30 @@
       "writtenOn": "2016-03-21T04:30:20Z",
       "side": 1,
       "message": "I feel you have got constants defined for these strings already. Use them.",
+      "range": {
+        "startLine": 14,
+        "startChar": 16,
+        "endLine": 14,
+        "endChar": 25
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_ea033b0c",
+        "filename": "bigfinmodels/default_values.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 14,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-23T10:14:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_bd888f23",
       "range": {
         "startLine": 14,
         "startChar": 16,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_ca08772b",
+        "filename": "bigfinmodels/default_values.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-23T10:14:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da9b358b_476222da",
+      "range": {
+        "startLine": 28,
+        "startChar": 35,
+        "endLine": 28,
+        "endChar": 56
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_7d761740",
         "filename": "provider/events.go",
         "patchSetId": 10
@@ -82,6 +154,30 @@
       "writtenOn": "2016-03-21T04:30:20Z",
       "side": 1,
       "message": "Multi line for better readability..",
+      "range": {
+        "startLine": 161,
+        "startChar": 12,
+        "endLine": 161,
+        "endChar": 61
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_6a104b4f",
+        "filename": "provider/events.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 161,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-23T10:14:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_7d761740",
       "range": {
         "startLine": 161,
         "startChar": 12,
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_4a1d8765",
+        "filename": "provider/events.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 164,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-23T10:14:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_bd8faf22",
+      "range": {
+        "startLine": 164,
+        "startChar": 12,
+        "endLine": 164,
+        "endChar": 66
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_dd946b39",
         "filename": "provider/events.go",
         "patchSetId": 10
@@ -128,6 +248,30 @@
       "writtenOn": "2016-03-21T04:30:20Z",
       "side": 1,
       "message": "Multi line??",
+      "range": {
+        "startLine": 170,
+        "startChar": 11,
+        "endLine": 170,
+        "endChar": 62
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_0a265fba",
+        "filename": "provider/events.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 170,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-23T10:14:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_dd946b39",
       "range": {
         "startLine": 170,
         "startChar": 11,
@@ -234,6 +378,30 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_ea2a1b7e",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 94,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-23T10:14:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_1d9fe353",
+      "range": {
+        "startLine": 94,
+        "startChar": 15,
+        "endLine": 94,
+        "endChar": 78
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_3da3bf9f",
         "filename": "provider/monitoring.go",
         "patchSetId": 10
@@ -257,6 +425,30 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_ca1f575a",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-23T10:14:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_3da3bf9f",
+      "range": {
+        "startLine": 101,
+        "startChar": 15,
+        "endLine": 101,
+        "endChar": 63
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da9b358b_0782da52",
         "filename": "provider/monitoring.go",
         "patchSetId": 10
@@ -268,6 +460,30 @@
       "writtenOn": "2016-03-23T05:55:08Z",
       "side": 1,
       "message": "I think we have written similar function some where?",
+      "range": {
+        "startLine": 108,
+        "startChar": 4,
+        "endLine": 108,
+        "endChar": 15
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_4a3467dd",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-23T10:14:07Z",
+      "side": 1,
+      "message": "Yeah we had 1 but that was reverted to a conditional handling bcoz of some limitation that was in skyring monitoring.go and its name was getEntityName but now its conditional and very much specific to entity type not generic as this",
+      "parentUuid": "da9b358b_0782da52",
       "range": {
         "startLine": 108,
         "startChar": 4,
@@ -326,6 +542,30 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_ca563706",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 131,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-23T10:14:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_7dad3788",
+      "range": {
+        "startLine": 131,
+        "startChar": 3,
+        "endLine": 131,
+        "endChar": 52
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da9b358b_67dac67a",
         "filename": "provider/monitoring.go",
         "patchSetId": 10
@@ -337,6 +577,30 @@
       "writtenOn": "2016-03-23T05:55:08Z",
       "side": 1,
       "message": "What is this? why this check is required?",
+      "range": {
+        "startLine": 150,
+        "startChar": 29,
+        "endLine": 150,
+        "endChar": 52
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_2a48035b",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-23T10:14:07Z",
+      "side": 1,
+      "message": "Ok So the thresholds are stored as array of configs as there could be other configs as well other than thresholds like intially we thought time should also be configurable plus collectd supports 4 kinds of thresholds warningmin, warningmax, criticalmin and criticalmax.So, with this approach of having an array of configs, we are effectively placing no limitation on number of threshold levels\n\nSo with configs being of array type,\nthere will be 1 entry for critical threshold and 1 other for warning and so on.\n\nSo, now with all this, the moment a threshold is crossed, this threshold could potentially be from any of the threshold levels(as mentioned above).So ideally, we need to be looping around all thresholds comparing there values with the actual metric values and the highest of these levels should be returned. To do this ideally we should have a standard sorted array of predefined threshold levels to tell us about the most/best applicable threshold.Or the 2nd minimalistic aproach could be based on the threshold value the highest applicable of these values could be treated as the best fit. but since we assume only 2 levels of threshold I treat critical as the highest level of threshold which I have named as nonoverridable bcoz in each iteration, the current applicable threshold is overriden to the latest applicable threshold but we need to return if we find that the current threshold level is critical bcoz in our scenario, this is the best fit(if it at all applies)",
+      "parentUuid": "da9b358b_67dac67a",
       "range": {
         "startLine": 150,
         "startChar": 29,
@@ -372,6 +636,30 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_ea78db91",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-23T10:14:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_9daaf36e",
+      "range": {
+        "startLine": 208,
+        "startChar": 19,
+        "endLine": 208,
+        "endChar": 79
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da9b358b_075e5ae9",
         "filename": "provider/monitoring.go",
         "patchSetId": 10
@@ -383,6 +671,30 @@
       "writtenOn": "2016-03-23T05:55:08Z",
       "side": 1,
       "message": "what is this check?",
+      "range": {
+        "startLine": 223,
+        "startChar": 18,
+        "endLine": 223,
+        "endChar": 44
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_aa72d3ab",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-23T10:14:07Z",
+      "side": 1,
+      "message": "So lets say there was threshold breach on an entity and now its back to normal, in such a case we need to send an event(clearing event) for this right. So, the severity of this kind of event was blank string. But I\u0027ll change this to models.STATUS_OK",
+      "parentUuid": "da9b358b_075e5ae9",
       "range": {
         "startLine": 223,
         "startChar": 18,
@@ -418,6 +730,30 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_8a682fbc",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 225,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-23T10:14:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_bdb6cfda",
+      "range": {
+        "startLine": 225,
+        "startChar": 10,
+        "endLine": 225,
+        "endChar": 42
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_ddbb8bc2",
         "filename": "provider/monitoring.go",
         "patchSetId": 10
@@ -441,6 +777,30 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_6a65ebdf",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 230,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-23T10:14:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "3a6ff13c_ddbb8bc2",
+      "range": {
+        "startLine": 230,
+        "startChar": 11,
+        "endLine": 230,
+        "endChar": 38
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da9b358b_c77bd27a",
         "filename": "provider/monitoring.go",
         "patchSetId": 10
@@ -452,6 +812,30 @@
       "writtenOn": "2016-03-23T05:55:08Z",
       "side": 1,
       "message": "FetchOSDStats already running as a goroutine right? why you want to create another on here? Applicable to all",
+      "range": {
+        "startLine": 453,
+        "startChar": 2,
+        "endLine": 453,
+        "endChar": 28
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_ea9fbbb2",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 453,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-23T10:14:07Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da9b358b_c77bd27a",
       "range": {
         "startLine": 453,
         "startChar": 2,
