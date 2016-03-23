@@ -2,6 +2,29 @@
   "comments": [
     {
       "key": {
+        "uuid": "da9b358b_e79ff6b2",
+        "filename": "bigfinmodels/default_values.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-23T05:55:08Z",
+      "side": 1,
+      "message": "I am not sure this should be part of models?? utils?",
+      "range": {
+        "startLine": 8,
+        "startChar": 5,
+        "endLine": 8,
+        "endChar": 47
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_bd888f23",
         "filename": "bigfinmodels/default_values.go",
         "patchSetId": 10
@@ -18,6 +41,29 @@
         "startChar": 16,
         "endLine": 14,
         "endChar": 25
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_476222da",
+        "filename": "bigfinmodels/default_values.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 28,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-23T05:55:08Z",
+      "side": 1,
+      "message": "we need both warning and critical thresholds right?",
+      "range": {
+        "startLine": 28,
+        "startChar": 35,
+        "endLine": 28,
+        "endChar": 56
       },
       "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
@@ -211,6 +257,52 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_0782da52",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-23T05:55:08Z",
+      "side": 1,
+      "message": "I think we have written similar function some where?",
+      "range": {
+        "startLine": 108,
+        "startChar": 4,
+        "endLine": 108,
+        "endChar": 15
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_c7f2b206",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 122,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-23T05:55:08Z",
+      "side": 1,
+      "message": "We were discussing about an issue in using global var, have you fixed that issue? is there different patch to address this?",
+      "range": {
+        "startLine": 122,
+        "startChar": 11,
+        "endLine": 122,
+        "endChar": 30
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "3a6ff13c_7dad3788",
         "filename": "provider/monitoring.go",
         "patchSetId": 10
@@ -226,6 +318,29 @@
         "startLine": 131,
         "startChar": 3,
         "endLine": 131,
+        "endChar": 52
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_67dac67a",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 150,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-23T05:55:08Z",
+      "side": 1,
+      "message": "What is this? why this check is required?",
+      "range": {
+        "startLine": 150,
+        "startChar": 29,
+        "endLine": 150,
         "endChar": 52
       },
       "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
@@ -250,6 +365,29 @@
         "startChar": 19,
         "endLine": 208,
         "endChar": 79
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_075e5ae9",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 223,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-23T05:55:08Z",
+      "side": 1,
+      "message": "what is this check?",
+      "range": {
+        "startLine": 223,
+        "startChar": 18,
+        "endLine": 223,
+        "endChar": 44
       },
       "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
@@ -296,6 +434,29 @@
         "startChar": 11,
         "endLine": 230,
         "endChar": 38
+      },
+      "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_c77bd27a",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 10
+      },
+      "lineNbr": 453,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-23T05:55:08Z",
+      "side": 1,
+      "message": "FetchOSDStats already running as a goroutine right? why you want to create another on here? Applicable to all",
+      "range": {
+        "startLine": 453,
+        "startChar": 2,
+        "endLine": 453,
+        "endChar": 28
       },
       "revId": "50a60bd81fd58734454b5e97dec18ccc6fe8a30c",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
