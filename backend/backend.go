@@ -66,8 +66,8 @@ type Backend interface {
 	AddMon(clusterName string, mons []Mon, ctxt string) (bool, error)
 	StartMon(nodes []string, ctxt string) (bool, error)
 	AddOSD(clusterName string, osd OSD, ctxt string) (map[string][]string, error)
-	CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64, ctxt string) (bool, error)
-	CreateECPool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64, ecProfile string, ctxt string) (bool, error)
+	CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64, ruleset int, ctxt string) (bool, error)
+	CreateECPool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64, ecProfile string, ruleset int, ctxt string) (bool, error)
 	ListPoolNames(mon string, clusterName string, ctxt string) ([]string, error)
 	GetClusterStatus(mon string, clusterId uuid.UUID, clusterName string, ctxt string) (string, error)
 	GetPools(mon string, clusterId uuid.UUID, ctxt string) ([]CephPool, error)
@@ -83,6 +83,10 @@ type Backend interface {
 	UpdateOSD(mon string, clusterId uuid.UUID, osdId string, params map[string]interface{}, ctxt string) (bool, error)
 	GetPGCount(mon string, clusterId uuid.UUID, ctxt string) (map[string]uint64, error)
 	GetClusterConfig(mon string, clusterId uuid.UUID, ctxt string) (map[string]string, error)
+	CreateCrushRule(mon string, clusterId uuid.UUID, rule CrushRuleRequest, ctxt string) error
+	CreateCrushNode(mon string, clusterId uuid.UUID, node CrushNodeRequest, ctxt string) (int, error)
+	GetCrushNodes(mon string, clusterId uuid.UUID, ctxt string) ([]CrushNode, error)
+	PatchCrushNode(mon string, clusterId uuid.UUID, crushNodeId int, params map[string]interface{}, ctxt string) (bool, error)
 }
 
 type OSDDetails struct {
@@ -113,4 +117,34 @@ type CephOSD struct {
 	CrushNodeAncestry    [][]int   `json:"crush_node_ancestry"`
 	BackendPartitionPath string    `json:"backend_partition_path"`
 	BackendDeviceNode    string    `json:"backend_device_node"`
+}
+
+type CrushItem struct {
+	Id     int     `json:"id"`
+	Weight float64 `json:"weight"`
+	Pos    int     `json:"pos"`
+}
+type CrushNodeRequest struct {
+	BucketType string      `json:"bucket_type"`
+	Name       string      `json:"name"`
+	Items      []CrushItem `json:"items"`
+}
+
+type CrushRuleRequest struct {
+	Name    string                   `json:"name"`
+	RuleSet int                      `json:"ruleset"`
+	Type    string                   `json:"type"`
+	MinSize int                      `json:"min_size"`
+	MaxSize int                      `json:"max_size"`
+	Steps   []map[string]interface{} `json:"steps"`
+}
+
+type CrushNode struct {
+	BucketType string      `json:"bucket_type"`
+	Name       string      `json:"name"`
+	Id         int         `json:"id"`
+	Weight     float64     `json:"weight"`
+	Alg        string      `json:"alg"`
+	Hash       int         `json:"hash"`
+	Items      []CrushItem `json:"items"`
 }
