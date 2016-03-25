@@ -1,8 +1,8 @@
 %define pkg_name bigfin
-%define pkg_version 0.0.6
+%define pkg_version 0.0.7
 %define pkg_release 1
 
-Summary: SkyRing Ceph provider
+Summary: skyring ceph provider
 Name: %{pkg_name}
 Version: %{pkg_version}
 Release: %{pkg_release}%{?dist}
@@ -53,6 +53,7 @@ rm -rf $RPM_BUILD_ROOT
 /srv/salt/*
 %{python2_sitelib}/bigfin/*
 /srv/salt/_modules/*
+/etc/skyring/providers.d/ceph.dat
 
 %changelog
 * Tue Dec 22 2015 Kanagaraj Mayilsamy <kmayilsa@redhat.com> - 0.0.1-1
