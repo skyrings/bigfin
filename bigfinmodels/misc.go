@@ -28,3 +28,8 @@ const (
 	NUMBER_OF_OBJECTS          = "num_objects"
 	NUMBER_OF_DEGRADED_OBJECTS = "num_objects_degraded"
 )
+
+type CrushInfo struct {
+	RuleSetId   int
+	CrushNodeId int
+}

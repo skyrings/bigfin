@@ -96,7 +96,7 @@ func (s Salt) AddOSD(clusterName string, osd backend.OSD, ctxt string) (osds map
 	return
 }
 
-func (s Salt) CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64, ctxt string) (bool, error) {
+func (s Salt) CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64, ruleset int, ctxt string) (bool, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	pyobj, err := pyFuncs["CreatePool"].Call(name, mon, clusterName, pgnum, ctxt)
@@ -116,6 +116,7 @@ func (s Salt) CreateECPool(
 	quotaMaxObjects int,
 	quotaMaxBytes uint64,
 	ecProfile string,
+	ruleset int,
 	ctxt string) (bool, error) {
 	return true, nil
 }
@@ -233,4 +234,19 @@ func (c Salt) GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt string)
 
 func (c Salt) GetClusterConfig(mon string, clusterId uuid.UUID, ctxt string) (map[string]string, error) {
 	return map[string]string{}, nil
+}
+func (c Salt) CreateCrushRule(mon string, clusterId uuid.UUID, rule backend.CrushRuleRequest, ctxt string) error {
+	return nil
+}
+func (c Salt) CreateCrushNode(mon string, clusterId uuid.UUID, node backend.CrushNodeRequest, ctxt string) (int, error) {
+	return 0, nil
+}
+func (c Salt) GetCrushNodes(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CrushNode, error) {
+	return []backend.CrushNode{}, nil
+}
+func (c Salt) GetCrushNode(mon string, clusterId uuid.UUID, crushNodeId int, ctxt string) (backend.CrushNode, error) {
+	return backend.CrushNode{}, nil
+}
+func (c Salt) PatchCrushNode(mon string, clusterId uuid.UUID, crushNodeId int, items []backend.CrushItem, ctxt string) (bool, error) {
+	return true, nil
 }
