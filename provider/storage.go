@@ -230,7 +230,20 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 			pgNum = DerivePgNum(clusterId, request.Size, request.Replicas)
 		}
 	}
+	var ruleset int
+	if val, ok := cluster.Options["rulesetmap"]; ok {
+		rulesetmap := val.(map[string]interface{})
+		if val, ok = rulesetmap[request.Profile]; !ok {
+			utils.FailTask(fmt.Sprintf("Error getting the ruleset for cluster: %s", cluster.Name), nil, t)
+			return nil, false
+		} else {
+			ruleset = int(val.(float64))
+		}
 
+	} else {
+		utils.FailTask(fmt.Sprintf("Error getting the ruleset for cluster: %s", cluster.Name), nil, t)
+		return nil, false
+	}
 	ok := true
 	if request.Type == models.STORAGE_TYPE_ERASURE_CODED {
 		// cmd := fmt.Sprintf("ceph --cluster %s osd pool create %s %d %d erasure %s", cluster.Name, request.Name, uint(pgNum), uint(pgNum), request.Options["ecprofile"])
@@ -245,6 +258,7 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 			quotaMaxObjects,
 			quotaMaxBytes,
 			request.Options["ecprofile"],
+			ruleset,
 			ctxt)
 	} else {
 		ok, err = cephapi_backend.CreatePool(
@@ -255,6 +269,7 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 			request.Replicas,
 			quotaMaxObjects,
 			quotaMaxBytes,
+			ruleset,
 			ctxt)
 	}
 	if err != nil || !ok {
