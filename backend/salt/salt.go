@@ -217,3 +217,13 @@ func (c Salt) GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt string)
 
 	return backend.CephOSD{}, nil
 }
+
+func (c Salt) CreateCrushRule(mon string, clusterId uuid.UUID, rule backend.CrushRuleRequest, ctxt string) error {
+	return nil
+}
+func (c Salt) CreateCrushNode(mon string, clusterId uuid.UUID, node backend.CrushNodeRequest, ctxt string) (int, error) {
+	return 0, nil
+}
+func (c Salt) GetCrushNode(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CrushNode, error) {
+	return []backend.CrushNode{}, nil
+}
