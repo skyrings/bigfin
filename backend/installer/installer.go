@@ -115,3 +115,13 @@ func (c Installer) UpdateOSD(mon string, clusterId uuid.UUID, osdId string, para
 func (c Installer) GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt string) (backend.CephOSD, error) {
 	return backend.CephOSD{}, nil
 }
+
+func (c Installer) CreateCrushRule(mon string, clusterId uuid.UUID, rule backend.CrushRuleRequest, ctxt string) error {
+	return nil
+}
+func (c Installer) CreateCrushNode(mon string, clusterId uuid.UUID, node backend.CrushNodeRequest, ctxt string) (int, error) {
+	return 0, nil
+}
+func (c Installer) GetCrushNode(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CrushNode, error) {
+	return []backend.CrushNode{}, nil
+}
