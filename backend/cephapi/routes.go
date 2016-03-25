@@ -99,6 +99,24 @@ func (c *CephApi) LoadRoutes() {
 			Method:  "POST",
 			Version: 2,
 		},
+		{
+			Name:    "CreateCrushRule",
+			Pattern: "cluster/{cluster-fsid}/crush_rule",
+			Method:  "POST",
+			Version: 2,
+		},
+		{
+			Name:    "CreateCrushNode",
+			Pattern: "cluster/{cluster-fsid}/crush_node",
+			Method:  "POST",
+			Version: 2,
+		},
+		{
+			Name:    "GetCrushNodes",
+			Pattern: "cluster/{cluster-fsid}/crush_node",
+			Method:  "GET",
+			Version: 2,
+		},
 	}
 	for _, route := range routes {
 		CEPH_API_ROUTES[route.Name] = route
