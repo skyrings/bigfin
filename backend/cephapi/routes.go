@@ -102,6 +102,25 @@ func (c *CephApi) LoadRoutes() {
 		{
 			Name:    "GetClusterConfig",
 			Pattern: "cluster/{cluster-fsid}/sync_object/config?format=json",
+			Method:  "POST",
+			Version: 2,
+		},
+		{
+
+			Name:    "CreateCrushRule",
+			Pattern: "cluster/{cluster-fsid}/crush_rule",
+			Method:  "POST",
+			Version: 2,
+		},
+		{
+			Name:    "CreateCrushNode",
+			Pattern: "cluster/{cluster-fsid}/crush_node",
+			Method:  "POST",
+			Version: 2,
+		},
+		{
+			Name:    "GetCrushNodes",
+			Pattern: "cluster/{cluster-fsid}/crush_node",
 			Method:  "GET",
 			Version: 2,
 		},

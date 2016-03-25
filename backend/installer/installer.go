@@ -132,3 +132,12 @@ func (c Installer) GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt st
 func (c Installer) GetClusterConfig(mon string, clusterId uuid.UUID, ctxt string) (map[string]string, error) {
 	return map[string]string{}, nil
 }
+func (c Installer) CreateCrushRule(mon string, clusterId uuid.UUID, rule backend.CrushRuleRequest, ctxt string) error {
+	return nil
+}
+func (c Installer) CreateCrushNode(mon string, clusterId uuid.UUID, node backend.CrushNodeRequest, ctxt string) (int, error) {
+	return 0, nil
+}
+func (c Installer) GetCrushNode(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CrushNode, error) {
+	return []backend.CrushNode{}, nil
+}

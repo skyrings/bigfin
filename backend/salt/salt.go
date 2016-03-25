@@ -234,3 +234,12 @@ func (c Salt) GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt string)
 func (c Salt) GetClusterConfig(mon string, clusterId uuid.UUID, ctxt string) (map[string]string, error) {
 	return map[string]string{}, nil
 }
+func (c Salt) CreateCrushRule(mon string, clusterId uuid.UUID, rule backend.CrushRuleRequest, ctxt string) error {
+	return nil
+}
+func (c Salt) CreateCrushNode(mon string, clusterId uuid.UUID, node backend.CrushNodeRequest, ctxt string) (int, error) {
+	return 0, nil
+}
+func (c Salt) GetCrushNode(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CrushNode, error) {
+	return []backend.CrushNode{}, nil
+}
