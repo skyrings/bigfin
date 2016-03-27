@@ -271,6 +271,7 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 }
 
 func FetchOSDStats(ctxt string, cluster models.Cluster, monName string) (map[string]map[string]string, error) {
+	var osdEvents []models.Event
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
 	statistics, statsFetchErr := salt_backend.GetOSDDetails(monName, cluster.Name, ctxt)
 	if statsFetchErr != nil {
@@ -294,30 +295,111 @@ func FetchOSDStats(ctxt string, cluster models.Cluster, monName string) (map[str
 			logger.Get().Error("%s - Failed to analyse threshold breach for osd utilization of %v.Error %v", ctxt, osd.Name, err)
 			continue
 		}
+
 		if isRaiseEvent {
-			if err, _ := HandleEvent(event, ctxt); err != nil {
-				logger.Get().Error("%s - Threshold: %v.Error %v", ctxt, event, err)
+			osdEvents = append(osdEvents, event)
+		}
+	}
+
+	/*
+		Correlation of Osd threshold crossing and storage profile threshold crossing
+
+		Facts:
+			0. Storage Profile utilization is calculated cluster-wise
+			1. Osds are grouped into storage profiles.
+			2. Storage profile capacity is the sum of capacities of Osds that are associated with the storage profile.
+			3. The default threshold values for:
+		      	Storage Profile Utilization : Warning  -> 65
+		      								Critical -> 85
+		      	OSD Utilization : Warning -> Warning  -> 85
+		                                   Critical -> 95
+			4. From 1, 2 and 3, storage profile utilization crossing a threshold may or may not have threshold crossings of associated OSDs
+
+		Logic:
+			1. Fetch all Osds in the current cluster
+			2. Group osds into a map with key as the osds storage profile
+			3. Loop over the storage profile threshold events and for each storage profile event:
+				3.1. Get the list of osd events for the current storage profile.
+				3.2. Add the list of osd events obtained in 3.1(empty or non-empty) to the field ImpactingEvents of the event related to the storage profile
+				3.3. Loop over the osd events in 3.2 and set the flag notify false so that they are not separately notified to end user
+				3.3. Raise threshold crossing event for storage profile
+			4. Iterate over the entries in the map fetched from 2 and raise osd threshold crossing event.
+			   For the osds captured already in the storage profile event's ImpactingEvents, the notification flag is turned off so the eventing module doesn't notify this
+			   but just maintains the detail.
+	*/
+	slus, sluFetchErr := getOsds(cluster.ClusterId)
+	if sluFetchErr != nil {
+		return nil, sluFetchErr
+	}
+
+	spToOsdEvent := make(map[string][]models.Event)
+	for _, osdEvent := range osdEvents {
+		for _, slu := range slus {
+			osdIdFromEvent, osdIdFromEventError := uuid.Parse(osdEvent.Tags[models.ENTITY_ID])
+			if osdIdFromEventError != nil {
+				logger.Get().Error("%s - Failed to parse osd id %v from cluster %v.Error %v", osdIdFromEvent, cluster.ClusterId, osdIdFromEventError)
+			}
+
+			if uuid.Equal(slu.SluId, *osdIdFromEvent) && slu.Name == osdEvent.Tags[models.ENTITY_NAME] {
+				spToOsdEvent[slu.StorageProfile] = append(spToOsdEvent[slu.StorageProfile], osdEvent)
 			}
 		}
 	}
 
-	storageProfileStats, storageProfileStatsErr := FetchStorageProfileUtilizations(ctxt, statistics, cluster)
+	storageProfileStats, storageProfileStatsErr, storageProfileEvents := FetchStorageProfileUtilizations(ctxt, statistics, cluster)
 	if storageProfileStatsErr != nil {
+		for _, event := range osdEvents {
+			if err, _ := HandleEvent(event, ctxt); err != nil {
+				logger.Get().Error("%s - Threshold: %v.Error %v", ctxt, event, err)
+			}
+		}
 		return metrics, fmt.Errorf("Failed to fetch storage profile utilizations for cluster %v.Error %v", cluster.Name, storageProfileStatsErr)
 	}
+
+	for _, spEvent := range storageProfileEvents {
+		osdEvents := spToOsdEvent[spEvent.Tags[models.ENTITY_NAME]]
+		impactingEvents := make(map[string][]models.Event)
+		for _, osdEvent := range osdEvents {
+			osdIdFromEvent, osdIdFromEventError := uuid.Parse(osdEvent.Tags[models.ENTITY_ID])
+			if osdIdFromEventError != nil {
+				logger.Get().Error("%s - Failed to parse osd id %v from cluster %v.Error %v", osdIdFromEvent, cluster.ClusterId, osdIdFromEventError)
+			}
+			impactingEvents[models.COLL_NAME_STORAGE_LOGICAL_UNITS] = append(impactingEvents[models.COLL_NAME_STORAGE_LOGICAL_UNITS], osdEvent)
+			osdEvent.Tags[models.NOTIFY] = strconv.FormatBool(false)
+			if err, _ := HandleEvent(osdEvent, ctxt); err != nil {
+				logger.Get().Error("%s - Threshold: %v.Error %v", ctxt, spEvent, err)
+			}
+		}
+		spEvent.ImpactingEvents = impactingEvents
+		if err, _ := HandleEvent(spEvent, ctxt); err != nil {
+			logger.Get().Error("%s - Threshold: %v.Error %v", ctxt, spEvent, err)
+		}
+		delete(spToOsdEvent, spEvent.Tags[models.ENTITY_NAME])
+	}
+
+	for _, osdEvents := range spToOsdEvent {
+		for _, osdEvent := range osdEvents {
+			if err, _ := HandleEvent(osdEvent, ctxt); err != nil {
+				logger.Get().Error("%s - Threshold: %v.Error %v", ctxt, osdEvent, err)
+			}
+		}
+	}
+
 	for key, timeStampValueMap := range storageProfileStats {
 		metrics[key] = timeStampValueMap
 	}
+
 	return metrics, nil
 }
 
-func FetchStorageProfileUtilizations(ctxt string, osdDetails []backend.OSDDetails, cluster models.Cluster) (statsToPush map[string]map[string]string, err error) {
+func FetchStorageProfileUtilizations(ctxt string, osdDetails []backend.OSDDetails, cluster models.Cluster) (statsToPush map[string]map[string]string, err error, storageProfileEvents []models.Event) {
 	statsToPush = make(map[string]map[string]string)
+	statsForEventAnalyse := make(map[string]float64)
 	cluster.StorageProfileUsage = make(map[string]models.Utilization)
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
 	slus, sluFetchErr := getOsds(cluster.ClusterId)
 	if sluFetchErr != nil {
-		return nil, sluFetchErr
+		return nil, sluFetchErr, []models.Event{}
 	}
 	currentTimeStamp := strconv.FormatInt(time.Now().Unix(), 10)
 	metric_prefix := monitoringConfig.CollectionName + "." + cluster.Name + "." + skyring_monitoring.STORAGE_PROFILE_UTILIZATION + "_"
@@ -331,7 +413,7 @@ func FetchStorageProfileUtilizations(ctxt string, osdDetails []backend.OSDDetail
 				if utilization, ok := statsToPush[metric_name+skyring_monitoring.USED_SPACE]; ok {
 					existingUtilization, err := strconv.ParseUint(utilization[currentTimeStamp], 10, 64)
 					if err != nil {
-						return nil, fmt.Errorf("Error fetching osd stats for cluster %v. Error %v", cluster.Name, err)
+						return nil, fmt.Errorf("Error fetching osd stats for cluster %v. Error %v", cluster.Name, err), []models.Event{}
 					}
 					spUsed = osdDetail.Used + existingUtilization
 					statsToPush[metric_name+skyring_monitoring.USED_SPACE] = map[string]string{currentTimeStamp: strconv.FormatUint(spUsed, 10)}
@@ -343,7 +425,7 @@ func FetchStorageProfileUtilizations(ctxt string, osdDetails []backend.OSDDetail
 				if utilization, ok := statsToPush[metric_name+skyring_monitoring.FREE_SPACE]; ok {
 					existingUtilization, err := strconv.ParseUint(utilization[currentTimeStamp], 10, 64)
 					if err != nil {
-						return nil, fmt.Errorf("Error fetching osd stats for cluster %v. Error %v", cluster.Name, err)
+						return nil, fmt.Errorf("Error fetching osd stats for cluster %v. Error %v", cluster.Name, err), []models.Event{}
 					}
 					spFree = osdDetail.Available + existingUtilization
 					statsToPush[metric_name+skyring_monitoring.FREE_SPACE] = map[string]string{currentTimeStamp: strconv.FormatUint(spFree, 10)}
@@ -357,15 +439,27 @@ func FetchStorageProfileUtilizations(ctxt string, osdDetails []backend.OSDDetail
 
 				percent_used := (float64(spUsed) * 100) / (float64(spUsed + spFree))
 				statsToPush[metric_name+skyring_monitoring.USAGE_PERCENT] = map[string]string{currentTimeStamp: fmt.Sprintf("%v", percent_used)}
+
+				statsForEventAnalyse[slu.StorageProfile] = percent_used
 			}
 		}
 	}
 
+	for statProfile, stat := range statsForEventAnalyse {
+		event, isRaiseEvent, err := util.AnalyseThresholdBreach(ctxt, skyring_monitoring.STORAGE_PROFILE_UTILIZATION, statProfile, stat, cluster)
+		if err != nil {
+			logger.Get().Error("%s - Failed to analyse threshold breach for storage profile utilization of %v.Error %v", ctxt, statProfile, err)
+			continue
+		}
+		if isRaiseEvent {
+			storageProfileEvents = append(storageProfileEvents, event)
+		}
+	}
 	if err := updateDB(bson.M{"clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"storageprofileusage": cluster.StorageProfileUsage}}, models.COLL_NAME_STORAGE_CLUSTERS); err != nil {
 		logger.Get().Error("%s - Updating the storage profile statistics to db for the cluster %v failed.Error %v", ctxt, cluster.Name, err.Error())
 	}
 
-	return statsToPush, nil
+	return statsToPush, nil, storageProfileEvents
 }
 
 func updateDB(query interface{}, update interface{}, collectionName string) error {
@@ -394,7 +488,7 @@ func getOsds(clusterId uuid.UUID) (slus []models.StorageLogicalUnit, err error) 
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
-	if err := coll.Find(bson.M{"clusterid": clusterId}).All(&slus); err != nil {
+	if err := coll.Find(bson.M{"clusterid": clusterId}).Sort("name").All(&slus); err != nil {
 		return nil, fmt.Errorf("Error getting the slus for cluster: %v. error: %v", clusterId, err)
 	}
 	return slus, nil
