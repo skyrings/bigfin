@@ -934,7 +934,7 @@ func (s *CephProvider) GetClusterConfig(req models.RpcRequest, resp *models.RpcR
 		logger.Get().Error(
 			"%s-Error forming the output for config details of cluster: %s. error: %v",
 			ctxt,
-			cluster.Name,
+			*cluster_id,
 			err)
 		*resp = utils.WriteResponse(
 			http.StatusInternalServerError,
