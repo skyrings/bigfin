@@ -214,13 +214,12 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 						}
 						t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", osds))
 						if len(succeededOSDs) == 0 {
-							utils.FailTask(fmt.Sprintf(
-								"%s-Failed adding all OSDs while create cluster %s",
+							t.UpdateStatus("Failed adding all OSDs")
+							logger.Get().Error(
+								"%s-Failed adding all OSDs while create cluster %s. error: %v",
 								ctxt,
-								request.Name),
-								err,
-								t)
-							return
+								request.Name,
+								err)
 						}
 					}
 
@@ -232,7 +231,6 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 							"status": clusterStatus,
 							"state":  models.CLUSTER_STATE_ACTIVE}}); err != nil {
 						t.UpdateStatus("Error updating the cluster status")
-						return
 					}
 
 					// Delete the default created pool "rbd"
@@ -244,6 +242,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 						// No need to fail the cluster creation task
 						t.UpdateStatus("Success")
 						t.Done(models.TASK_STATUS_SUCCESS)
+						setClusterState(*cluster_uuid, models.CLUSTER_STATE_ACTIVE, ctxt)
 						return
 					}
 					// First pool in the cluster so poolid = 0
@@ -267,6 +266,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 
 					t.UpdateStatus("Success")
 					t.Done(models.TASK_STATUS_SUCCESS)
+					setClusterState(*cluster_uuid, models.CLUSTER_STATE_ACTIVE, ctxt)
 					return
 				}
 			}
