@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da9b358b_11b9e1e9",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 245,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-29T12:09:25Z",
+      "side": 1,
+      "message": "This is not reqd as it is already set as active. same below as well",
+      "range": {
+        "startLine": 245,
+        "startChar": 6,
+        "endLine": 245,
+        "endChar": 33
+      },
+      "revId": "5c617de5ab29c417540dd9861803c4251c5a44dd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
