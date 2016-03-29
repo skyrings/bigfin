@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da9b358b_8e7eecac",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 350,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-29T10:11:50Z",
+      "side": 1,
+      "message": "After above delete do we still have entries present in spToOsdEvent??",
+      "range": {
+        "startLine": 350,
+        "startChar": 1,
+        "endLine": 350,
+        "endChar": 39
+      },
+      "revId": "dfb9de40d032334fb47d18dcf238668adde57cdb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
