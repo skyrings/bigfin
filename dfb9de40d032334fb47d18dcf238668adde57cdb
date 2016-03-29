@@ -22,6 +22,30 @@
       "revId": "dfb9de40d032334fb47d18dcf238668adde57cdb",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_d1101951",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 350,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-03-29T10:33:56Z",
+      "side": 1,
+      "message": "Yes, the logic is as under:\n\n1. x Osds crossing thresholds contribute to y (y\u003c\u003dx) storage profiles crossing thresholds\n\n2. z Osds cross thresholds but p (p \u003c\u003d z) storage profiles corresponding to the z might not be crossing thresholds for various reasons like p storage profiles might be having n \u003e z number of osds, which might average the overall sp utilization below threshold, etc...\n\nSo, after removing the osds with corresponding threshold crossing of correspongding storage profile utilization, there might still be other osds belonging to OTHER sp(with no threshold crossing). So since the associated sp utilization for these osds have not crossed it means nothing to correlate here and hence we just raise events for these osds",
+      "parentUuid": "da9b358b_8e7eecac",
+      "range": {
+        "startLine": 350,
+        "startChar": 1,
+        "endLine": 350,
+        "endChar": 39
+      },
+      "revId": "dfb9de40d032334fb47d18dcf238668adde57cdb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
