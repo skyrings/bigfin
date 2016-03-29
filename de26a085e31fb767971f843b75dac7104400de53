@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_0c466423",
+        "filename": "backend/cephapi/api.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 521,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-29T15:32:08Z",
+      "side": 1,
+      "message": "right. This will read by caller if err!\u003d nil. If err \u003d\u003dnil, only in that case we return the correct id",
+      "parentUuid": "da9b358b_358dfa31",
+      "range": {
+        "startLine": 521,
+        "startChar": 5,
+        "endLine": 521,
+        "endChar": 12
+      },
+      "revId": "de26a085e31fb767971f843b75dac7104400de53",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da9b358b_558f5e23",
         "filename": "provider/cluster.go",
         "patchSetId": 7
@@ -71,6 +95,54 @@
     },
     {
       "key": {
+        "uuid": "da9b358b_ac5538c7",
+        "filename": "provider/cluster.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 1219,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-29T15:32:08Z",
+      "side": 1,
+      "message": "done",
+      "parentUuid": "da9b358b_558f5e23",
+      "range": {
+        "startLine": 1219,
+        "startChar": 94,
+        "endLine": 1219,
+        "endChar": 117
+      },
+      "revId": "de26a085e31fb767971f843b75dac7104400de53",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_8c5274dc",
+        "filename": "provider/cluster.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 1219,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-29T15:32:08Z",
+      "side": 1,
+      "message": "Yes",
+      "parentUuid": "da9b358b_7573824e",
+      "range": {
+        "startLine": 1219,
+        "startChar": 81,
+        "endLine": 1219,
+        "endChar": 91
+      },
+      "revId": "de26a085e31fb767971f843b75dac7104400de53",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "da9b358b_f59d525a",
         "filename": "provider/cluster.go",
         "patchSetId": 7
@@ -82,6 +154,30 @@
       "writtenOn": "2016-03-27T07:48:22Z",
       "side": 1,
       "message": "Not required",
+      "range": {
+        "startLine": 1327,
+        "startChar": 1,
+        "endLine": 1327,
+        "endChar": 19
+      },
+      "revId": "de26a085e31fb767971f843b75dac7104400de53",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "da9b358b_6c5e10eb",
+        "filename": "provider/cluster.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 1327,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-03-29T15:32:08Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "da9b358b_f59d525a",
       "range": {
         "startLine": 1327,
         "startChar": 1,
