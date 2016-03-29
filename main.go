@@ -23,6 +23,7 @@ import (
 	"github.com/skyrings/bigfin/tools/task"
 	"github.com/skyrings/skyring-common/conf"
 	"github.com/skyrings/skyring-common/db"
+	"github.com/skyrings/skyring-common/provisioner"
 	"github.com/skyrings/skyring-common/tools/logger"
 	"net/rpc/jsonrpc"
 	"os"
@@ -72,6 +73,13 @@ func main() {
 
 	// Initialize ceph http client
 	client.InitCephApiSession()
+
+	// Initilaize the provisioner
+	prov, err := provisioner.InitializeProvisioner(bigfin_conf.ProviderConfig.Provisioner)
+	if err != nil {
+		logger.Get().Error("Unable to initialize the provisioner")
+	}
+	provider.Provisioner = prov
 
 	provd := &provider.CephProvider{}
 	p := pie.NewProvider()

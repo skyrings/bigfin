@@ -23,6 +23,7 @@ import (
 	"github.com/skyrings/skyring-common/db"
 	"github.com/skyrings/skyring-common/models"
 	"github.com/skyrings/skyring-common/monitoring"
+	"github.com/skyrings/skyring-common/provisioner/cephinstaller"
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/task"
 	"github.com/skyrings/skyring-common/tools/uuid"
@@ -47,9 +48,11 @@ var (
 )
 
 const (
-	RULEOFFSET = 10000
-	MINSIZE    = 1
-	MAXSIZE    = 10
+	RULEOFFSET           = 10000
+	MINSIZE              = 1
+	MAXSIZE              = 10
+	MAX_JOURNALS_ON_SSD  = 6
+	DEFAULT_JOURNAL_SIZE = "5120MB"
 )
 
 func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResponse) error {
@@ -112,6 +115,10 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 		return errors.New(fmt.Sprintf("No mons mentioned in the node list while create cluster %s", request.Name))
 	}
 
+	if request.JournalSize == "" {
+		request.JournalSize = DEFAULT_JOURNAL_SIZE
+	}
+
 	asyncTask := func(t *task.Task) {
 		sessionCopy := db.GetDatastore().Copy()
 		defer sessionCopy.Close()
@@ -138,6 +145,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 				cluster.State = models.CLUSTER_STATE_CREATING
 				cluster.AlmStatus = models.ALARM_STATUS_CLEARED
 				cluster.AutoExpand = !request.DisableAutoExpand
+				cluster.JournalSize = request.JournalSize
 				cluster.Monitoring = models.MonitoringState{
 					Plugins:    utils.GetProviderSpecificDefaultThresholdValues(),
 					StaleNodes: []string{},
@@ -218,28 +226,22 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 						utils.FailTask(fmt.Sprintf("%s-Error getting updated nodes list post create cluster %s", ctxt, request.Name), err, t)
 						return
 					}
-					failedOSDs, succeededOSDs := addOSDs(
+					ok := addOSDs(
 						*cluster_uuid,
-						request.Name,
+						request.Networks.Public,
+						request.Networks.Cluster,
 						updated_nodes,
 						request.Nodes,
+						request.JournalSize,
 						t,
 						ctxt)
 
-					if len(failedOSDs) != 0 {
-						var osds []string
-						for _, osd := range failedOSDs {
-							osds = append(osds, fmt.Sprintf("%s:%s", osd.Node, osd.Device))
-						}
-						t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", osds))
-						if len(succeededOSDs) == 0 {
-							t.UpdateStatus("Failed adding all OSDs")
-							logger.Get().Error(
-								"%s-Failed adding all OSDs while create cluster %s. error: %v",
-								ctxt,
-								request.Name,
-								err)
-						}
+					if !ok {
+						t.UpdateStatus("OSD addition failed")
+						logger.Get().Error(
+							"%s-Failed adding OSDs for cluster: %v",
+							ctxt,
+							*cluster_uuid)
 					}
 
 					// Update the cluster status at the last
@@ -262,7 +264,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 						return
 					}
 					// First pool in the cluster so poolid = 0
-					ok, err := cephapi_backend.RemovePool(monnode.Hostname, *cluster_uuid, request.Name, "rbd", 0, ctxt)
+					ok, err = cephapi_backend.RemovePool(monnode.Hostname, *cluster_uuid, request.Name, "rbd", 0, ctxt)
 					if err != nil || !ok {
 						// Wait and try once more
 						time.Sleep(10 * time.Second)
@@ -394,146 +396,224 @@ func startAndPersistMons(clusterId uuid.UUID, mons []string, ctxt string) (bool,
 	return true, nil
 }
 
-func addOSDs(clusterId uuid.UUID, clusterName string, nodes map[uuid.UUID]models.Node, requestNodes []models.ClusterNode, t *task.Task, ctxt string) ([]backend.OSD, []backend.OSD) {
-	sessionCopy := db.GetDatastore().Copy()
-	defer sessionCopy.Close()
+func addOSDs(
+	clusterId uuid.UUID,
+	publicNetwork string,
+	clusterNetwork string,
+	nodes map[uuid.UUID]models.Node,
+	requestNodes []models.ClusterNode,
+	journalSize string,
+	t *task.Task,
+	ctxt string) bool {
 
-	updatedStorageDisksMap := make(map[uuid.UUID][]models.Disk)
-	var (
-		failedOSDs    []backend.OSD
-		succeededOSDs []backend.OSD
-		slus          = make(map[string]models.StorageLogicalUnit)
-	)
+	// Get the mons of the cluster
+	mons, err := GetMons(bson.M{"clusterid": clusterId})
+	if err != nil {
+		logger.Get().Error(
+			"%s-Error getting mons of the cluster: %v while add OSD. error: %v",
+			ctxt,
+			clusterId,
+			err)
+		t.UpdateStatus("Failed to get mons of cluster")
+		return false
+	}
+	var monsForOSDConfigure []map[string]interface{}
+	for _, mon := range mons {
+		monForOSDConfigure := map[string]interface{}{
+			"host":    mon.Hostname,
+			"address": mon.PublicIP4,
+		}
+		monsForOSDConfigure = append(monsForOSDConfigure, monForOSDConfigure)
+	}
+
 	for _, requestNode := range requestNodes {
 		if util.StringInSlice(models.NODE_TYPE_OSD, requestNode.NodeType) {
-			var updatedStorageDisks []models.Disk
 			uuid, err := uuid.Parse(requestNode.NodeId)
 			if err != nil {
 				logger.Get().Error(
-					"%s-Error parsing node id: %s while add OSD for cluster: %s. error: %v",
+					"%s-Error parsing node id: %s while add OSD for cluster: %v. error: %v",
 					ctxt,
 					requestNode.NodeId,
-					clusterName,
+					clusterId,
 					err)
 				t.UpdateStatus(fmt.Sprintf("Failed to add OSD(s) from node: %v", requestNode.NodeId))
 				continue
 			}
 			storageNode := nodes[*uuid]
+			var validDisks = make(map[string]models.Disk)
 			for _, storageDisk := range storageNode.StorageDisks {
 				for _, device := range requestNode.Devices {
 					if storageDisk.Name == device.Name && !storageDisk.Used {
-						if device.FSType == "" {
-							device.FSType = models.DEFAULT_FS_TYPE
-						}
-						var osd = backend.OSD{
-							Node:       storageNode.Hostname,
-							PublicIP4:  storageNode.PublicIP4,
-							ClusterIP4: storageNode.ClusterIP4,
-							Device:     device.Name,
-							FSType:     device.FSType,
-						}
-						osds, err := salt_backend.AddOSD(clusterName, osd, ctxt)
-						if err != nil {
-							failedOSDs = append(failedOSDs, osd)
-							break
-						}
-						osdName := osds[storageNode.Hostname][0]
-						var options = make(map[string]interface{})
-						options["node"] = osd.Node
-						options["publicip4"] = osd.PublicIP4
-						options["clusterip4"] = osd.ClusterIP4
-						options["device"] = osd.Device
-						options["fstype"] = osd.FSType
-						slu := models.StorageLogicalUnit{
-							Name:              osdName,
-							Type:              models.CEPH_OSD,
-							ClusterId:         clusterId,
-							NodeId:            storageNode.NodeId,
-							StorageDeviceId:   storageDisk.DiskId,
-							StorageProfile:    storageDisk.StorageProfile,
-							StorageDeviceSize: storageDisk.Size,
-							Options:           options,
-							Status:            models.SLU_STATUS_UNKNOWN,
-							State:             bigfinmodels.OSD_STATE_IN,
-							AlmStatus:         models.ALARM_STATUS_CLEARED,
-						}
-						if ok, err := persistOSD(slu, t, ctxt); err != nil || !ok {
-							logger.Get().Error("%s-Error persising %s for cluster: %s. error: %v", ctxt, slu.Name, clusterName, err)
-							failedOSDs = append(failedOSDs, osd)
-							break
-						}
-						slus[osdName] = slu
-						succeededOSDs = append(succeededOSDs, osd)
-						storageDisk.Used = true
+						validDisks[storageDisk.DevName] = storageDisk
 					}
-					updatedStorageDisks = append(updatedStorageDisks, storageDisk)
 				}
 			}
-			updatedStorageDisksMap[storageNode.NodeId] = updatedStorageDisks
+
+			// Get the journal mapping for the disks
+			diskWithJournalMapped := getDiskWithJournalMapped(validDisks, journalSize)
+			logger.Get().Error("Mapped Disk: %v", diskWithJournalMapped)
+			//osdConfigureReq := backend.OSDConfigureRequest{
+			osdConfigureReq := map[string]interface{}{
+				"devices":         diskWithJournalMapped,
+				"fsid":            clusterId,
+				"host":            storageNode.Hostname,
+				"journal_size":    utils.SizeFromStr(journalSize) / 1024,
+				"cluster_network": clusterNetwork,
+				"public_network":  publicNetwork,
+				"monitors":        monsForOSDConfigure,
+			}
+
+			if err := Provisioner.Configure(
+				ctxt,
+				t,
+				cephinstaller.OSD,
+				osdConfigureReq); err != nil {
+				logger.Get().Error(
+					"%s-Error adding OSDs for cluster: %s. error: %v",
+					ctxt,
+					clusterId,
+					err)
+				t.UpdateStatus(
+					fmt.Sprintf(
+						"Failed to add OSD(s) from node: %s",
+						storageNode.Hostname))
+				continue
+			}
+		}
+	}
+	t.UpdateStatus("Syncing the OSDs")
+	/*
+	 TODO: Sleep will be removed once the events are vailable
+	 from calamari on OSD status change. Immeadiately after the
+	 the creation the OSD sttaus set to out and down, so wait for
+	 sometime to get the right status
+	*/
+	time.Sleep(60 * time.Second)
+	for count := 0; count < 3; count++ {
+		if err := syncOsds(clusterId, ctxt); err != nil {
+			logger.Get().Warning(
+				"%s-Error syncing/persisiting the OSDs. error: %v",
+				ctxt,
+				err)
+			time.Sleep(10 * time.Second)
+		} else {
+			break
 		}
 	}
 
-	// Update the storage disks as used
-	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
-	for nodeid, updatedStorageDisks := range updatedStorageDisksMap {
-		if err := coll.Update(
-			bson.M{"nodeid": nodeid},
-			bson.M{"$set": bson.M{
-				"clusterid":    clusterId,
-				"storagedisks": updatedStorageDisks}}); err != nil {
-			logger.Get().Error(
-				"%s-Error updating disks for node: %v post add OSDs for cluster: %s. error: %v",
-				ctxt,
-				nodeid,
-				clusterName,
-				err)
+	return true
+}
+
+func getDiskWithJournalMapped(disks map[string]models.Disk, journalSize string) map[string]string {
+	jSize := utils.SizeFromStr(journalSize)
+
+	var mappedDisks = make(map[string]string)
+	var ssdCount, rotationalCount, osdCount int
+
+	for _, disk := range disks {
+		if disk.SSD {
+			ssdCount++
+		} else {
+			rotationalCount++
 		}
 	}
-	if len(slus) > 0 {
-		t.UpdateStatus("Syncing the OSD status")
-		/*
-		 TODO: Sleep will be removed once the events are vailable
-		 from calamari on OSD status change. Immeadiately after the
-		 the creation the OSD sttaus set to out and down, so wait for
-		 sometime to get the right status
-		*/
-		time.Sleep(60 * time.Second)
-		for count := 0; count < 3; count++ {
-			if err := syncOsdDetails(clusterId, slus, ctxt); err != nil || len(slus) > 0 {
-				logger.Get().Warning(
-					"%s-Error syncing the OSD status. error: %v",
-					ctxt,
-					err)
-				time.Sleep(10 * time.Second)
-			} else {
+
+	// All the disks are rotational
+	validCount := 0
+	if rotationalCount == len(disks) || ssdCount == len(disks) {
+		if rotationalCount%2 == 0 {
+			validCount = rotationalCount / 2
+		} else {
+			validCount = (rotationalCount - 1) / 2
+		}
+
+		for key, disk := range disks {
+			delete(disks, key)
+			for key1, disk1 := range disks {
+				if disk.Size > disk1.Size {
+					if disk1.Size >= jSize {
+						mappedDisks[disk.DevName] = disk1.DevName
+						delete(disks, key1)
+						osdCount++
+						break
+					}
+				} else {
+					if disk.Size >= jSize {
+						mappedDisks[disk1.DevName] = disk.DevName
+						delete(disks, key1)
+						osdCount++
+						break
+					}
+				}
+			}
+			if osdCount >= validCount {
+				break
+			}
+		}
+		return mappedDisks
+	}
+
+	// Few of the disks are SSD and few rotational
+	var ssdDisks, rotationalDisks []models.Disk
+	for _, disk := range disks {
+		if disk.SSD {
+			ssdDisks = append(ssdDisks, disk)
+		} else {
+			rotationalDisks = append(rotationalDisks, disk)
+		}
+	}
+	var count, ssdJournalCount int
+	var ssdDiskSize uint64
+	for _, disk := range rotationalDisks {
+		ssdDiskSize = ssdDisks[count].Size - jSize
+		ssdJournalCount++
+		osdCount++
+		mappedDisks[disk.DevName] = ssdDisks[count].DevName
+		if ssdJournalCount == MAX_JOURNALS_ON_SSD || ssdDiskSize < jSize {
+			ssdJournalCount = 0
+			count++
+		}
+	}
+
+	// If still rotational disks pending, map them among themselves
+	if osdCount < len(rotationalDisks) {
+		pendingRotationalDisks := len(rotationalDisks) - osdCount
+		if pendingRotationalDisks%2 == 0 {
+			validCount = pendingRotationalDisks / 2
+		} else {
+			validCount = (pendingRotationalDisks - 1) / 2
+		}
+		var pendingDisksMap = make(map[string]models.Disk)
+		for count := osdCount - 1; count < len(rotationalDisks); count++ {
+			pendingDisksMap[rotationalDisks[count].DevName] = rotationalDisks[count]
+		}
+		var osdCount1 int
+		for key, disk := range pendingDisksMap {
+			delete(pendingDisksMap, key)
+			for key1, disk1 := range pendingDisksMap {
+				if disk.Size > disk1.Size {
+					if disk1.Size >= jSize {
+						mappedDisks[disk.DevName] = disk1.DevName
+						delete(pendingDisksMap, key1)
+						osdCount1++
+						break
+					}
+				} else {
+					if disk.Size >= jSize {
+						mappedDisks[disk1.DevName] = disk.DevName
+						delete(pendingDisksMap, key1)
+						osdCount1++
+						break
+					}
+				}
+			}
+			if osdCount1 >= validCount {
 				break
 			}
 		}
 	}
-	return failedOSDs, succeededOSDs
-}
 
-func persistOSD(slu models.StorageLogicalUnit, t *task.Task, ctxt string) (bool, error) {
-	sessionCopy := db.GetDatastore().Copy()
-	defer sessionCopy.Close()
-	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
-	if err := coll.Insert(slu); err != nil {
-		return false, err
-	}
-	logger.Get().Info(
-		fmt.Sprintf("%s-Added %s (%s %s) for cluster: %v",
-			ctxt,
-			slu.Name,
-			slu.Options["node"],
-			slu.Options["device"],
-			slu.ClusterId))
-	t.UpdateStatus(
-		"Added %s (%s %s)",
-		slu.Name,
-		slu.Options["node"],
-		slu.Options["device"])
-
-	return true, nil
+	return mappedDisks
 }
 
 func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResponse) error {
@@ -683,40 +763,33 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 						t)
 					return
 				}
-				failedOSDs, succeededOSDs := addOSDs(
+				ok := addOSDs(
 					*cluster_id,
-					cluster.Name,
+					cluster.Networks.Public,
+					cluster.Networks.Cluster,
 					updated_nodes,
 					new_nodes,
+					cluster.JournalSize,
 					t,
 					ctxt)
-				if len(succeededOSDs) == 0 {
+				if !ok {
 					utils.FailTask(
-						fmt.Sprintf("Failed to add all OSDs while expand cluster: %v", *cluster_id),
+						fmt.Sprintf("Failed to add OSDs while expand cluster: %v", *cluster_id),
 						fmt.Errorf("%s-%v", ctxt, err),
 						t)
 					return
 				}
-				if len(failedOSDs) != 0 {
-					var osds []string
-					for _, osd := range failedOSDs {
-						osds = append(osds, fmt.Sprintf("%s:%s", osd.Node, osd.Device))
-					}
-					t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", osds))
+				t.UpdateStatus("Recalculating pgnum/pgpnum")
+				if ok := RecalculatePgnum(ctxt, *cluster_id, t); !ok {
+					logger.Get().Warning(
+						"%s-Could not re-calculate pgnum/pgpnum for cluster: %v",
+						ctxt,
+						*cluster_id)
 				}
-				if len(succeededOSDs) > 0 {
-					t.UpdateStatus("Recalculating pgnum/pgpnum")
-					if ok := RecalculatePgnum(ctxt, *cluster_id, t); !ok {
-						logger.Get().Warning(
-							"%s-Could not re-calculate pgnum/pgpnum for cluster: %v",
-							ctxt,
-							*cluster_id)
-					}
-					//Update the CRUSH MAP
-					t.UpdateStatus("Updating the CRUSH Map")
-					if err := UpdateCrushNodeItems(ctxt, *cluster_id); err != nil {
-						logger.Get().Error("%s-Error updating the Crush map for cluster: %v. error: %v", ctxt, *cluster_id, err)
-					}
+				//Update the CRUSH MAP
+				t.UpdateStatus("Updating the CRUSH Map")
+				if err := UpdateCrushNodeItems(ctxt, *cluster_id); err != nil {
+					logger.Get().Error("%s-Error updating the Crush map for cluster: %v. error: %v", ctxt, *cluster_id, err)
 				}
 				t.UpdateStatus("Success")
 				t.Done(models.TASK_STATUS_SUCCESS)

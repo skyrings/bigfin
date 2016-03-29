@@ -21,6 +21,7 @@ import (
 	"github.com/skyrings/skyring-common/conf"
 	"github.com/skyrings/skyring-common/db"
 	"github.com/skyrings/skyring-common/models"
+	"github.com/skyrings/skyring-common/provisioner"
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/uuid"
 	"gopkg.in/mgo.v2/bson"
@@ -29,6 +30,7 @@ import (
 var (
 	salt_backend    = salt.New()
 	cephapi_backend = cephapi.New()
+	Provisioner     provisioner.Provisioner
 )
 
 type CephProvider struct{}
