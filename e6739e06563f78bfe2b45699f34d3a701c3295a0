@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "da9b358b_2cb008dd",
+        "filename": "provider/cluster.go",
+        "patchSetId": 9
+      },
+      "lineNbr": 692,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-03-29T16:46:28Z",
+      "side": 1,
+      "message": "Dont we need this during CreateCluster flow?",
+      "range": {
+        "startLine": 692,
+        "startChar": 15,
+        "endLine": 692,
+        "endChar": 35
+      },
+      "revId": "e6739e06563f78bfe2b45699f34d3a701c3295a0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
