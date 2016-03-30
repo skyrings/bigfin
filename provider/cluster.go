@@ -1186,7 +1186,7 @@ func updateCrushMap(ctxt string, mon string, clusterId uuid.UUID) error {
 			continue
 		}
 		//create crush nodes
-		cNode := backend.CrushNodeRequest{BucketType: "host", Name: sprof.Name}
+		cNode := backend.CrushNodeRequest{BucketType: "root", Name: sprof.Name}
 		var pos int
 		for _, slu := range slus {
 			id, _ := strconv.Atoi(strings.Split(slu.Name, `.`)[1])
@@ -1210,17 +1210,18 @@ func updateCrushMap(ctxt string, mon string, clusterId uuid.UUID) error {
 		cRule.Steps = append(cRule.Steps, step_take)
 		leaf := make(map[string]interface{})
 		leaf["num"] = 0
-		leaf["type"] = "host"
+		leaf["type"] = "osd"
 		leaf["op"] = "chooseleaf_firstn"
 		cRule.Steps = append(cRule.Steps, leaf)
 		emit := make(map[string]interface{})
 		emit["op"] = "emit"
 		cRule.Steps = append(cRule.Steps, emit)
-		if err := cephapi_backend.CreateCrushRule(mon, clusterId, cRule, ctxt); err != nil {
+		cRuleId, err := cephapi_backend.CreateCrushRule(mon, clusterId, cRule, ctxt)
+		if err != nil {
 			logger.Get().Error("Failed to create Crush rule for cluster: %s. error: %v", clusterId, err)
 			continue
 		}
-		ruleInfo := bigfinmodels.CrushInfo{RuleSetId: ruleSetId, CrushNodeId: cNodeId}
+		ruleInfo := bigfinmodels.CrushInfo{RuleSetId: cRuleId, CrushNodeId: cNodeId}
 		ruleSets[sprof.Name] = ruleInfo
 	}
 	//update the cluster with this rulesets
@@ -1284,25 +1285,25 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID) error {
 			items = append(items, item)
 			pos = pos + 1
 		}
-		var ruleset bigfinmodels.CrushInfo
-		if val, ok := cluster.Options["rulesetmap"]; ok {
-			rulesetmap := val.(map[string]interface{})
-			if val, ok = rulesetmap[sprof.Name]; !ok {
-				logger.Get().Error("Error getting the ruleset for cluster: %s", cluster.Name)
-				return nil
-			} else {
-				ruleset = val.(bigfinmodels.CrushInfo)
-			}
 
-		} else {
+		rulesetmapval, ok := cluster.Options["rulesetmap"]
+		if !ok {
+
+			logger.Get().Error("Error getting the ruleset for cluster: %s", cluster.Name)
+			return nil
+
+		}
+		rulesetmap := rulesetmapval.(map[string]interface{})
+		rulesetval, ok := rulesetmap[sprof.Name]
+		if !ok {
 			logger.Get().Error("Error getting the ruleset for cluster: %s", cluster.Name)
 			return nil
 		}
-
+		ruleset := rulesetval.(map[string]interface{})
 		params := map[string]interface{}{
 			"items": items,
 		}
-		_, err := cephapi_backend.PatchCrushNode(monnode.Hostname, clusterId, ruleset.CrushNodeId, params, ctxt)
+		_, err := cephapi_backend.PatchCrushNode(monnode.Hostname, clusterId, ruleset["crushnodeid"].(int), params, ctxt)
 		if err != nil {
 			logger.Get().Error("Failed to update Crush node for cluster: %s. error: %v", clusterId, err)
 			continue

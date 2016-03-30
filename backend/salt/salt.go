@@ -234,8 +234,8 @@ func (c Salt) GetClusterConfig(mon string, clusterId uuid.UUID, ctxt string) (ma
 	return map[string]string{}, nil
 }
 
-func (c Salt) CreateCrushRule(mon string, clusterId uuid.UUID, rule backend.CrushRuleRequest, ctxt string) error {
-	return nil
+func (c Salt) CreateCrushRule(mon string, clusterId uuid.UUID, rule backend.CrushRuleRequest, ctxt string) (int, error) {
+	return 0, nil
 }
 
 func (c Salt) CreateCrushNode(mon string, clusterId uuid.UUID, node backend.CrushNodeRequest, ctxt string) (int, error) {
@@ -248,6 +248,11 @@ func (c Salt) GetCrushNodes(mon string, clusterId uuid.UUID, ctxt string) ([]bac
 
 func (c Salt) PatchCrushNode(mon string, clusterId uuid.UUID, crushNodeId int, params map[string]interface{}, ctxt string) (bool, error) {
 	return true, nil
+}
+
+func (c Salt) GetCrushRules(mon string, clusterId uuid.UUID, ctxt string) ([]map[string]interface{}, error) {
+	var m []map[string]interface{}
+	return m, nil
 }
 
 func (c Salt) GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error) {
