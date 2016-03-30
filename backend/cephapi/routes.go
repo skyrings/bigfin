@@ -131,6 +131,12 @@ func (c *CephApi) LoadRoutes() {
 			Version: 2,
 		},
 		{
+			Name:    "GetCrushRules",
+			Pattern: "cluster/{cluster-fsid}/crush_rule",
+			Method:  "GET",
+			Version: 2,
+		},
+		{
 			Name:    "PatchCrushNode",
 			Pattern: "cluster/{cluster-fsid}/crush_node/{crush_node_id}",
 			Method:  "PATCH",
