@@ -134,8 +134,8 @@ func (c Installer) GetClusterConfig(mon string, clusterId uuid.UUID, ctxt string
 	return map[string]string{}, nil
 }
 
-func (c Installer) CreateCrushRule(mon string, clusterId uuid.UUID, rule backend.CrushRuleRequest, ctxt string) error {
-	return nil
+func (c Installer) CreateCrushRule(mon string, clusterId uuid.UUID, rule backend.CrushRuleRequest, ctxt string) (int, error) {
+	return 0, nil
 }
 
 func (c Installer) CreateCrushNode(mon string, clusterId uuid.UUID, node backend.CrushNodeRequest, ctxt string) (int, error) {
@@ -148,6 +148,11 @@ func (c Installer) GetCrushNodes(mon string, clusterId uuid.UUID, ctxt string) (
 
 func (c Installer) PatchCrushNode(mon string, clusterId uuid.UUID, crushNodeId int, params map[string]interface{}, ctxt string) (bool, error) {
 	return true, nil
+}
+
+func (c Installer) GetCrushRules(mon string, clusterId uuid.UUID, ctxt string) ([]map[string]interface{}, error) {
+	var m []map[string]interface{}
+	return m, nil
 }
 
 func (c Installer) GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error) {

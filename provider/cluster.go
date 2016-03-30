@@ -1216,11 +1216,12 @@ func updateCrushMap(ctxt string, mon string, clusterId uuid.UUID) error {
 		emit := make(map[string]interface{})
 		emit["op"] = "emit"
 		cRule.Steps = append(cRule.Steps, emit)
-		if err := cephapi_backend.CreateCrushRule(mon, clusterId, cRule, ctxt); err != nil {
+		cRuleId, err := cephapi_backend.CreateCrushRule(mon, clusterId, cRule, ctxt)
+		if err != nil {
 			logger.Get().Error("Failed to create Crush rule for cluster: %s. error: %v", clusterId, err)
 			continue
 		}
-		ruleInfo := bigfinmodels.CrushInfo{RuleSetId: ruleSetId, CrushNodeId: cNodeId}
+		ruleInfo := bigfinmodels.CrushInfo{RuleSetId: cRuleId, CrushNodeId: cNodeId}
 		ruleSets[sprof.Name] = ruleInfo
 	}
 	//update the cluster with this rulesets

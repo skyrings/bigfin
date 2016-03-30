@@ -124,10 +124,11 @@ type Backend interface {
 	UpdateOSD(mon string, clusterId uuid.UUID, osdId string, params map[string]interface{}, ctxt string) (bool, error)
 	GetPGCount(mon string, clusterId uuid.UUID, ctxt string) (map[string]uint64, error)
 	GetClusterConfig(mon string, clusterId uuid.UUID, ctxt string) (map[string]string, error)
-	CreateCrushRule(mon string, clusterId uuid.UUID, rule CrushRuleRequest, ctxt string) error
+	CreateCrushRule(mon string, clusterId uuid.UUID, rule CrushRuleRequest, ctxt string) (int, error)
 	CreateCrushNode(mon string, clusterId uuid.UUID, node CrushNodeRequest, ctxt string) (int, error)
 	GetCrushNodes(mon string, clusterId uuid.UUID, ctxt string) ([]CrushNode, error)
 	PatchCrushNode(mon string, clusterId uuid.UUID, crushNodeId int, params map[string]interface{}, ctxt string) (bool, error)
+	GetCrushRules(mon string, clusterId uuid.UUID, ctxt string) ([]map[string]interface{}, error)
 	GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error)
 	GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string) ([]CephClusterNode, error)
 	GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt string) (MonNodeStatus, error)

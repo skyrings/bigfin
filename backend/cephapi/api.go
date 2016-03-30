@@ -509,27 +509,44 @@ func (c CephApi) GetClusterConfig(mon string, clusterId uuid.UUID, ctxt string) 
 	return configs, nil
 }
 
-func (c CephApi) CreateCrushRule(mon string, clusterId uuid.UUID, rule backend.CrushRuleRequest, ctxt string) error {
+func (c CephApi) CreateCrushRule(mon string, clusterId uuid.UUID, rule backend.CrushRuleRequest, ctxt string) (int, error) {
 	// Replace cluster id in route pattern
+	var cRuleId int
 	route := CEPH_API_ROUTES["CreateCrushRule"]
 	route.Pattern = strings.Replace(route.Pattern, "{cluster-fsid}", clusterId.String(), 1)
 
 	buf, err := json.Marshal(rule)
 	if err != nil {
-		return errors.New(fmt.Sprintf("Error forming request body. error: %v", err))
+		return cRuleId, errors.New(fmt.Sprintf("Error forming request body. error: %v", err))
 	}
 	body := bytes.NewBuffer(buf)
 	resp, err := route_request(route, mon, body)
 	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted) {
-		return errors.New(fmt.Sprintf("Failed to create crush rule for cluster: %s. error: %v", clusterId.String(), err))
+		return cRuleId, errors.New(fmt.Sprintf("Failed to create crush rule for cluster: %s. error: %v", clusterId.String(), err))
 	} else {
 		ok, err := syncRequestStatus(mon, resp)
 		if !ok {
-			return err
+			return cRuleId, err
+		}
+		cRules, err := c.GetCrushRules(mon, clusterId, ctxt)
+		if err != nil {
+			return cRuleId, err
+		}
+		for _, cRule := range cRules {
+			//ruleMap := cRule.(map[string]interface{})
+			if val, ok := cRule["name"]; ok {
+				if rule.Name == val.(string) {
+					if val, ok := cRule["ruleset"]; ok {
+						cRuleId = int(val.(float64))
+						return cRuleId, nil
+					}
+				}
+
+			}
 		}
 	}
 
-	return nil
+	return cRuleId, errors.New("Failed to retrieve the Crush Ruleset Id")
 }
 
 func (c CephApi) CreateCrushNode(mon string, clusterId uuid.UUID, node backend.CrushNodeRequest, ctxt string) (int, error) {
@@ -601,6 +618,27 @@ func (c CephApi) PatchCrushNode(mon string, clusterId uuid.UUID, crushNodeId int
 		ok, err := syncRequestStatus(mon, resp)
 		return ok, err
 	}
+}
+
+func (c CephApi) GetCrushRules(mon string, clusterId uuid.UUID, ctxt string) ([]map[string]interface{}, error) {
+	// Replace cluster id in route pattern
+	route := CEPH_API_ROUTES["GetCrushRules"]
+	route.Pattern = strings.Replace(route.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+
+	var m []map[string]interface{}
+	resp, err := route_request(route, mon, bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return m, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return m, err
+	}
+	if err := json.Unmarshal(respBody, &m); err != nil {
+		return m, err
+	}
+
+	return m, nil
 }
 
 func (c CephApi) GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error) {
