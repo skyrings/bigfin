@@ -1,3 +1,4 @@
+#!/usr/bin/python
 #
 # Copyright 2016 Red Hat, Inc.
 #
