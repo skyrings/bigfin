@@ -39,6 +39,7 @@ func main() {
 	}
 
 	conf.SystemConfig = config
+	conf.SystemConfig = config
 
 	// Initialize the logger
 	level, err := logging.LogLevel(config.Logging.Level.String())
@@ -55,6 +56,11 @@ func main() {
 
 	if err := db.InitDBSession(config.DBConfig); err != nil {
 		logger.Get().Fatalf("Unable to initialize DB. error: %v", err)
+	}
+
+	//Initialize the DB provider
+	if err := provider.InitializeDb(); err != nil {
+		logger.Get().Error("Unable to initialize the authentication provider: %s", err)
 	}
 
 	// Initialize the task manager
