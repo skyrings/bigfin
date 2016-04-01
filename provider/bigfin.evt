@@ -1,0 +1,6 @@
+{
+	"slu_utilization":            "OSD Utilization",
+	"cluster_utilization":        "Cluster Utilization",
+	"storage_utilzation":         "Pool Utilization",
+	"storage_profile_utilzation": "Storage Profile Utilization"
+}
