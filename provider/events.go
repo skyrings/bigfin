@@ -19,31 +19,37 @@ import (
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/conf"
 	"github.com/skyrings/skyring-common/db"
-	"github.com/skyrings/skyring-common/event"
+	common_event "github.com/skyrings/skyring-common/event"
 	"github.com/skyrings/skyring-common/models"
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/uuid"
+	"github.com/skyrings/skyring-common/utils"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"time"
 )
 
 var (
 	handlermap = map[string]interface{}{
-		"skyring/calamari/ceph/calamari/started":        calamari_server_start_handler,
-		"skyring/calamari/ceph/server/added":            ceph_server_add_handler,
-		"skyring/calamari/ceph/server/reboot":           ceph_server_reboot_handler,
-		"skyring/calamari/ceph/server/package/changed":  ceph_server_package_change_handler,
-		"skyring/calamari/ceph/server/lateReporting":    ceph_server_late_reporting_handler,
-		"skyring/calamari/ceph/server/regainedContact":  ceph_server_contact_regained_handler,
-		"skyring/calamari/ceph/cluster/lateReporting":   ceph_cluster_late_reporting_handler,
-		"skyring/calamari/ceph/cluster/regainedContact": ceph_cluster_contact_regained_handler,
-		"skyring/calamari/ceph/osd/propertyChanged":     ceph_osd_property_changed_handler,
-		"skyring/calamari/ceph/mon/propertyChanged":     ceph_mon_property_changed_handler,
-		"skyring/calamari/ceph/cluster/health/changed":  ceph_cluster_health_changed,
+		"skyring/calamari/ceph/calamari/started":                         calamari_server_start_handler,
+		"skyring/calamari/ceph/server/added":                             ceph_server_add_handler,
+		"skyring/calamari/ceph/server/reboot":                            ceph_server_reboot_handler,
+		"skyring/calamari/ceph/server/package/changed":                   ceph_server_package_change_handler,
+		"skyring/calamari/ceph/server/lateReporting":                     ceph_server_late_reporting_handler,
+		"skyring/calamari/ceph/server/regainedContact":                   ceph_server_contact_regained_handler,
+		"skyring/calamari/ceph/cluster/lateReporting":                    ceph_cluster_late_reporting_handler,
+		"skyring/calamari/ceph/cluster/regainedContact":                  ceph_cluster_contact_regained_handler,
+		"skyring/calamari/ceph/osd/propertyChanged":                      ceph_osd_property_changed_handler,
+		"skyring/calamari/ceph/mon/propertyChanged":                      ceph_mon_property_changed_handler,
+		"skyring/calamari/ceph/cluster/health/changed":                   ceph_cluster_health_changed,
+		"skyring/ceph/cluster/*/threshold/slu_utilization/*":             ceph_osd_utilization_threshold_changed,
+		"skyring/ceph/cluster/*/threshold/cluster_utilization/*":         ceph_cluster_utilization_threshold_changed,
+		"skyring/ceph/cluster/*/threshold/storage_utilization/*":         ceph_storage_utilization_threshold_changed,
+		"skyring/ceph/cluster/*/threshold/storage_profile_utilization/*": ceph_storage_profile_utilization_threshold_changed,
 	}
 	cluster_status_in_enum = map[string]int{
 		"HEALTH_OK":   models.CLUSTER_STATUS_OK,
@@ -51,6 +57,183 @@ var (
 		"HEALTH_ERR":  models.CLUSTER_STATUS_ERROR,
 	}
 )
+
+var EventType = map[string]string{
+	"slu_utilization":            "OSD Utilization",
+	"cluster_utilization":        "Cluster Utilization",
+	"storage_utilzation":         "Pool Utilization",
+	"storage_profile_utilzation": "Storage Profile Utilization",
+}
+
+func parseThresholdEvent(event models.Event, ctxt string) (models.AppEvent, error) {
+	var appEvent models.AppEvent
+	eventId, err := uuid.New()
+	if err != nil {
+		logger.Get().Error("%s- Uuid generation for event failed. Error: %v", ctxt, err)
+		return appEvent, err
+	}
+
+	currentValue, currentValueErr := util.GetReadableFloat(event.Tags["CurrentValue"], ctxt)
+	if currentValueErr != nil {
+		logger.Get().Error("%s-Could not parse the current value:%s", ctxt, currentValueErr)
+		return appEvent, currentValueErr
+	}
+
+	thresholdValue, thresholdValueErr := util.GetReadableFloat(event.Tags["ThresholdValue"], ctxt)
+	if thresholdValueErr != nil {
+		logger.Get().Error("%s-Could not parse the current value:%s", ctxt, thresholdValueErr)
+		return appEvent, thresholdValueErr
+	}
+
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	var cluster models.Cluster
+	if err := coll.Find(bson.M{"clusterid": event.ClusterId}).One(&cluster); err == nil {
+		appEvent.ClusterName = cluster.Name
+	}
+
+	appEvent.Tags = map[string]string{
+		"Current Utilization": currentValue,
+		"Threshold value":     thresholdValue,
+		"Entity Name":         event.Tags["EntityName"],
+	}
+
+	if event.Tags["ThresholdType"] == models.OK {
+		appEvent.Severity = models.ALARM_STATUS_CLEARED
+	} else if event.Tags["ThresholdType"] == models.WARNING {
+		appEvent.Severity = models.ALARM_STATUS_WARNING
+	} else {
+		appEvent.Severity = models.ALARM_STATUS_CRITICAL
+	}
+
+	appEvent.Name = EventType[event.Tags["Plugin"]]
+	appEvent.EventId = *eventId
+
+	entityId, err := uuid.Parse(event.Tags["EntityId"])
+	if err != nil {
+		logger.Get().Error("%s-Could not parse the entity UUID. Error: %v", ctxt, err)
+		return appEvent, err
+	}
+	appEvent.EntityId = *entityId
+
+	appEvent.Timestamp = event.Timestamp
+	appEvent.ClusterId = event.ClusterId
+	appEvent.Message = event.Message
+	appEvent.Notify = true
+	return appEvent, nil
+}
+
+func ceph_osd_utilization_threshold_changed(event models.Event, ctxt string) (models.AppEvent, error) {
+	appEvent, err := parseThresholdEvent(event, ctxt)
+	if err != nil {
+		logger.Get().Error("%s- Could not parse the threshold cross event. Error:%v", ctxt, err)
+		return appEvent, err
+	}
+	appEvent.NotificationEntity = models.NOTIFICATION_ENTITY_SLU
+
+	var slu models.StorageLogicalUnit
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
+	if err := coll.Find(bson.M{"clusterid": appEvent.ClusterId,
+		"sluid": appEvent.EntityId}).One(&slu); err != nil {
+		return appEvent, fmt.Errorf("%s-Error getting the slu:%v for"+
+			" cluster: %v. error: %v", ctxt, appEvent.EntityId, appEvent.ClusterId, err)
+	}
+	appEvent.NodeId = slu.NodeId
+
+	var node models.Node
+	coll = sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
+	if err = coll.Find(bson.M{"nodeid": appEvent.NodeId}).One(&node); err != nil {
+		return appEvent, fmt.Errorf("%s-Error getting the node: %v from DB."+
+			" error: %v", ctxt, appEvent.NodeId, err)
+	}
+
+	appEvent.Message = fmt.Sprintf("OSD utilization for %s on %s cluster has moved to %s",
+		event.Tags["EntityName"],
+		appEvent.ClusterName,
+		event.Tags["ThresholdType"])
+
+	if val, ok := event.Tags["Notify"]; ok {
+		if val, err := strconv.ParseBool(val); err != nil {
+			logger.Get().Error("%s-Error parsing the value: %s", ctxt, event.Tags["Notify"])
+			return appEvent, err
+		} else {
+			appEvent.Notify = val
+		}
+	}
+
+	appEvent.NodeName = node.Hostname
+	return appEvent, nil
+}
+
+func ceph_cluster_utilization_threshold_changed(event models.Event, ctxt string) (models.AppEvent, error) {
+	appEvent, err := parseThresholdEvent(event, ctxt)
+	if err != nil {
+		logger.Get().Error("%s- Could not parse the threshold cross event. Error:%v", ctxt, err)
+		return appEvent, err
+	}
+
+	appEvent.Message = fmt.Sprintf("Cluster utilization for %s has moved to %s",
+		appEvent.ClusterName,
+		event.Tags["ThresholdType"])
+
+	appEvent.NotificationEntity = models.NOTIFICATION_ENTITY_CLUSTER
+
+	return appEvent, nil
+}
+
+func ceph_storage_profile_utilization_threshold_changed(event models.Event, ctxt string) (models.AppEvent, error) {
+	appEvent, err := parseThresholdEvent(event, ctxt)
+	if err != nil {
+		logger.Get().Error("%s- Could not parse the threshold cross event. Error:%v", ctxt, err)
+		return appEvent, err
+	}
+
+	appEvent.Message = fmt.Sprintf("Storage Profile utilization for profile %s"+
+		" on %s cluster has moved to %s",
+		event.Tags["EntityName"],
+		appEvent.ClusterName,
+		event.Tags["ThresholdType"])
+
+	var affectedOSDs string
+	osdEvents := event.ImpactingEntities["storage_logical_units"]
+	for _, e := range osdEvents {
+		currentValue, currentValueErr := util.GetReadableFloat(e.Tags["CurrentValue"], ctxt)
+		if currentValueErr != nil {
+			logger.Get().Error("%s-Could not parse the current value:%s",
+				ctxt, currentValueErr)
+			return appEvent, currentValueErr
+		}
+		if affectedOSDs == "" {
+			affectedOSDs += fmt.Sprintf("%s(%s%%)", e.Tags["EntityName"], currentValue)
+		} else {
+			affectedOSDs += fmt.Sprintf(", %s(%s%%)", e.Tags["EntityName"], currentValue)
+		}
+	}
+	affectedOSDs += fmt.Sprintf(".")
+
+	appEvent.Tags["Affected OSDs"] = affectedOSDs
+	return appEvent, nil
+}
+
+func ceph_storage_utilization_threshold_changed(event models.Event, ctxt string) (models.AppEvent, error) {
+	appEvent, err := parseThresholdEvent(event, ctxt)
+	if err != nil {
+		logger.Get().Error("%s- Could not parse the threshold cross event. Error:%v", ctxt, err)
+		return appEvent, err
+	}
+
+	appEvent.Message = fmt.Sprintf("Pool utilization for pool %s on %s cluster has moved to %s",
+		event.Tags["EntityName"],
+		appEvent.ClusterName,
+		event.Tags["ThresholdType"])
+
+	appEvent.NotificationEntity = models.NOTIFICATION_ENTITY_STORAGE
+
+	return appEvent, nil
+}
 
 func calamari_server_start_handler(event models.Event, ctxt string) error {
 	return nil
@@ -157,11 +340,12 @@ func HandleEvent(e models.Event, ctxt string) (err error, statusCode int) {
 	for tag, handler := range handlermap {
 		if match, err := filepath.Match(tag, e.Tag); err == nil {
 			if match {
-				if err = handler.(func(models.Event, string) error)(e, ctxt); err != nil {
+				appEvent, err := handler.(func(models.Event, string) (models.AppEvent, error))(e, ctxt)
+				if err != nil {
 					return fmt.Errorf("Event Handling Failed for event: %s. error: %v",
 						e.Tag, err), http.StatusInternalServerError
 				}
-				if err = event.Persist_event(e, ctxt); err != nil {
+				if err = common_event.AuditLog(ctxt, appEvent, GetDbProvider()); err != nil {
 					return fmt.Errorf("Could not persist the event: %s to DB. error: %v",
 						e.Tag, err), http.StatusInternalServerError
 				} else {

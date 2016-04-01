@@ -17,6 +17,7 @@ limitations under the License.
 // This should probably be part of some configuration fed into the build for a
 // given binary target.
 import (
+	_ "github.com/skyrings/skyring-common/dbprovider/mongodb"
 	_ "github.com/skyrings/skyring-common/monitoring/graphitemanager"
 	_ "github.com/skyrings/skyring-common/monitoring/influxdbmanager"
 )
