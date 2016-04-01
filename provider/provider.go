@@ -20,6 +20,7 @@ import (
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/conf"
 	"github.com/skyrings/skyring-common/db"
+	"github.com/skyrings/skyring-common/dbprovider"
 	"github.com/skyrings/skyring-common/models"
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/uuid"
@@ -30,6 +31,7 @@ var (
 	salt_backend    = salt.New()
 	cephapi_backend = cephapi.New()
 	EventTypes      map[string]string
+	DbManager       dbprovider.DbInterface
 )
 
 type CephProvider struct{}
@@ -68,6 +70,24 @@ func GetRandomMon(clusterId uuid.UUID) (*models.Node, error) {
 		return nil, err
 	}
 	return &monnode, nil
+}
+
+func InitializeDb() error {
+	if mgr, err := dbprovider.InitDbProvider("mongodbprovider", ""); err != nil {
+		logger.Get().Error("Error Initializing the Db Provider: %s", err)
+		return err
+	} else {
+		DbManager = mgr
+	}
+	if err := DbManager.InitDb(); err != nil {
+		logger.Get().Error("Error Initializing the DAOs. Error: %s", err)
+		return err
+	}
+	return nil
+}
+
+func GetDbProvider() dbprovider.DbInterface {
+	return DbManager
 }
 
 func GetMons(param bson.M) (models.Nodes, error) {

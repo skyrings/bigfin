@@ -62,6 +62,11 @@ func main() {
 		logger.Get().Fatalf("Unable to initialize DB. error: %v", err)
 	}
 
+	//Initialize the DB provider
+	if err := provider.InitializeDb(); err != nil {
+		logger.Get().Error("Unable to initialize the DB provider: %s", err)
+	}
+
 	// Initialize the task manager
 	if err := task.InitializeTaskManager(); err != nil {
 		logger.Get().Fatalf("Failed to initialize task manager. error: %v", err)
