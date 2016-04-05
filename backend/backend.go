@@ -131,6 +131,7 @@ type Backend interface {
 	GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error)
 	GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string) ([]CephClusterNode, error)
 	GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt string) (MonNodeStatus, error)
+	GetPartDeviceDetails(node string, partPath string, ctxt string) (DeviceDetail, error)
 }
 
 type OSDDetails struct {
@@ -161,6 +162,8 @@ type CephOSD struct {
 	CrushNodeAncestry    [][]int   `json:"crush_node_ancestry"`
 	BackendPartitionPath string    `json:"backend_partition_path"`
 	BackendDeviceNode    string    `json:"backend_device_node"`
+	OsdData              string    `json:"osd_data"`
+	OsdJournal           string    `json:"osd_journal"`
 }
 
 type CrushItem struct {
@@ -235,4 +238,12 @@ type MonNodeStatus struct {
 	State  string `json:"state"`
 	Rank   uint   `json:"rank"`
 	Quorum []uint `json:"quorum"`
+}
+
+type DeviceDetail struct {
+	DevName  string    `json:"devname"`
+	Uuid     uuid.UUID `json:"uuid"`
+	PartName string    `json:"partname"`
+	FSType   string    `json:"fstype"`
+	Size     uint64    `json:"size"`
 }
