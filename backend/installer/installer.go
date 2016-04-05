@@ -40,7 +40,7 @@ func New() (backend.Backend, error) {
 	return installerapi, nil
 }
 
-func (c Installer) CreateCluster(clusterName string, fsid uuid.UUID, mons []backend.Mon, ctxt string) (bool, error) {
+func (c Installer) CreateCluster(clusterName string, fsid uuid.UUID, mon interface{}, ctxt string) (bool, error) {
 	return true, nil
 }
 
@@ -48,7 +48,7 @@ func (c Installer) GetPGCount(mon string, clusterId uuid.UUID, ctxt string) (map
 	return nil, nil
 }
 
-func (c Installer) AddMon(clusterName string, mons []backend.Mon, ctxt string) (bool, error) {
+func (c Installer) AddMon(clusterName string, mon interface{}, ctxt string) (bool, error) {
 	return true, nil
 }
 
@@ -56,7 +56,7 @@ func (c Installer) StartMon(nodes []string, ctxt string) (bool, error) {
 	return true, nil
 }
 
-func (c Installer) AddOSD(clusterName string, osd backend.OSD, ctxt string) (map[string][]string, error) {
+func (c Installer) AddOSD(clusterName string, osd interface{}, ctxt string) (map[string][]string, error) {
 	return map[string][]string{}, nil
 }
 
