@@ -16,3 +16,5 @@ import:
   version: bea0c295debd84f9c80050cea3c6aeb3dd448f7c
 - package: github.com/parnurzeal/gorequest
   version: 91b42fce877cc6af96c45818665a4c615cc5f4ee
+- package: github.com/fatih/structs
+  version: 73c4e3dc02a78deaba8640d5f3a8c236ec1352bf
