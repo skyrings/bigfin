@@ -542,6 +542,16 @@ def GetClusterStatus(monitor, cluster_name, ctxt=""):
     raise Exception("ceph cluster status failed. error=%s" % out)
 
 
+def ParticipatesInCluster(node, ctxt=""):
+    out = local.cmd(node, 'cmd.run_all', ['ls -l /var/lib/ceph/mon/*'])
+    if out[node]['retcode'] == 0:
+        return True
+    out = local.cmd(node, 'cmd.run_all', ['ls -l /var/lib/ceph/osd/*'])
+    if out[node]['retcode'] == 0:
+        return True
+    return False
+
+
 def GetClusterStats(monitor, cluster_name, ctxt=""):
     ret_val = {}
     out = local.cmd(monitor, "ceph.getClusterStats", [cluster_name])
