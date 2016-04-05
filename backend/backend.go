@@ -244,3 +244,42 @@ type DeviceDetail struct {
 	FSType   string `json:"fstype"`
 	Size     uint64 `json:"size"`
 }
+
+/*
+BEGIN:
+Ceph Installer related req/resp data structures
+*/
+type CephInstallerMonDetail struct {
+	Node    string `json:"calamari"`
+	Address string `json:"calamari"`
+}
+
+type CephInstallerMonReq struct {
+	Calamari       bool                     `json:"calamari"`
+	Node           string                   `json:"host"`
+	Address        string                   `json:"address"`
+	Fsid           string                   `json:"fsid"`
+	Secret         string                   `json:"monitor_secret"`
+	ClusterName    string                   `json:"cluster_name"`
+	ClusterNetwork string                   `json:"cluster_network"`
+	PublicNetwork  string                   `json:"public_network"`
+	Monitors       []CephInstallerMonDetail `json:"monitors"`
+	RedhatStorage  bool                     `json:"redhat_storage"`
+}
+
+type CephInstallerOSDReq struct {
+	Devices        map[string]string        `json:"devices"`
+	Fsid           string                   `json:"fsid"`
+	Node           string                   `json:"host"`
+	JournalSize    int                      `json:"journal_size"`
+	ClusterName    string                   `json:"cluster_name"`
+	ClusterNetwork string                   `json:"cluster_network"`
+	PublicNetwork  string                   `json:"public_network"`
+	RedhatStorage  bool                     `json:"redhat_storage"`
+	Monitors       []CephInstallerMonDetail `json:"monitors"`
+}
+
+/*
+END:
+Ceph Installer related req/resp data structures
+*/
