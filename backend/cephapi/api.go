@@ -678,3 +678,7 @@ func (c CephApi) GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt
 	}
 	return monStatus, nil
 }
+
+func (c CephApi) GetPartDeviceDetails(node string, partPath string, ctxt string) (backend.DeviceDetail, error) {
+	return backend.DeviceDetail{}, nil
+}
