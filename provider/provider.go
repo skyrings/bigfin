@@ -16,6 +16,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/skyrings/bigfin/backend/cephapi"
+	"github.com/skyrings/bigfin/backend/installer"
 	"github.com/skyrings/bigfin/backend/salt"
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/conf"
@@ -27,8 +28,9 @@ import (
 )
 
 var (
-	salt_backend    = salt.New()
-	cephapi_backend = cephapi.New()
+	salt_backend         = salt.New()
+	cephapi_backend      = cephapi.New()
+	installer_backend, _ = installer.New()
 )
 
 type CephProvider struct{}

@@ -49,10 +49,14 @@ func init() {
 type Salt struct {
 }
 
-func (s Salt) CreateCluster(clusterName string, fsid uuid.UUID, mons []backend.Mon, ctxt string) (bool, error) {
+func (s Salt) CreateCluster(clusterName string, fsid uuid.UUID, mon interface{}, ctxt string) (bool, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	pyobj, err := pyFuncs["CreateCluster"].Call(clusterName, fsid.String(), mons, ctxt)
+
+	cephMon := make([]backend.Mon, 1)
+	cephMon[0] = mon.(backend.Mon)
+
+	pyobj, err := pyFuncs["CreateCluster"].Call(clusterName, fsid.String(), cephMon, ctxt)
 	if err == nil {
 		return gopy.Bool(pyobj), nil
 	}
@@ -60,10 +64,14 @@ func (s Salt) CreateCluster(clusterName string, fsid uuid.UUID, mons []backend.M
 	return false, err
 }
 
-func (s Salt) AddMon(clusterName string, mons []backend.Mon, ctxt string) (bool, error) {
+func (s Salt) AddMon(clusterName string, mon interface{}, ctxt string) (bool, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	pyobj, err := pyFuncs["AddMon"].Call(clusterName, mons, ctxt)
+
+	cephMon := make([]backend.Mon, 1)
+	cephMon[0] = mon.(backend.Mon)
+
+	pyobj, err := pyFuncs["AddMon"].Call(clusterName, cephMon, ctxt)
 	if err == nil {
 		return gopy.Bool(pyobj), nil
 	}
@@ -82,11 +90,13 @@ func (s Salt) StartMon(nodes []string, ctxt string) (bool, error) {
 	return false, err
 }
 
-func (s Salt) AddOSD(clusterName string, osd backend.OSD, ctxt string) (osds map[string][]string, err error) {
+func (s Salt) AddOSD(clusterName string, osd interface{}, ctxt string) (osds map[string][]string, err error) {
 	mutex.Lock()
 	defer mutex.Unlock()
 	osdMap := make(map[string][]string)
-	if pyobj, loc_err := pyFuncs["AddOSD"].Call(clusterName, osd, ctxt); loc_err == nil {
+	cephOsd := make([]backend.OSD, 1)
+	cephOsd[0] = osd.(backend.OSD)
+	if pyobj, loc_err := pyFuncs["AddOSD"].Call(clusterName, cephOsd, ctxt); loc_err == nil {
 		err = gopy.Convert(pyobj, &osdMap)
 		osds = osdMap
 	} else {

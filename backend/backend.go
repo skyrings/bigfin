@@ -103,10 +103,11 @@ type ClusterTimeChecks struct {
 }
 
 type Backend interface {
-	CreateCluster(clusterName string, fsid uuid.UUID, mons []Mon, ctxt string) (bool, error)
-	AddMon(clusterName string, mons []Mon, ctxt string) (bool, error)
+	CreateCluster(clusterName string, fsid uuid.UUID, mon interface{}, ctxt string) (bool, error)
+	AddMon(clusterName string, mon interface{}, ctxt string) (bool, error)
 	StartMon(nodes []string, ctxt string) (bool, error)
-	AddOSD(clusterName string, osd OSD, ctxt string) (map[string][]string, error)
+	AddOSD(clusterName string, osd interface{}, ctxt string) (map[string][]string, error)
+
 	CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64, ruleset int, ctxt string) (bool, error)
 	CreateECPool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64, ecProfile string, ruleset int, ctxt string) (bool, error)
 	ListPoolNames(mon string, clusterName string, ctxt string) ([]string, error)
@@ -236,3 +237,42 @@ type MonNodeStatus struct {
 	Rank   uint   `json:"rank"`
 	Quorum []uint `json:"quorum"`
 }
+
+/*
+BEGIN:
+Ceph Installer related req/resp data structures
+*/
+type CephInstallerMonDetail struct {
+	Node    string `json:"calamari"`
+	Address string `json:"calamari"`
+}
+
+type CephInstallerMonReq struct {
+	Calamari       bool                     `json:"calamari"`
+	Node           string                   `json:"host"`
+	Address        string                   `json:"address"`
+	Fsid           string                   `json:"fsid"`
+	Secret         string                   `json:"monitor_secret"`
+	ClusterName    string                   `json:"cluster_name"`
+	ClusterNetwork string                   `json:"cluster_network"`
+	PublicNetwork  string                   `json:"public_network"`
+	Monitors       []CephInstallerMonDetail `json:"monitors"`
+	RedhatStorage  bool                     `json:"redhat_storage"`
+}
+
+type CephInstallerOSDReq struct {
+	Devices        map[string]string        `json:"devices"`
+	Fsid           string                   `json:"fsid"`
+	Node           string                   `json:"host"`
+	JournalSize    int                      `json:"journal_size"`
+	ClusterName    string                   `json:"cluster_name"`
+	ClusterNetwork string                   `json:"cluster_network"`
+	PublicNetwork  string                   `json:"public_network"`
+	RedhatStorage  bool                     `json:"redhat_storage"`
+	Monitors       []CephInstallerMonDetail `json:"monitors"`
+}
+
+/*
+END:
+Ceph Installer related req/resp data structures
+*/
