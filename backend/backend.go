@@ -131,6 +131,7 @@ type Backend interface {
 	GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error)
 	GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string) ([]CephClusterNode, error)
 	GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt string) (MonNodeStatus, error)
+	GetPartDeviceDetails(node string, partPath string, ctxt string) (DeviceDetail, error)
 }
 
 type OSDDetails struct {
@@ -235,4 +236,11 @@ type MonNodeStatus struct {
 	State  string `json:"state"`
 	Rank   uint   `json:"rank"`
 	Quorum []uint `json:"quorum"`
+}
+
+type DeviceDetail struct {
+	DevName  string `json:"devname"`
+	PartName string `json:"partname"`
+	FSType   string `json:"fstype"`
+	Size     uint64 `json:"size"`
 }

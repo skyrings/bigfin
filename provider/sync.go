@@ -314,6 +314,7 @@ func syncOsds(clusterId uuid.UUID, ctxt string) error {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
+	coll1 := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 
 	// Fetch the OSDs from DB
 	var fetchedSlus []models.StorageLogicalUnit
@@ -334,7 +335,6 @@ func syncOsds(clusterId uuid.UUID, ctxt string) error {
 		logger.Get().Error("%s-Error getting OSDs list for cluster: %v. error: %v", ctxt, clusterId, err)
 		return err
 	}
-
 	for _, osd := range osds {
 		if ok := osd_in_fetched_list(fetchedSlus, osd); ok {
 			status := mapOsdStatus(osd.Up, osd.In)
@@ -346,10 +346,21 @@ func syncOsds(clusterId uuid.UUID, ctxt string) error {
 			logger.Get().Info("%s-Updated the status of slu: osd.%d on cluster: %v", ctxt, osd.Id, clusterId)
 		} else {
 			// Get the node details for SLU
-			coll1 := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 			var node models.Node
-			if err := coll1.Find(bson.M{"hostname": bson.M{"$regex": fmt.Sprintf("%s.*", osd.Server), "$options": "$i"}}).One(&node); err != nil {
-				logger.Get().Error("%s-Error fetching node details for SLU id: %d on cluster: %v. error: %v", ctxt, osd.Id, clusterId, err)
+			if err := coll1.Find(
+				bson.M{"hostname": bson.M{
+					"$regex":   fmt.Sprintf("%s.*", osd.Server),
+					"$options": "$i"}}).One(&node); err != nil {
+				// if err := coll1.Find(
+				// 	bson.M{"hostname": bson.M{
+				// 		"$regex":   fmt.Sprintf("%s.*", "dhcp47-95.lab.eng.blr.redhat.com"),
+				// 		"$options": "$i"}}).One(&node); err != nil {
+				logger.Get().Error(
+					"%s-Error fetching node details for SLU id: %d on cluster: %v. error: %v",
+					ctxt,
+					osd.Id,
+					clusterId,
+					err)
 				continue
 			}
 			newSlu := models.StorageLogicalUnit{
@@ -358,20 +369,48 @@ func syncOsds(clusterId uuid.UUID, ctxt string) error {
 				Type:      models.CEPH_OSD,
 				ClusterId: clusterId,
 				NodeId:    node.NodeId,
-				// TODO:: Below details should be enabled once calamari provides device details
-				//StorageId:
-				//StorageDeviceId:
-				//StorageDeviceSize:
-				//StorageProfile:
-				Status: mapOsdStatus(osd.Up, osd.In),
-				State:  mapOsdState(osd.In),
+				Status:    mapOsdStatus(osd.Up, osd.In),
+				State:     mapOsdState(osd.In),
 			}
+			deviceDetails, err := salt_backend.GetPartDeviceDetails(
+				node.Hostname,
+				osd.BackendPartitionPath,
+				// fmt.Sprintf("/var/lib/ceph/osd/c1-%d", osd.Id),
+				ctxt)
+			if err != nil {
+				logger.Get().Error(
+					"%s-Error getting device details of osd.%d. error: %v",
+					ctxt,
+					osd.Id,
+					err)
+				continue
+			}
+			device_id, err := uuid.New()
+			if err != nil {
+				logger.Get().Error(
+					"%s-Error forming uuid for SLU. error: %v",
+					ctxt,
+					err)
+				continue
+			}
+			newSlu.StorageDeviceId = *device_id
+			newSlu.StorageDeviceSize = deviceDetails.Size
+			newSlu.StorageProfile = get_disk_profile(node.StorageDisks, deviceDetails.PartName)
 			var options = make(map[string]interface{})
 			options["in"] = strconv.FormatBool(osd.In)
 			options["up"] = strconv.FormatBool(osd.Up)
+			options["node"] = node.NodeId.String()
+			options["publicip4"] = node.PublicIP4
+			options["clusterip4"] = node.ClusterIP4
+			options["device"] = deviceDetails.DevName
+			options["fstype"] = deviceDetails.FSType
 			newSlu.Options = options
 			if err := coll.Insert(newSlu); err != nil {
-				logger.Get().Error("%s-Error creating the new SLU for cluster: %v. error: %v", ctxt, clusterId, err)
+				logger.Get().Error(
+					"%s-Error creating the new SLU for cluster: %v. error: %v",
+					ctxt,
+					clusterId,
+					err)
 				continue
 			}
 			logger.Get().Info("%s-Added new slu: osd.%d on cluster: %v", ctxt, osd.Id, clusterId)
@@ -392,6 +431,15 @@ func syncOsds(clusterId uuid.UUID, ctxt string) error {
 	}
 
 	return nil
+}
+
+func get_disk_profile(disks []models.Disk, partName string) string {
+	for _, disk := range disks {
+		if disk.DevName == partName {
+			return disk.StorageProfile
+		}
+	}
+	return ""
 }
 
 func (s *CephProvider) SyncStorages(req models.RpcRequest, resp *models.RpcResponse) error {
