@@ -40,11 +40,11 @@ import (
 type CephApi struct {
 }
 
-func (c CephApi) CreateCluster(clusterName string, fsid uuid.UUID, mons []backend.Mon, ctxt string) (bool, error) {
+func (c CephApi) CreateCluster(clusterName string, fsid uuid.UUID, mon interface{}, ctxt string) (bool, error) {
 	return true, nil
 }
 
-func (c CephApi) AddMon(clusterName string, mons []backend.Mon, ctxt string) (bool, error) {
+func (c CephApi) AddMon(clusterName string, mon interface{}, ctxt string) (bool, error) {
 	return true, nil
 }
 
@@ -52,7 +52,7 @@ func (c CephApi) StartMon(nodes []string, ctxt string) (bool, error) {
 	return true, nil
 }
 
-func (c CephApi) AddOSD(clusterName string, osd backend.OSD, ctxt string) (map[string][]string, error) {
+func (c CephApi) AddOSD(clusterName string, osd interface{}, ctxt string) (map[string][]string, error) {
 	return map[string][]string{}, nil
 }
 
