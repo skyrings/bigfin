@@ -63,7 +63,11 @@ func main() {
 	}
 
 	if err := provider.InitMonitoringManager(); err != nil {
-		logger.Get().Error("Error initializing the monitoring manager: %v", err)
+		logger.Get().Fatalf("Error initializing the monitoring manager: %v", err)
+	}
+
+	if err := provider.InitInstaller(); err != nil {
+		logger.Get().Fatalf("Error initializing the Installer: %v", err)
 	}
 
 	// Initialize ceph http client
