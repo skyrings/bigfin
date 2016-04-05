@@ -29,7 +29,6 @@ import (
 	"path/filepath"
 
 	bigfin_conf "github.com/skyrings/bigfin/conf"
-	_ "github.com/skyrings/skyring-common/provisioner/cephinstaller"
 )
 
 func main() {
@@ -37,8 +36,13 @@ func main() {
 	if err := json.Unmarshal([]byte(os.Args[1]), &config); err != nil {
 		panic(fmt.Sprintf("Reading configurations failed. error: %v", err))
 	}
-
 	conf.SystemConfig = config
+
+	var providerConfig conf.ProviderInfo
+	if err := json.Unmarshal([]byte(os.Args[2]), &providerConfig); err != nil {
+		panic(fmt.Sprintf("Reading provider configurations failed. error: %v", err))
+	}
+	bigfin_conf.ProviderConfig = providerConfig
 
 	// Initialize the logger
 	level, err := logging.LogLevel(config.Logging.Level.String())
