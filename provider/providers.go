@@ -20,4 +20,5 @@ import (
 	_ "github.com/skyrings/skyring-common/dbprovider/mongodb"
 	_ "github.com/skyrings/skyring-common/monitoring/graphitemanager"
 	_ "github.com/skyrings/skyring-common/monitoring/influxdbmanager"
+	_ "github.com/skyrings/skyring-common/provisioner/cephinstaller"
 )
