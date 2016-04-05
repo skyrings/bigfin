@@ -22,16 +22,20 @@ import (
 	"github.com/skyrings/skyring-common/db"
 	"github.com/skyrings/skyring-common/dbprovider"
 	"github.com/skyrings/skyring-common/models"
+	"github.com/skyrings/skyring-common/provisioner"
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/uuid"
 	"gopkg.in/mgo.v2/bson"
+
+	bigfin_conf "github.com/skyrings/bigfin/conf"
 )
 
 var (
-	salt_backend    = salt.New()
-	cephapi_backend = cephapi.New()
-	EventTypes      map[string]string
-	DbManager       dbprovider.DbInterface
+	salt_backend      = salt.New()
+	cephapi_backend   = cephapi.New()
+	EventTypes        map[string]string
+	DbManager         dbprovider.DbInterface
+	installer_backend provisioner.Provisioner
 )
 
 type CephProvider struct{}
@@ -134,4 +138,14 @@ func CreateDefaultECProfiles(ctxt string, mon string, clusterId uuid.UUID) (bool
 		}
 	}
 	return true, nil
+}
+
+func InitInstaller() error {
+	if installerinst, err := provisioner.InitializeProvisioner(conf.SystemConfig.Provisioners[bigfin_conf.ProviderName]); err != nil {
+		logger.Get().Error("Unable to initialize the provisioner:%v", err)
+		return err
+	} else {
+		installer_backend = installerinst
+	}
+	return nil
 }
