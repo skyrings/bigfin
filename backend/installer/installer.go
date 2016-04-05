@@ -166,3 +166,7 @@ func (c Installer) GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string)
 func (c Installer) GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt string) (backend.MonNodeStatus, error) {
 	return backend.MonNodeStatus{}, nil
 }
+
+func (c Installer) GetPartDeviceDetails(node string, partPath string, ctxt string) (backend.DeviceDetail, error) {
+	return backend.DeviceDetail{}, nil
+}
