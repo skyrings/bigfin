@@ -27,6 +27,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"strconv"
+	"strings"
 
 	bigfin_models "github.com/skyrings/bigfin/bigfinmodels"
 )
@@ -46,7 +47,23 @@ func (s *CephProvider) SyncBlockDevices(req models.RpcRequest, resp *models.RpcR
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
 		return err
 	}
-	if err := syncRBDs(*cluster_id, ctxt); err != nil {
+
+	// Get a random mon node
+	monnode, err := GetRandomMon(*cluster_id)
+	if err != nil {
+		logger.Get().Error(
+			"%s-Error getting a mon node in cluster: %v. error: %v",
+			ctxt,
+			*cluster_id, err)
+		*resp = utils.WriteResponse(
+			http.StatusInternalServerError,
+			fmt.Sprintf(
+				"Error getting a mon node in cluster. error: %v",
+				err))
+		return err
+	}
+
+	if err := syncRBDs(monnode.Hostname, *cluster_id, ctxt); err != nil {
 		logger.Get().Error(err.Error())
 		*resp = utils.WriteResponse(http.StatusInternalServerError, err.Error())
 		return err
@@ -55,7 +72,7 @@ func (s *CephProvider) SyncBlockDevices(req models.RpcRequest, resp *models.RpcR
 	return nil
 }
 
-func syncRBDs(clusterId uuid.UUID, ctxt string) error {
+func syncRBDs(mon string, clusterId uuid.UUID, ctxt string) error {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 
@@ -76,16 +93,6 @@ func syncRBDs(clusterId uuid.UUID, ctxt string) error {
 	if err := coll.Find(bson.M{"clusterid": clusterId}).All(&pools); err != nil {
 		return fmt.Errorf(
 			"%s-Error getting the pools for cluster: %v. error: %v",
-			ctxt,
-			clusterId,
-			err)
-	}
-
-	// Pick a random mon from the list
-	monnode, err := GetRandomMon(clusterId)
-	if err != nil {
-		return fmt.Errorf(
-			"%s-Error getting a mon from cluster: %v. error: %v",
 			ctxt,
 			clusterId,
 			err)
@@ -115,7 +122,7 @@ func syncRBDs(clusterId uuid.UUID, ctxt string) error {
 			cluster.Name)
 		var blkDevices []string
 		ok, out, err := cephapi_backend.ExecCmd(
-			monnode.Hostname,
+			mon,
 			clusterId,
 			cmd,
 			ctxt)
@@ -146,7 +153,7 @@ func syncRBDs(clusterId uuid.UUID, ctxt string) error {
 				pool.Name)
 			var blkDeviceDet backend.BlockDevice
 			ok, out, err := cephapi_backend.ExecCmd(
-				monnode.Hostname,
+				mon,
 				clusterId,
 				cmd,
 				ctxt)
@@ -300,7 +307,22 @@ func (s *CephProvider) SyncStorageLogicalUnits(req models.RpcRequest, resp *mode
 		return err
 	}
 
-	if err := syncOsds(*cluster_id, ctxt); err != nil {
+	// Get a random mon node
+	monnode, err := GetRandomMon(*cluster_id)
+	if err != nil {
+		logger.Get().Error(
+			"%s-Error getting a mon node in cluster: %v. error: %v",
+			ctxt,
+			*cluster_id, err)
+		*resp = utils.WriteResponse(
+			http.StatusInternalServerError,
+			fmt.Sprintf(
+				"Error getting a mon node in cluster. error: %v",
+				err))
+		return err
+	}
+
+	if err := syncOsds(monnode.Hostname, *cluster_id, ctxt); err != nil {
 		logger.Get().Error("%s-Error syncing the OSDs for cluster: %v. Err: %v", ctxt, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error syncing the OSD status. Err: %v", err))
 		return err
@@ -310,7 +332,7 @@ func (s *CephProvider) SyncStorageLogicalUnits(req models.RpcRequest, resp *mode
 
 }
 
-func syncOsds(clusterId uuid.UUID, ctxt string) error {
+func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	coll_slu := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
@@ -327,14 +349,7 @@ func syncOsds(clusterId uuid.UUID, ctxt string) error {
 		fetchedSlusMap[fmt.Sprintf("%s:%s", fetchedSlu.NodeId.String(), fetchedSlu.Options["device"])] = fetchedSlu
 	}
 
-	// Get a random mon node
-	monnode, err := GetRandomMon(clusterId)
-	if err != nil {
-		logger.Get().Error("%s-Error getting a mon node in cluster: %s. error: %v", ctxt, clusterId, err)
-		return err
-	}
-
-	osds, err := cephapi_backend.GetOSDs(monnode.Hostname, clusterId, ctxt)
+	osds, err := cephapi_backend.GetOSDs(mon, clusterId, ctxt)
 	if err != nil {
 		logger.Get().Error("%s-Error getting OSDs list for cluster: %v. error: %v", ctxt, clusterId, err)
 		return err
@@ -344,7 +359,7 @@ func syncOsds(clusterId uuid.UUID, ctxt string) error {
 		var node models.Node
 		if err := coll_nodes.Find(
 			bson.M{"hostname": bson.M{
-				"$regex":   fmt.Sprintf("%s.*", osd.Server),
+				"$regex":   osd.Server,
 				"$options": "$i"}}).One(&node); err != nil {
 			// if err := coll_nodes.Find(
 			// 	bson.M{"hostname": bson.M{
@@ -745,22 +760,80 @@ func syncStorageNodes(mon string, clusterId uuid.UUID, ctxt string) error {
 			err)
 	}
 
+	var fetchedNode models.Node
 	for _, node := range nodes {
+		var updates bson.M = make(map[string]interface{})
 		for _, service := range node.Services {
 			if service.Type == bigfin_models.NODE_SERVICE_MON {
+				updates["clusterid"] = clusterId
+				updates["options.mon"] = models.Yes
+				if strings.HasPrefix(mon, node.FQDN) {
+					updates["options.calamari"] = models.Yes
+				}
 				if err := coll.Update(
 					bson.M{"hostname": node.FQDN},
-					bson.M{
-						"$set": bson.M{
-							"clusterid":   clusterId,
-							"options.mon": models.Yes}}); err != nil {
+					bson.M{"$set": updates, "$push": bson.M{"roles": MON}}); err != nil {
 					failedNodes = append(failedNodes, node.FQDN)
-					break
 				}
 				succeededNodes = append(succeededNodes, node.Hostname)
 			}
+			if service.Type == bigfin_models.NODE_SERVICE_OSD {
+				if err := coll.Find(bson.M{"hostname": bson.M{
+					"$regex": fmt.Sprintf("%s.*", node.FQDN)}}).One(&fetchedNode); err != nil {
+					logger.Get().Warning(
+						"%s-Failed to update OSD role for node: %s. error: %v",
+						ctxt,
+						node.FQDN,
+						err)
+					failedNodes = append(failedNodes, node.FQDN)
+				} else {
+					if err := coll.Update(
+						bson.M{"hostname": fetchedNode.Hostname},
+						bson.M{"$push": bson.M{"roles": OSD}}); err != nil {
+						logger.Get().Warning(
+							"%s-Failed to update the OSD role for the node: %s. error: %v",
+							ctxt,
+							node.FQDN,
+							err)
+						failedNodes = append(failedNodes, node.FQDN)
+					}
+				}
+			}
 		}
 	}
+
+	monNodes, err := cephapi_backend.GetMonitors(mon, clusterId, ctxt)
+	if err != nil {
+		return fmt.Errorf(
+			"%s-Error getting mon nodes of the cluster: %v. error: %v",
+			ctxt,
+			clusterId,
+			err)
+	}
+	for _, monNode := range monNodes {
+		if strings.HasPrefix(mon, monNode) {
+			succeededNodes = append(succeededNodes, monNode)
+			continue
+		}
+		if err := coll.Find(
+			bson.M{"hostname": bson.M{
+				"$regex":   monNode,
+				"$options": "$i"}}).One(&fetchedNode); err != nil {
+			failedNodes = append(failedNodes, monNode)
+		} else {
+			if err := coll.Update(
+				bson.M{"hostname": fetchedNode.Hostname},
+				bson.M{
+					"$set": bson.M{
+						"clusterid":   clusterId,
+						"options.mon": models.Yes},
+					"$push": bson.M{"roles": MON}}); err != nil {
+				failedNodes = append(failedNodes, monNode)
+			}
+		}
+		succeededNodes = append(succeededNodes, monNode)
+	}
+
 	if len(failedNodes) > 0 {
 		logger.Get().Warning(
 			"%s-Updating node details failed for [%s]",
@@ -780,10 +853,19 @@ func syncStorageNodes(mon string, clusterId uuid.UUID, ctxt string) error {
 				node)
 		}
 		if mondet.State == "leader" {
+			if err := coll.Find(
+				bson.M{"hostname": bson.M{
+					"$regex":   node,
+					"$options": "$i"}}).One(&fetchedNode); err != nil {
+				logger.Get().Warning(
+					"%s-Failed to mark mon node: %s as leader. error: %v",
+					ctxt,
+					node,
+					err)
+				break
+			}
 			if err := coll.Update(
-				bson.M{
-					"clusterid": clusterId,
-					"hostname":  bson.M{"$regex": fmt.Sprintf("%s*", node)}},
+				bson.M{"clusterid": clusterId, "hostname": fetchedNode.Hostname},
 				bson.M{"$set": bson.M{"options.leader": models.Yes}}); err != nil {
 				logger.Get().Warning(
 					"%s-Failed to update leader status of mon node: %s",

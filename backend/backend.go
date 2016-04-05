@@ -15,6 +15,7 @@
 package backend
 
 import (
+	"github.com/skyrings/skyring-common/models"
 	"github.com/skyrings/skyring-common/tools/uuid"
 )
 
@@ -130,8 +131,11 @@ type Backend interface {
 	PatchCrushNode(mon string, clusterId uuid.UUID, crushNodeId int, params map[string]interface{}, ctxt string) (bool, error)
 	GetCrushRules(mon string, clusterId uuid.UUID, ctxt string) ([]map[string]interface{}, error)
 	GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error)
+	GetCluster(mon string, ctxt string) (CephCluster, error)
+	GetClusterNetworks(mon string, clusterId uuid.UUID, ctxt string) (models.ClusterNetworks, error)
 	GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string) ([]CephClusterNode, error)
 	GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt string) (MonNodeStatus, error)
+	ParticipatesInCluster(node string, ctxt string) bool
 	GetPartDeviceDetails(node string, partPath string, ctxt string) (DeviceDetail, error)
 	GetServiceCount(hostname string, ctxt string) (map[string]int, error)
 }
@@ -223,11 +227,17 @@ type BlockDevice struct {
 	Format          int    `json:"format"`
 }
 
+type CephCluster struct {
+	Id   uuid.UUID `json:"id"`
+	Name string    `json:"name"`
+}
+
 type CephClusterNode struct {
-	Hostname string            `json:"hostname"`
-	FQDN     string            `json:"fqdn"`
-	Managed  bool              `json:"managed"`
-	Services []CephNodeService `json:"services"`
+	Hostname    string            `json:"hostname"`
+	FQDN        string            `json:"fqdn"`
+	Managed     bool              `json:"managed"`
+	CephVersion string            `json:"ceph_version"`
+	Services    []CephNodeService `json:"services"`
 }
 
 type CephNodeService struct {
