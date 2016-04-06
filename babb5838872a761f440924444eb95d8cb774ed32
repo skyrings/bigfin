@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_12b44af0",
+        "filename": "backend/backend.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 253,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-06T13:55:13Z",
+      "side": 1,
+      "message": "node",
+      "range": {
+        "startLine": 253,
+        "startChar": 23,
+        "endLine": 253,
+        "endChar": 31
+      },
+      "revId": "babb5838872a761f440924444eb95d8cb774ed32",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_f2b8c6e7",
+        "filename": "backend/backend.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 254,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-06T13:55:13Z",
+      "side": 1,
+      "message": "address",
+      "range": {
+        "startLine": 254,
+        "startChar": 23,
+        "endLine": 254,
+        "endChar": 31
+      },
+      "revId": "babb5838872a761f440924444eb95d8cb774ed32",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_b2f59e84",
+        "filename": "provider/cluster.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-06T13:55:13Z",
+      "side": 1,
+      "message": "Does this help converting a struct in map[string]interface{} automatically ?",
+      "range": {
+        "startLine": 19,
+        "startChar": 2,
+        "endLine": 19,
+        "endChar": 26
+      },
+      "revId": "babb5838872a761f440924444eb95d8cb774ed32",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_b2923e56",
+        "filename": "provider/cluster.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 55,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-06T13:55:13Z",
+      "side": 1,
+      "message": "These are already defined as constants in bigfinmodels package I remember",
+      "range": {
+        "startLine": 54,
+        "startChar": 0,
+        "endLine": 55,
+        "endChar": 20
+      },
+      "revId": "babb5838872a761f440924444eb95d8cb774ed32",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_7273964e",
+        "filename": "provider/cluster.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 352,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-06T13:55:13Z",
+      "side": 1,
+      "message": "We should generate this using ceph-auth-tool or python way we talked about earlier with ceph team.",
+      "range": {
+        "startLine": 352,
+        "startChar": 3,
+        "endLine": 352,
+        "endChar": 58
+      },
+      "revId": "babb5838872a761f440924444eb95d8cb774ed32",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_32bbcec6",
+        "filename": "provider/cluster.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 497,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-06T13:55:13Z",
+      "side": 1,
+      "message": "No need to populate the osd name. anyway the sync call would take care.",
+      "range": {
+        "startLine": 497,
+        "startChar": 5,
+        "endLine": 497,
+        "endChar": 23
+      },
+      "revId": "babb5838872a761f440924444eb95d8cb774ed32",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
