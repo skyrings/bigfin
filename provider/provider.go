@@ -149,3 +149,41 @@ func InitInstaller() error {
 	}
 	return nil
 }
+
+func SortDisksOnSize(disks []models.Disk) []models.Disk {
+	if len(disks) <= 1 {
+		return disks
+	}
+
+	mid := len(disks) / 2
+	left := disks[:mid]
+	right := disks[mid:]
+
+	left = SortDisksOnSize(left)
+	right = SortDisksOnSize(right)
+
+	return merge(left, right)
+}
+
+func merge(left, right []models.Disk) []models.Disk {
+	var result []models.Disk
+	for len(left) > 0 || len(right) > 0 {
+		if len(left) > 0 && len(right) > 0 {
+			if left[0].Size >= right[0].Size {
+				result = append(result, left[0])
+				left = left[1:]
+			} else {
+				result = append(result, right[0])
+				right = right[1:]
+			}
+		} else if len(left) > 0 {
+			result = append(result, left[0])
+			left = left[1:]
+		} else if len(right) > 0 {
+			result = append(result, right[0])
+			right = right[1:]
+		}
+	}
+
+	return result
+}
