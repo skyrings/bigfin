@@ -47,12 +47,13 @@ var (
 )
 
 const (
-	RULEOFFSET  = 10000
-	MINSIZE     = 1
-	MAXSIZE     = 10
-	MON         = "MON"
-	OSD         = "OSD"
-	JOURNALSIZE = 1024
+	RULEOFFSET          = 10000
+	MINSIZE             = 1
+	MAXSIZE             = 10
+	MON                 = "MON"
+	OSD                 = "OSD"
+	JOURNALSIZE         = 5120
+	MAX_JOURNALS_ON_SSD = 6
 )
 
 func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResponse) error {
@@ -88,6 +89,10 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 		logger.Get().Error("%s-Error creating cluster id while create cluster %s. error: %v", ctxt, request.Name, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error creating cluster id. error: %v", err))
 		return nil
+	}
+
+	if request.JournalSize == "" {
+		request.JournalSize = fmt.Sprintf("%dMB", JOURNALSIZE)
 	}
 
 	nodeRoleMapFromRequest := make(map[string][]string)
@@ -131,6 +136,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 				cluster.State = models.CLUSTER_STATE_CREATING
 				cluster.AlmStatus = models.ALARM_STATUS_CLEARED
 				cluster.AutoExpand = !request.DisableAutoExpand
+				cluster.JournalSize = request.JournalSize
 				cluster.Monitoring = models.MonitoringState{
 					Plugins:    utils.GetProviderSpecificDefaultThresholdValues(),
 					StaleNodes: []string{},
@@ -459,6 +465,7 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 		return failedOSDs, succeededOSDs, err
 	}
 	t.UpdateStatus("Configuring the OSDs")
+	var osdId int
 	for _, requestNode := range request.Nodes {
 		if !util.StringInSlice(models.NODE_TYPE_OSD, requestNode.NodeType) {
 			continue
@@ -475,15 +482,10 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 			continue
 		}
 
+		devices := make(map[string]models.Disk)
 		storageNode := nodes[*uuid]
 		for _, storageDisk := range storageNode.StorageDisks {
 			for _, device := range requestNode.Devices {
-
-				devices := make(map[string]string)
-				//
-				//	Here the jounaling logic should come in
-				//	For time being, putting some dummy vals
-				//
 				if storageDisk.Name == device.Name {
 					if storageDisk.Used {
 						logger.Get().Warning(
@@ -492,56 +494,64 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 							storageDisk.Name)
 						break
 					}
-					devices[device.Name] = device.Name
+					devices[device.Name] = storageDisk
 				} else {
 					continue
 				}
-				osd := make(map[string]interface{})
-				osd["devices"] = devices
-				osd["fsid"] = clusterId.String()
-				osd["host"] = storageNode.Hostname
-				osd["journal_size"] = JOURNALSIZE
-				//osd["cluster_name"] = request.Name
-				osd["cluster_network"] = request.Networks.Cluster
-				osd["public_network"] = request.Networks.Public
-				osd["redhat_storage"] = conf.SystemConfig.Provisioners[bigfin_conf.ProviderName].RedhatStorage
-				osd["monitors"] = clusterMons
-
-				if err := installer_backend.Configure(ctxt, t, OSD, osd); err != nil {
-					failedOSDs = append(failedOSDs, fmt.Sprintf("%v:%v", osd["host"].(string), osd["devices"]))
-					logger.Get().Error("%s-Failed to add OSD: %v on Host: %v. error: %v", ctxt, osd["devices"], osd["host"].(string), err)
-					break
-				}
-				var options = make(map[string]interface{})
-				options["node"] = osd["host"].(string)
-				options["publicip4"] = storageNode.PublicIP4
-				options["clusterip4"] = storageNode.ClusterIP4
-				options["device"] = device.Name
-				//
-				//	TODO: OSD Names needs to be taken care by syc calls
-				//
-				osdName := "osd.0"
-				slu := models.StorageLogicalUnit{
-					Name:              osdName,
-					Type:              models.CEPH_OSD,
-					ClusterId:         clusterId,
-					NodeId:            storageNode.NodeId,
-					StorageDeviceId:   storageDisk.DiskId,
-					StorageProfile:    storageDisk.StorageProfile,
-					StorageDeviceSize: storageDisk.Size,
-					Options:           options,
-					Status:            models.SLU_STATUS_UNKNOWN,
-					State:             bigfinmodels.OSD_STATE_IN,
-					AlmStatus:         models.ALARM_STATUS_CLEARED,
-				}
-				if ok, err := persistOSD(slu, t, ctxt); err != nil || !ok {
-					logger.Get().Error("%s-Error persising %s for cluster: %s. error: %v", ctxt, slu.Name, request.Name, err)
-					failedOSDs = append(failedOSDs, fmt.Sprintf("%s:%s", osd["host"].(string), osd["devices"]))
-					break
-				}
-				slus[osdName] = slu
-				succeededOSDs = append(succeededOSDs, fmt.Sprintf("%v:%v", osd["host"].(string), osd["devices"]))
 			}
+		}
+
+		// Get the journal mapping for the disks
+		diskWithJournalMapped := getDiskWithJournalMapped(devices, request.JournalSize)
+		for disk, journalDisk := range diskWithJournalMapped {
+			var osdDet = make(map[string]string)
+			osdDet[disk] = journalDisk
+			osd := make(map[string]interface{})
+			osd["devices"] = osdDet
+			osd["fsid"] = clusterId.String()
+			osd["host"] = storageNode.Hostname
+			osd["journal_size"] = JOURNALSIZE
+			//osd["cluster_name"] = request.Name
+			osd["cluster_network"] = request.Networks.Cluster
+			osd["public_network"] = request.Networks.Public
+			osd["redhat_storage"] = conf.SystemConfig.Provisioners[bigfin_conf.ProviderName].RedhatStorage
+			osd["monitors"] = clusterMons
+
+			if err := installer_backend.Configure(ctxt, t, OSD, osd); err != nil {
+				failedOSDs = append(failedOSDs, fmt.Sprintf("%v:%v", osd["host"].(string), osd["devices"]))
+				logger.Get().Error("%s-Failed to add OSD: %v on Host: %v. error: %v", ctxt, osd["devices"], osd["host"].(string), err)
+				break
+			}
+			osdName := fmt.Sprintf("osd.%d", osdId)
+			osdId++
+			var options = make(map[string]interface{})
+			options["node"] = osd["host"].(string)
+			options["publicip4"] = storageNode.PublicIP4
+			options["clusterip4"] = storageNode.ClusterIP4
+			options["device"] = disk
+			//
+			//	TODO: OSD Names needs to be taken care by sync calls
+			//
+			slu := models.StorageLogicalUnit{
+				Name:              osdName,
+				Type:              models.CEPH_OSD,
+				ClusterId:         clusterId,
+				NodeId:            storageNode.NodeId,
+				StorageDeviceId:   devices[disk].DiskId,
+				StorageProfile:    devices[disk].StorageProfile,
+				StorageDeviceSize: devices[disk].Size,
+				Options:           options,
+				Status:            models.SLU_STATUS_UNKNOWN,
+				State:             bigfinmodels.OSD_STATE_IN,
+				AlmStatus:         models.ALARM_STATUS_CLEARED,
+			}
+			if ok, err := persistOSD(slu, t, ctxt); err != nil || !ok {
+				logger.Get().Error("%s-Error persising %s for cluster: %s. error: %v", ctxt, slu.Name, request.Name, err)
+				failedOSDs = append(failedOSDs, fmt.Sprintf("%s:%s", osd["host"].(string), osd["devices"]))
+				break
+			}
+			slus[osdName] = slu
+			succeededOSDs = append(succeededOSDs, fmt.Sprintf("%v:%v", osd["host"].(string), osd["devices"]))
 		}
 
 	}
@@ -567,6 +577,194 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 		}
 	}
 	return failedOSDs, succeededOSDs, nil
+}
+
+/**
+ * This fuction works based on a simple algorithm which maps
+ * smaller sized disks as journla for bigger sized disks.
+ * To achieve this, it first sorts the list of disks based on
+ * size in descending order and then start the mapping of disks
+ * with their journal disks.
+ *
+ * There are below listed four scenarios to be handled
+ *
+ * CASE-1: All the disks are rotational
+ * RESTRICTION: In this case one disk can be used as journal
+ * for one disk only
+ * LOGIC: Here the logic is very simple. If the no of disks is
+ * event valid possible no of OSDs would be (no of disks / 2)
+ * else if the no of disks is  odd, the valid no of OSDs would be
+ * (no of disks - 1) / 2. Now in sorted list of disks on descending
+ * size, first half set of disks get mapped to second half set of
+ * disks to use them as journals.
+ *
+ * CASE-2: All the disks are SSDs
+ * RESTRICTION: In this case one disk can be used as journal for
+ * upto 6 disks
+ * LOGIC: Here in sorted list of disks on descending size, it starts
+ * from first disk and starts mapping the last entry in the list as
+ * journal. Once 6 disks are mapped to last entry in list, next set
+ * of disks start mapping to one but last disk in list as their
+ * journal. This continues till all the disks are mapped to their
+ * journals. Also while mapping disks to their journal, if no more
+ * space available on journal disk, it moves mapping to the next
+ * higher sized disk from last.
+ * The below diagram explains the logic well
+ *
+ *   ----------------------------------------------------
+ *   |    -----------------------------------------------
+ *   |    |    ------------------------------------------
+ *   |    |    |    -------------------------------------
+ *   |    |    |    |    --------------------------------
+ *   |    |    |    |    |    ---------------------------
+ *   |    |    |    |    |    |    ----------------    |
+ *   |    |    |    |    |    |    |    -----------    |
+ *   |    |    |    |    |    |    |    |    ------    |
+ *   |    |    |    |    |    |    |    |    |    |    |
+ *  ---  ---  ---  ---  ---  ---  ---  ---  ---  ---  ----
+ *  |0|  |1|  |2|  |3|  |4|  |5|  |6|  |7|  |8|  |9|  |10|
+ *  ---  ---  ---  ---  ---  ---  ---  ---  ---  ---  ----
+ *
+ * CASE-3: Few disks are rotational and few are SSDs
+ * RESTRICTION: First SSDs should be used as journals and a maximum
+ * of 6 disks can use one SSD as journal.
+ * LOGIC: In this case, first it segregates the list of SSDs and
+ * rotational disks. Then starts mapping SSD disk as journal for
+ * rotational disk. Once already 6 disks marked to use an SSD as
+ * journal or no space available in the selected SSD, it moves to
+ * next SSD to use as journal.
+ * After this mapping done, we might end up in a situation where
+ * more rotational or SSDs disks are left
+ * 	SUB CASE-3a: More rotational disks left
+ *	LOGIC: Logic in case-1 is repeated for the left out disks
+ *
+ *	SUB CASE-3b: More SSDs are left
+ *	LOGIC: Logic in case-2 is repeated for the left out disks
+ */
+func getDiskWithJournalMapped(disks map[string]models.Disk, journalSize string) map[string]string {
+	jSize := utils.SizeFromStr(journalSize)
+
+	var mappedDisks = make(map[string]string)
+	var ssdCount, rotationalCount, osdCount int
+
+	for _, disk := range disks {
+		if disk.SSD {
+			ssdCount++
+		} else {
+			rotationalCount++
+		}
+	}
+
+	// All the disks are rotational
+	var validCount int
+	if rotationalCount == len(disks) {
+		var disksForSort []models.Disk
+		for _, disk := range disks {
+			disksForSort = append(disksForSort, disk)
+		}
+		sortedDisks := SortDisksOnSize(disksForSort)
+		if len(disks)%2 == 0 {
+			validCount = len(disks) / 2
+		} else {
+			validCount = (len(disks) - 1) / 2
+		}
+
+		for idx := 0; idx < validCount; idx++ {
+			mappedDisks[sortedDisks[idx].DevName] = sortedDisks[(len(disks)-idx)-1].DevName
+		}
+		return mappedDisks
+	}
+
+	// All the disks are ssd
+	var journalDiskIdx, mappedDiskCountForJournal int
+	var ssdDiskSize uint64
+	if ssdCount == len(disks) {
+		var disksForSort []models.Disk
+		for _, disk := range disks {
+			disksForSort = append(disksForSort, disk)
+		}
+		sortedDisks := SortDisksOnSize(disksForSort)
+		for idx := 0; idx <= (len(sortedDisks)-journalDiskIdx)-2; idx++ {
+			ssdDiskSize = sortedDisks[(len(sortedDisks)-journalDiskIdx)-1].Size - jSize
+			mappedDiskCountForJournal++
+			osdCount++
+			mappedDisks[sortedDisks[idx].DevName] = sortedDisks[(len(sortedDisks)-journalDiskIdx)-1].DevName
+			if mappedDiskCountForJournal == MAX_JOURNALS_ON_SSD || ssdDiskSize < jSize {
+				mappedDiskCountForJournal = 0
+				journalDiskIdx++
+			}
+		}
+		return mappedDisks
+	}
+
+	// Few of the disks are SSD and few rotational
+	var ssdDisks, rotationalDisks []models.Disk
+	for _, disk := range disks {
+		if disk.SSD {
+			ssdDisks = append(ssdDisks, disk)
+		} else {
+			rotationalDisks = append(rotationalDisks, disk)
+		}
+	}
+	journalDiskIdx = 0
+	mappedDiskCountForJournal = 0
+	for _, disk := range rotationalDisks {
+		if journalDiskIdx < len(ssdDisks) {
+			ssdDiskSize = ssdDisks[journalDiskIdx].Size - jSize
+			mappedDiskCountForJournal++
+			osdCount++
+			mappedDisks[disk.DevName] = ssdDisks[journalDiskIdx].DevName
+			if mappedDiskCountForJournal == MAX_JOURNALS_ON_SSD || ssdDiskSize < jSize {
+				mappedDiskCountForJournal = 0
+				journalDiskIdx++
+			}
+		}
+	}
+
+	// If still ssd disks pending, map them among themselves
+	// There should not be any rotational disks left by this time
+	if journalDiskIdx < len(ssdDisks) {
+		var pendingDisks []models.Disk
+		for idx := journalDiskIdx; idx < len(ssdDisks); idx++ {
+			pendingDisks = append(pendingDisks, ssdDisks[idx])
+		}
+		sortedDisks := SortDisksOnSize(pendingDisks)
+
+		journalDiskIdx = 0
+		mappedDiskCountForJournal = 0
+		for idx1 := 0; idx1 <= (len(sortedDisks)-journalDiskIdx)-2; idx1++ {
+			ssdDiskSize = sortedDisks[(len(sortedDisks)-journalDiskIdx)-1].Size - jSize
+			mappedDiskCountForJournal++
+			osdCount++
+			mappedDisks[sortedDisks[idx1].DevName] = sortedDisks[(len(sortedDisks)-journalDiskIdx)-1].DevName
+			if mappedDiskCountForJournal == MAX_JOURNALS_ON_SSD || ssdDiskSize < jSize {
+				mappedDiskCountForJournal = 0
+				journalDiskIdx++
+			}
+		}
+		return mappedDisks
+	}
+
+	// If still rotational disks pending, map them among themselves
+	if osdCount < len(rotationalDisks) {
+		pendingDisksCount := len(rotationalDisks) - osdCount
+		if pendingDisksCount%2 == 0 {
+			validCount = pendingDisksCount / 2
+		} else {
+			validCount = (pendingDisksCount - 1) / 2
+		}
+		var pendingDisks []models.Disk
+		for idx := osdCount - 1; idx < len(rotationalDisks); idx++ {
+			pendingDisks = append(pendingDisks, rotationalDisks[idx])
+		}
+		sortedDisks := SortDisksOnSize(pendingDisks)
+		for idx2 := 0; idx2 < validCount; idx2++ {
+			mappedDisks[sortedDisks[idx2].DevName] = sortedDisks[(len(pendingDisks)-idx2)-1].DevName
+		}
+		return mappedDisks
+	}
+
+	return mappedDisks
 }
 
 func setClusterState(clusterId uuid.UUID, state models.ClusterState, ctxt string) {
