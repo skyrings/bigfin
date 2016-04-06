@@ -13,10 +13,12 @@ limitations under the License.
 package provider
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/skyrings/bigfin/backend/cephapi"
 	"github.com/skyrings/bigfin/backend/salt"
+	"github.com/skyrings/bigfin/bigfinmodels"
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/conf"
 	"github.com/skyrings/skyring-common/db"
@@ -24,6 +26,7 @@ import (
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/uuid"
 	"gopkg.in/mgo.v2/bson"
+	"net/http"
 )
 
 var (
@@ -113,4 +116,68 @@ func CreateDefaultECProfiles(ctxt string, mon string, clusterId uuid.UUID) (bool
 		}
 	}
 	return true, nil
+}
+
+func (s *CephProvider) GetNodeRole(req models.RpcRequest, resp *models.RpcResponse) error {
+	ctxt := req.RpcRequestContext
+
+	node_id_str := req.RpcRequestVars["node-id"]
+	node_id, err := uuid.Parse(node_id_str)
+	if err != nil {
+		logger.Get().Error(
+			"%s-Error parsing the node id: %s. error: %v",
+			ctxt,
+			node_id_str,
+			err)
+		*resp = utils.WriteResponse(
+			http.StatusBadRequest,
+			fmt.Sprintf("Error parsing the node id: %s. error: %v",
+				node_id_str,
+				err))
+		return err
+	}
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	var node models.Node
+	var slus []models.StorageLogicalUnit
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
+	coll1 := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
+	if err := coll.Find(bson.M{"nodeid": *node_id}).One(&node); err != nil {
+		logger.Get().Error(
+			"%s-Error getting the details of node: %v. error: %v",
+			ctxt,
+			*node_id,
+			err)
+		*resp = utils.WriteResponse(
+			http.StatusInternalServerError,
+			"Error getting node details")
+		return err
+	}
+	if err := coll1.Find(bson.M{"nodeid": *node_id}).All(&slus); err != nil {
+		logger.Get().Info(
+			"%s-No slus for the node: %v. error: %v",
+			ctxt,
+			*node_id,
+			err)
+	}
+	var roles []string
+	if len(slus) > 0 {
+		roles = append(roles, bigfinmodels.NODE_SERVICE_OSD)
+	}
+	if node.Options[models.Mon] == models.Yes {
+		roles = append(roles, bigfinmodels.NODE_SERVICE_MON)
+	}
+	result, err := json.Marshal(roles)
+	if err != nil {
+		logger.Get().Error(
+			"%s-Error marshalling the node roles data. error: %v",
+			ctxt,
+			err)
+		*resp = utils.WriteResponse(
+			http.StatusInternalServerError,
+			"Error marshalling node roles data")
+		return err
+	}
+	*resp = utils.WriteResponseWithData(http.StatusOK, "", result)
+	return nil
 }
