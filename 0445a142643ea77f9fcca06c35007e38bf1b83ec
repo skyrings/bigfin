@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_12f32a0c",
+        "filename": "provider/events.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 84,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-06T13:02:11Z",
+      "side": 1,
+      "message": "threshold",
+      "range": {
+        "startLine": 84,
+        "startChar": 45,
+        "endLine": 84,
+        "endChar": 52
+      },
+      "revId": "0445a142643ea77f9fcca06c35007e38bf1b83ec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_f2f7a6f3",
+        "filename": "provider/events.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 107,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-06T13:02:11Z",
+      "side": 1,
+      "message": "default is critical?",
+      "range": {
+        "startLine": 107,
+        "startChar": 2,
+        "endLine": 107,
+        "endChar": 50
+      },
+      "revId": "0445a142643ea77f9fcca06c35007e38bf1b83ec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_d2ddc271",
+        "filename": "provider/events.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-06T13:02:11Z",
+      "side": 1,
+      "message": "We can have switch case may be",
+      "range": {
+        "startLine": 102,
+        "startChar": 1,
+        "endLine": 108,
+        "endChar": 2
+      },
+      "revId": "0445a142643ea77f9fcca06c35007e38bf1b83ec",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
