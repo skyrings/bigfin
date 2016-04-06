@@ -47,12 +47,13 @@ var (
 )
 
 const (
-	RULEOFFSET  = 10000
-	MINSIZE     = 1
-	MAXSIZE     = 10
-	MON         = "MON"
-	OSD         = "OSD"
-	JOURNALSIZE = 1024
+	RULEOFFSET          = 10000
+	MINSIZE             = 1
+	MAXSIZE             = 10
+	MON                 = "MON"
+	OSD                 = "OSD"
+	JOURNALSIZE         = 5120
+	MAX_JOURNALS_ON_SSD = 6
 )
 
 func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResponse) error {
@@ -98,6 +99,11 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error creating cluster id. error: %v", err))
 		return nil
 	}
+
+	if request.JournalSize == "" {
+		request.JournalSize = fmt.Sprintf("%dMB", JOURNALSIZE)
+	}
+
 	var flag bool
 	for _, req_node := range request.Nodes {
 		if util.StringInSlice("MON", req_node.NodeType) {
@@ -137,6 +143,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 				cluster.State = models.CLUSTER_STATE_CREATING
 				cluster.AlmStatus = models.ALARM_STATUS_CLEARED
 				cluster.AutoExpand = !request.DisableAutoExpand
+				cluster.JournalSize = request.JournalSize
 				cluster.Monitoring = models.MonitoringState{
 					Plugins:    utils.GetProviderSpecificDefaultThresholdValues(),
 					StaleNodes: []string{},
@@ -461,6 +468,7 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 		return failedOSDs, succeededOSDs, err
 	}
 	t.UpdateStatus("Configuring the OSDs")
+	var osdId int
 	for _, requestNode := range request.Nodes {
 		if !util.StringInSlice(models.NODE_TYPE_OSD, requestNode.NodeType) {
 			continue
@@ -477,15 +485,10 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 			continue
 		}
 
+		devices := make(map[string]models.Disk)
 		storageNode := nodes[*uuid]
 		for _, storageDisk := range storageNode.StorageDisks {
 			for _, device := range requestNode.Devices {
-
-				devices := make(map[string]string)
-				//
-				//	Here the jounaling logic should come in
-				//	For time being, putting some dummy vals
-				//
 				if storageDisk.Name == device.Name {
 					if storageDisk.Used {
 						logger.Get().Warning(
@@ -494,56 +497,64 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 							storageDisk.Name)
 						break
 					}
-					devices[device.Name] = device.Name
+					devices[device.Name] = storageDisk
 				} else {
 					continue
 				}
-				osd := make(map[string]interface{})
-				osd["devices"] = devices
-				osd["fsid"] = clusterId.String()
-				osd["host"] = storageNode.Hostname
-				osd["journal_size"] = JOURNALSIZE
-				//osd["cluster_name"] = request.Name
-				osd["cluster_network"] = request.Networks.Cluster
-				osd["public_network"] = request.Networks.Public
-				osd["redhat_storage"] = conf.SystemConfig.Provisioners[bigfin_conf.ProviderName].RedhatStorage
-				osd["monitors"] = clusterMons
-
-				if err := installer_backend.Configure(ctxt, t, OSD, osd); err != nil {
-					failedOSDs = append(failedOSDs, fmt.Sprintf("%v:%v", osd["host"].(string), osd["devices"]))
-					logger.Get().Error("%s-Failed to add OSD: %v on Host: %v. error: %v", ctxt, osd["devices"], osd["host"].(string), err)
-					break
-				}
-				var options = make(map[string]interface{})
-				options["node"] = osd["host"].(string)
-				options["publicip4"] = storageNode.PublicIP4
-				options["clusterip4"] = storageNode.ClusterIP4
-				options["device"] = device.Name
-				//
-				//	TODO: OSD Names needs to be taken care by syc calls
-				//
-				osdName := "osd.0"
-				slu := models.StorageLogicalUnit{
-					Name:              osdName,
-					Type:              models.CEPH_OSD,
-					ClusterId:         clusterId,
-					NodeId:            storageNode.NodeId,
-					StorageDeviceId:   storageDisk.DiskId,
-					StorageProfile:    storageDisk.StorageProfile,
-					StorageDeviceSize: storageDisk.Size,
-					Options:           options,
-					Status:            models.SLU_STATUS_UNKNOWN,
-					State:             bigfinmodels.OSD_STATE_IN,
-					AlmStatus:         models.ALARM_STATUS_CLEARED,
-				}
-				if ok, err := persistOSD(slu, t, ctxt); err != nil || !ok {
-					logger.Get().Error("%s-Error persising %s for cluster: %s. error: %v", ctxt, slu.Name, request.Name, err)
-					failedOSDs = append(failedOSDs, fmt.Sprintf("%s:%s", osd["host"].(string), osd["devices"]))
-					break
-				}
-				slus[osdName] = slu
-				succeededOSDs = append(succeededOSDs, fmt.Sprintf("%v:%v", osd["host"].(string), osd["devices"]))
 			}
+		}
+
+		// Get the journal mapping for the disks
+		diskWithJournalMapped := getDiskWithJournalMapped(devices, request.JournalSize)
+		for disk, journalDisk := range diskWithJournalMapped {
+			var osdDet = make(map[string]string)
+			osdDet[disk] = journalDisk
+			osd := make(map[string]interface{})
+			osd["devices"] = osdDet
+			osd["fsid"] = clusterId.String()
+			osd["host"] = storageNode.Hostname
+			osd["journal_size"] = JOURNALSIZE
+			//osd["cluster_name"] = request.Name
+			osd["cluster_network"] = request.Networks.Cluster
+			osd["public_network"] = request.Networks.Public
+			osd["redhat_storage"] = conf.SystemConfig.Provisioners[bigfin_conf.ProviderName].RedhatStorage
+			osd["monitors"] = clusterMons
+
+			if err := installer_backend.Configure(ctxt, t, OSD, osd); err != nil {
+				failedOSDs = append(failedOSDs, fmt.Sprintf("%v:%v", osd["host"].(string), osd["devices"]))
+				logger.Get().Error("%s-Failed to add OSD: %v on Host: %v. error: %v", ctxt, osd["devices"], osd["host"].(string), err)
+				break
+			}
+			osdName := fmt.Sprintf("osd.%d", osdId)
+			osdId++
+			var options = make(map[string]interface{})
+			options["node"] = osd["host"].(string)
+			options["publicip4"] = storageNode.PublicIP4
+			options["clusterip4"] = storageNode.ClusterIP4
+			options["device"] = disk
+			//
+			//	TODO: OSD Names needs to be taken care by sync calls
+			//
+			slu := models.StorageLogicalUnit{
+				Name:              osdName,
+				Type:              models.CEPH_OSD,
+				ClusterId:         clusterId,
+				NodeId:            storageNode.NodeId,
+				StorageDeviceId:   devices[disk].DiskId,
+				StorageProfile:    devices[disk].StorageProfile,
+				StorageDeviceSize: devices[disk].Size,
+				Options:           options,
+				Status:            models.SLU_STATUS_UNKNOWN,
+				State:             bigfinmodels.OSD_STATE_IN,
+				AlmStatus:         models.ALARM_STATUS_CLEARED,
+			}
+			if ok, err := persistOSD(slu, t, ctxt); err != nil || !ok {
+				logger.Get().Error("%s-Error persising %s for cluster: %s. error: %v", ctxt, slu.Name, request.Name, err)
+				failedOSDs = append(failedOSDs, fmt.Sprintf("%s:%s", osd["host"].(string), osd["devices"]))
+				break
+			}
+			slus[osdName] = slu
+			succeededOSDs = append(succeededOSDs, fmt.Sprintf("%v:%v", osd["host"].(string), osd["devices"]))
 		}
 
 	}
@@ -569,6 +580,118 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 		}
 	}
 	return failedOSDs, succeededOSDs, nil
+}
+
+func getDiskWithJournalMapped(disks map[string]models.Disk, journalSize string) map[string]string {
+	jSize := utils.SizeFromStr(journalSize)
+
+	var mappedDisks = make(map[string]string)
+	var ssdCount, rotationalCount, osdCount int
+
+	for _, disk := range disks {
+		if disk.SSD {
+			ssdCount++
+		} else {
+			rotationalCount++
+		}
+	}
+
+	// All the disks are rotational
+	validCount := 0
+	if rotationalCount == len(disks) || ssdCount == len(disks) {
+		if rotationalCount%2 == 0 {
+			validCount = rotationalCount / 2
+		} else {
+			validCount = (rotationalCount - 1) / 2
+		}
+
+		for key, disk := range disks {
+			delete(disks, key)
+			for key1, disk1 := range disks {
+				if disk.Size > disk1.Size {
+					if disk1.Size >= jSize {
+						mappedDisks[disk.DevName] = disk1.DevName
+						delete(disks, key1)
+						osdCount++
+						break
+					}
+				} else {
+					if disk.Size >= jSize {
+						mappedDisks[disk1.DevName] = disk.DevName
+						delete(disks, key1)
+						osdCount++
+						break
+					}
+				}
+			}
+			if osdCount >= validCount {
+				break
+			}
+		}
+		return mappedDisks
+	}
+
+	// Few of the disks are SSD and few rotational
+	var ssdDisks, rotationalDisks []models.Disk
+	for _, disk := range disks {
+		if disk.SSD {
+			ssdDisks = append(ssdDisks, disk)
+		} else {
+			rotationalDisks = append(rotationalDisks, disk)
+		}
+	}
+	var count, ssdJournalCount int
+	var ssdDiskSize uint64
+	for _, disk := range rotationalDisks {
+		ssdDiskSize = ssdDisks[count].Size - jSize
+		ssdJournalCount++
+		osdCount++
+		mappedDisks[disk.DevName] = ssdDisks[count].DevName
+		if ssdJournalCount == MAX_JOURNALS_ON_SSD || ssdDiskSize < jSize {
+			ssdJournalCount = 0
+			count++
+		}
+	}
+
+	// If still rotational disks pending, map them among themselves
+	if osdCount < len(rotationalDisks) {
+		pendingRotationalDisks := len(rotationalDisks) - osdCount
+		if pendingRotationalDisks%2 == 0 {
+			validCount = pendingRotationalDisks / 2
+		} else {
+			validCount = (pendingRotationalDisks - 1) / 2
+		}
+		var pendingDisksMap = make(map[string]models.Disk)
+		for count := osdCount - 1; count < len(rotationalDisks); count++ {
+			pendingDisksMap[rotationalDisks[count].DevName] = rotationalDisks[count]
+		}
+		var osdCount1 int
+		for key, disk := range pendingDisksMap {
+			delete(pendingDisksMap, key)
+			for key1, disk1 := range pendingDisksMap {
+				if disk.Size > disk1.Size {
+					if disk1.Size >= jSize {
+						mappedDisks[disk.DevName] = disk1.DevName
+						delete(pendingDisksMap, key1)
+						osdCount1++
+						break
+					}
+				} else {
+					if disk.Size >= jSize {
+						mappedDisks[disk1.DevName] = disk.DevName
+						delete(pendingDisksMap, key1)
+						osdCount1++
+						break
+					}
+				}
+			}
+			if osdCount1 >= validCount {
+				break
+			}
+		}
+	}
+
+	return mappedDisks
 }
 
 func setClusterState(clusterId uuid.UUID, state models.ClusterState, ctxt string) {
