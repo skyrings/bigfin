@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_e60da838",
+        "filename": "provider/provider.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 156,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-04-07T09:30:59Z",
+      "side": 1,
+      "message": "It could be some other db error as well right? You can probably do it as:\n\nif err \u003d\u003d mgo.ErrNotFound {\n    logger.Get().Info(...)\n}",
+      "range": {
+        "startLine": 156,
+        "startChar": 62,
+        "endLine": 156,
+        "endChar": 73
+      },
+      "revId": "dc20fa09958a8c00b0b051b8c6114b9679872a6d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
