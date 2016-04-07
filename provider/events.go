@@ -165,6 +165,41 @@ func ceph_osd_utilization_threshold_changed(event models.Event, ctxt string) (mo
 	}
 
 	appEvent.NodeName = node.Hostname
+
+	clearedSeverity, err := common_event.ClearCorrespondingAlert(appEvent, ctxt)
+	if err != nil && appEvent.Severity == models.ALARM_STATUS_CLEARED {
+		logger.Get().Warning("%s-could not clear corresponding"+
+			" alert for: %s. Error: %v", ctxt, appEvent.EventId.String(), err)
+		return appEvent, err
+	}
+
+	if err = common_event.UpdateNodeAlarmCount(
+		appEvent,
+		clearedSeverity,
+		ctxt); err != nil {
+		logger.Get().Error("%s-Could not update Alarm state and"+
+			" count for event:%v .Error: %v", ctxt, appEvent.EventId, err)
+		return appEvent, err
+	}
+
+	if err = common_event.UpdateSluAlarmCount(
+		appEvent,
+		clearedSeverity,
+		ctxt); err != nil {
+		logger.Get().Error("%s-Could not update Alarm state and"+
+			" count for event:%v .Error: %v", ctxt, appEvent.EventId, err)
+		return appEvent, err
+	}
+
+	if err = common_event.UpdateClusterAlarmCount(
+		appEvent,
+		clearedSeverity,
+		ctxt); err != nil {
+		logger.Get().Error("%s-Could not update Alarm state and count for"+
+			" event:%v .Error: %v", ctxt, appEvent.EventId, err)
+		return appEvent, err
+	}
+
 	return appEvent, nil
 }
 
@@ -181,6 +216,22 @@ func ceph_cluster_utilization_threshold_changed(event models.Event, ctxt string)
 
 	appEvent.NotificationEntity = models.NOTIFICATION_ENTITY_CLUSTER
 
+	clearedSeverity, err := common_event.ClearCorrespondingAlert(appEvent, ctxt)
+	if err != nil && appEvent.Severity == models.ALARM_STATUS_CLEARED {
+		logger.Get().Warning("%s-could not clear corresponding"+
+			" alert for: %s. Error: %v", ctxt, appEvent.EventId.String(), err)
+		return appEvent, err
+	}
+
+	if err = common_event.UpdateClusterAlarmCount(
+		appEvent,
+		clearedSeverity,
+		ctxt); err != nil {
+		logger.Get().Error("%s-Could not update Alarm state and count for"+
+			" event:%v .Error: %v", ctxt, appEvent.EventId, err)
+		return appEvent, err
+	}
+
 	return appEvent, nil
 }
 
@@ -190,6 +241,8 @@ func ceph_storage_profile_utilization_threshold_changed(event models.Event, ctxt
 		logger.Get().Error("%s- Could not parse the threshold cross event. Error:%v", ctxt, err)
 		return appEvent, err
 	}
+
+	appEvent.NotificationEntity = models.NOTIFICATION_ENTITY_STORAGE_PROFILE
 
 	appEvent.Message = fmt.Sprintf("Storage Profile utilization for profile %s"+
 		" on %s cluster has moved to %s",
@@ -215,6 +268,23 @@ func ceph_storage_profile_utilization_threshold_changed(event models.Event, ctxt
 	affectedOSDs += fmt.Sprintf(".")
 
 	appEvent.Tags["Affected OSDs"] = affectedOSDs
+
+	clearedSeverity, err := common_event.ClearCorrespondingAlert(appEvent, ctxt)
+	if err != nil && appEvent.Severity == models.ALARM_STATUS_CLEARED {
+		logger.Get().Warning("%s-could not clear corresponding"+
+			" alert for: %s. Error: %v", ctxt, appEvent.EventId.String(), err)
+		return appEvent, err
+	}
+
+	if err = common_event.UpdateClusterAlarmCount(
+		appEvent,
+		clearedSeverity,
+		ctxt); err != nil {
+		logger.Get().Error("%s-Could not update Alarm state and count for"+
+			" event:%v .Error: %v", ctxt, appEvent.EventId, err)
+		return appEvent, err
+	}
+
 	return appEvent, nil
 }
 
@@ -231,6 +301,31 @@ func ceph_storage_utilization_threshold_changed(event models.Event, ctxt string)
 		event.Tags["ThresholdType"])
 
 	appEvent.NotificationEntity = models.NOTIFICATION_ENTITY_STORAGE
+
+	clearedSeverity, err := common_event.ClearCorrespondingAlert(appEvent, ctxt)
+	if err != nil && appEvent.Severity == models.ALARM_STATUS_CLEARED {
+		logger.Get().Warning("%s-could not clear corresponding"+
+			" alert for: %s. Error: %v", ctxt, appEvent.EventId.String(), err)
+		return appEvent, err
+	}
+
+	if err = common_event.UpdateStorageAlarmCount(
+		appEvent,
+		clearedSeverity,
+		ctxt); err != nil {
+		logger.Get().Error("%s-Could not update Alarm state and count for"+
+			" event:%v .Error: %v", ctxt, appEvent.EventId, err)
+		return appEvent, err
+	}
+
+	if err = common_event.UpdateClusterAlarmCount(
+		appEvent,
+		clearedSeverity,
+		ctxt); err != nil {
+		logger.Get().Error("%s-Could not update Alarm state and count for"+
+			" event:%v .Error: %v", ctxt, appEvent.EventId, err)
+		return appEvent, err
+	}
 
 	return appEvent, nil
 }
