@@ -37,8 +37,13 @@ func main() {
 	if err := json.Unmarshal([]byte(os.Args[1]), &config); err != nil {
 		panic(fmt.Sprintf("Reading configurations failed. error: %v", err))
 	}
-
 	conf.SystemConfig = config
+
+	var eventTypes = make(map[string]string)
+	if err := json.Unmarshal([]byte(os.Args[2]), &eventTypes); err != nil {
+		panic(fmt.Sprintf("Reading event types failed. error: %v", err))
+	}
+	provider.EventTypes = eventTypes
 
 	// Initialize the logger
 	level, err := logging.LogLevel(config.Logging.Level.String())
