@@ -29,6 +29,7 @@ import (
 var (
 	salt_backend    = salt.New()
 	cephapi_backend = cephapi.New()
+	EventTypes      map[string]string
 )
 
 type CephProvider struct{}
