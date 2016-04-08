@@ -24,6 +24,7 @@ import (
 var monitoringRoutines = []interface{}{
 	FetchOSDStats,
 	FetchClusterStats,
+	FetchRBDStats,
 	FetchObjectCount,
 	FetchPGSummary,
 }
@@ -398,6 +399,57 @@ func getOsds(clusterId uuid.UUID) (slus []models.StorageLogicalUnit, err error) 
 		return nil, fmt.Errorf("Error getting the slus for cluster: %v. error: %v", clusterId, err)
 	}
 	return slus, nil
+}
+
+func FetchRBDStats(ctxt string, cluster models.Cluster, monName string) (map[string]map[string]string, error) {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	collection := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+	var pools []models.Storage
+	if err := collection.Find(bson.M{"clusterid": cluster.ClusterId}).All(&pools); err != nil {
+		return nil, err
+	}
+	metrics := make(map[string]map[string]string)
+	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
+	var err_str string
+	currentTimeStamp := strconv.FormatInt(time.Now().Unix(), 10)
+	for _, pool := range pools {
+		metric_name := fmt.Sprintf("%s.%s.%s.%s.", monitoringConfig.CollectionName, cluster.Name, pool.Name, models.COLL_NAME_BLOCK_DEVICES)
+		statistics, statsFetchErr := salt_backend.GetRBDStats(monName, pool.Name, cluster.Name, ctxt)
+		if statsFetchErr != nil {
+			err_str = fmt.Sprintf("%s.Unable to fetch rbd stats from mon %v of pool %v, cluster %v.Error: %v",
+				err_str, monName, pool.Name, cluster.Name, statsFetchErr)
+			continue
+		}
+		rbdColl := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_BLOCK_DEVICES)
+		for rbdName, rbdStat := range statistics {
+			metric_name = fmt.Sprintf("%s%s.", metric_name, rbdName)
+			percent_used := float64(rbdStat["used_size"]*100) / float64(rbdStat["provisioned_size"])
+			if err := rbdColl.Update(bson.M{"clusterid": cluster.ClusterId, "name": rbdName, "storageid": pool.StorageId}, bson.M{"$set": bson.M{"usage": models.Utilization{Used: rbdStat["used_size"], Total: rbdStat["provisioned_size"], PercentUsed: percent_used}}}); err != nil {
+				err_str = fmt.Sprintf("%s.Unable to update rbd stats of rbd %v from mon %v of pool %v, cluster %v.Error: %v",
+					err_str, rbdName, monName, pool.Name, cluster.Name, err)
+			}
+
+			event, isRaiseEvent, err := util.AnalyseThresholdBreach(ctxt, skyring_monitoring.BLOCK_DEVICE_UTILIZATION, rbdName, percent_used, cluster)
+			if err != nil {
+				logger.Get().Error("%s - Failed to analyse threshold breach for utilization of rbd %v of pool %v from cluster %v.Error %v", ctxt, rbdName, pool.Name, cluster.Name, err)
+			}
+			if isRaiseEvent {
+				if err, _ := HandleEvent(event, ctxt); err != nil {
+					logger.Get().Error("%s - Threshold: %v.Error %v", ctxt, event, err)
+				}
+			}
+
+			metrics[metric_name+skyring_monitoring.USED_SPACE] = map[string]string{currentTimeStamp: fmt.Sprintf("%v", rbdStat["used_size"])}
+			metrics[metric_name+skyring_monitoring.TOTAL_SPACE] = map[string]string{currentTimeStamp: fmt.Sprintf("%v", rbdStat["provisioned_size"])}
+			metrics[metric_name+skyring_monitoring.PERCENT_USED] = map[string]string{currentTimeStamp: fmt.Sprintf("%v", percent_used)}
+		}
+	}
+	if err_str == "" {
+		return metrics, nil
+	} else {
+		return metrics, fmt.Errorf("%v", err_str)
+	}
 }
 
 func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map[string]map[string]string, error) {

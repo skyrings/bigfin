@@ -131,6 +131,7 @@ type Backend interface {
 	GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error)
 	GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string) ([]CephClusterNode, error)
 	GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt string) (MonNodeStatus, error)
+	GetRBDStats(mon string, poolName string, clusterName string, ctxt string) (map[string]map[string]int64, error)
 }
 
 type OSDDetails struct {
