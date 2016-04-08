@@ -139,6 +139,7 @@ type Backend interface {
 	ParticipatesInCluster(node string, ctxt string) bool
 	GetPartDeviceDetails(node string, partPath string, ctxt string) (DeviceDetail, error)
 	GetServiceCount(hostname string, ctxt string) (map[string]int, error)
+	GetRBDStats(mon string, poolName string, clusterName string, ctxt string) ([]RBDStats, error)
 }
 
 type OSDDetails struct {
@@ -153,6 +154,12 @@ type PgSummary struct {
 	ByOSD  map[string]map[string]uint64 `json:"by_osd"`
 	ByPool map[string]map[string]uint64 `json:"by_pool"`
 	All    map[string]uint64            `json:"all"`
+}
+
+type RBDStats struct {
+	Name  string `json:"name"`
+	Used  uint64 `json:"used"`
+	Total uint64 `json:"total"`
 }
 
 type CephOSD struct {

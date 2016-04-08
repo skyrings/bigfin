@@ -78,6 +78,15 @@ def getClusterStats(clusterName):
         return err
 
 
+def getRBDStats(pool_name, cluster_name):
+    cmd = ["rbd", "du", "--cluster", cluster_name, "-p", pool_name, "--format=json"]
+    rc, out, err = utils.execCmd(cmd)
+    if not rc:
+        return out
+    else:
+        return err
+
+
 def getObjectCount(clusterName):
     cmd = ["rados", "df", "--cluster", clusterName, "--format", "json"]
     rc, out, err = utils.execCmd(cmd)
