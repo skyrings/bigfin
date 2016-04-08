@@ -139,6 +139,7 @@ type Backend interface {
 	ParticipatesInCluster(node string, ctxt string) bool
 	GetPartDeviceDetails(node string, partPath string, ctxt string) (DeviceDetail, error)
 	GetServiceCount(hostname string, ctxt string) (map[string]int, error)
+	GetRBDStats(mon string, poolName string, clusterName string, ctxt string) (map[string]map[string]int64, error)
 }
 
 type OSDDetails struct {

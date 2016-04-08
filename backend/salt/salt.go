@@ -37,6 +37,7 @@ var funcNames = [...]string{
 	"ParticipatesInCluster",
 	"GetPartDeviceDetails",
 	"GetServiceCount",
+	"GetRBDStats",
 }
 
 var pyFuncs map[string]*gopy.PyFunction
@@ -167,6 +168,18 @@ func (s Salt) GetClusterStats(mon string, clusterName string, ctxt string) (stat
 		err = loc_err
 	}
 
+	return
+}
+
+func (s Salt) GetRBDStats(mon string, poolName string, clusterName string, ctxt string) (stats map[string]map[string]int64, err error) {
+	stats = make(map[string]map[string]int64)
+	mutex.Lock()
+	defer mutex.Unlock()
+	if pyobj, loc_err := pyFuncs["GetRBDStats"].Call(mon, poolName, clusterName, ctxt); loc_err == nil {
+		err = gopy.Convert(pyobj, &stats)
+	} else {
+		err = loc_err
+	}
 	return
 }
 
