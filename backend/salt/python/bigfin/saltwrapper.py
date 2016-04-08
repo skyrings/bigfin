@@ -541,6 +541,25 @@ def GetClusterStatus(monitor, cluster_name, ctxt=""):
     raise Exception("ceph cluster status failed. error=%s" % out)
 
 
+def GetRBDStats(monitor, pool_name, cluster_name, ctxt=""):
+    ret_val = {}
+    out = local.cmd(monitor, 'ceph.getRBDStats', [pool_name, cluster_name])
+    if not out[monitor]:
+        log.error("%s- failed to get rbd stats from pool %s of cluster %s. error=%s" % (ctxt, pool_name, cluster_name, out))
+        raise Exception("failed to get rbd stats from pool %s of cluster %s. error=%s" % (ctxt, pool_name, cluster_name, out))
+    try:
+        stats = ast.literal_eval(out[monitor])
+        for rbd in stats["images"]:
+            size_dict = {}
+            size_dict["provisioned_size"] = rbd["provisioned_size"]
+            size_dict["used_size"] = rbd["used_size"]
+            ret_val[rbd["name"]] = size_dict
+        return ret_val
+    except SyntaxError as err:
+        log.error("%s-Failed to get RBD utilization details from mon %s for pool %s of cluster %s, error=%s" % (ctxt, monitor, pool_name, cluster_name, out[monitor]))
+        raise Exception("Failed to get RBD utilization details from mon %s for pool %s of cluster %s, error=%s" % (monitor, pool_name, cluster_name, out[monitor]))
+
+
 def GetClusterStats(monitor, cluster_name, ctxt=""):
     ret_val = {}
     out = local.cmd(monitor, "ceph.getClusterStats", [cluster_name])

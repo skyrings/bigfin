@@ -90,6 +90,10 @@ func (c Installer) GetClusterStats(mon string, clusterName string, ctxt string) 
 	return backend.ClusterUtilization{}, nil
 }
 
+func (c Installer) GetRBDStats(mon string, poolName string, clusterName string, ctxt string) (map[string]map[string]int64, error) {
+	return map[string]map[string]int64{}, nil
+}
+
 func (c Installer) GetPools(mon string, clusterId uuid.UUID, ctxt string) ([]backend.CephPool, error) {
 	return []backend.CephPool{}, nil
 }
