@@ -165,6 +165,10 @@ func (c CephApi) GetClusterStats(mon string, clusterName string, ctxt string) (b
 	return backend.ClusterUtilization{}, nil
 }
 
+func (c CephApi) GetRBDStats(mon string, poolName string, clusterName string, ctxt string) ([]backend.RBDStats, error) {
+	return []backend.RBDStats{}, nil
+}
+
 func New() backend.Backend {
 	api := new(CephApi)
 	api.LoadRoutes()

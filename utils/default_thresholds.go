@@ -39,5 +39,13 @@ func GetProviderSpecificDefaultThresholdValues() (plugins []monitoring.Plugin) {
 				{Category: monitoring.THRESHOLD, Type: skyring_monitoring.WARNING, Value: "65"},
 			},
 		},
+		{
+			Name:   skyring_monitoring.BLOCK_DEVICE_UTILIZATION,
+			Enable: true,
+			Configs: []monitoring.PluginConfig{
+				{Category: monitoring.THRESHOLD, Type: skyring_monitoring.CRITICAL, Value: "85"},
+				{Category: monitoring.THRESHOLD, Type: skyring_monitoring.WARNING, Value: "65"},
+			},
+		},
 	}
 }
