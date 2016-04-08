@@ -552,6 +552,27 @@ def ParticipatesInCluster(node, ctxt=""):
     return False
 
 
+def GetRBDStats(monitor, pool_name, cluster_name, ctxt=""):
+    ret_val = []
+    out = local.cmd(monitor, 'ceph.getRBDStats', [pool_name, cluster_name])
+    if not out[monitor]:
+        log.error("%s- failed to get rbd stats from pool %s of cluster %s. error=%s" % (ctxt, pool_name, cluster_name, out))
+        raise Exception("failed to get rbd stats from pool %s of cluster %s. error=%s" % (ctxt, pool_name, cluster_name, out))
+    try:
+        stats = ast.literal_eval(out[monitor])
+        if stats.has_key('images'):
+            for rbd in stats["images"]:
+                stat = {}
+                stat["Name"] = rbd["name"]
+                stat["Used"] = rbd["used_size"]
+                stat["Total"] = rbd["provisioned_size"]
+                ret_val.append(stat)
+        return ret_val
+    except SyntaxError as err:
+        log.error("%s-Failed to get RBD utilization details from mon %s for pool %s of cluster %s, error=%s" % (ctxt, monitor, pool_name, cluster_name, out[monitor]))
+        raise Exception("Failed to get RBD utilization details from mon %s for pool %s of cluster %s, error=%s" % (monitor, pool_name, cluster_name, out[monitor]))
+
+
 def GetClusterStats(monitor, cluster_name, ctxt=""):
     ret_val = {}
     out = local.cmd(monitor, "ceph.getClusterStats", [cluster_name])
