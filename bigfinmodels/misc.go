@@ -30,9 +30,17 @@ const (
 
 	NODE_SERVICE_MON = "mon"
 	NODE_SERVICE_OSD = "osd"
+
+	MONITOR_AVAILABILTY = "monitor_availability"
+	OSD_AVAILABILITY    = "osd_availability"
 )
 
 type CrushInfo struct {
 	RuleSetId   int
 	CrushNodeId int
+}
+
+var NOTIFICATIONS_SUPPORTED = []string{
+	MONITOR_AVAILABILTY,
+	OSD_AVAILABILITY,
 }
