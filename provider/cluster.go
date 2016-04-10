@@ -133,7 +133,20 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 					Plugins:    utils.GetProviderSpecificDefaultThresholdValues(),
 					StaleNodes: []string{},
 				}
-
+				var bigfin_notifications []models.NotificationSubscription
+				for _, notification := range bigfinmodels.NOTIFICATIONS_SUPPORTED {
+					bigfin_notifications = append(bigfin_notifications, models.NotificationSubscription{
+						Name:    notification,
+						Enabled: true,
+					})
+				}
+				for _, notification := range models.NOTIFICATIONS_SUPPORTED {
+					bigfin_notifications = append(bigfin_notifications, models.NotificationSubscription{
+						Name:    notification,
+						Enabled: true,
+					})
+				}
+				cluster.SubscribedNotifications = bigfin_notifications
 				cluster.MonitoringInterval = request.MonitoringInterval
 				if cluster.MonitoringInterval == 0 {
 					cluster.MonitoringInterval = monitoring.DefaultClusterMonitoringInterval
