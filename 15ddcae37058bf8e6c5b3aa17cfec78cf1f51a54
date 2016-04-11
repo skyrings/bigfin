@@ -22,6 +22,30 @@
       "revId": "15ddcae37058bf8e6c5b3aa17cfec78cf1f51a54",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_ffff5f32",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-04-11T10:49:45Z",
+      "side": 1,
+      "message": "They are 2 disjoint lists one that is common like cluster availability, etc...\n\nand the other is(here) ceph specific like monitor availability, etc...\n\nAnd we are only maintaining it as lists there so we iterate over them and store as map so that we can perform enable/disable kind of actions on each of these notifications.",
+      "parentUuid": "baa041b7_9f04d37e",
+      "range": {
+        "startLine": 137,
+        "startChar": 4,
+        "endLine": 148,
+        "endChar": 5
+      },
+      "revId": "15ddcae37058bf8e6c5b3aa17cfec78cf1f51a54",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
