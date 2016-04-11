@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_9f04d37e",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 148,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-11T10:32:34Z",
+      "side": 1,
+      "message": "I didnt get why loop through two lists here. Shouldnt this be defined a system level?\n\nAlso if you tend to override the system value with provider specific value, it would better to have a map[string]models.NotificationSubscription so it updates the same key and not added to the list at last.",
+      "range": {
+        "startLine": 137,
+        "startChar": 4,
+        "endLine": 148,
+        "endChar": 5
+      },
+      "revId": "15ddcae37058bf8e6c5b3aa17cfec78cf1f51a54",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
