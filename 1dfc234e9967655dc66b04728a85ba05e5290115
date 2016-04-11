@@ -1,0 +1,113 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_65b4e0f1",
+        "filename": "backend/installer/installer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-04-11T15:41:04Z",
+      "side": 1,
+      "message": "This file is removed. Might have to rebase",
+      "revId": "1dfc234e9967655dc66b04728a85ba05e5290115",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_c5c5ec5b",
+        "filename": "provider/sync.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-04-11T15:41:04Z",
+      "side": 1,
+      "message": "rename appropriately",
+      "range": {
+        "startLine": 317,
+        "startChar": 1,
+        "endLine": 317,
+        "endChar": 6
+      },
+      "revId": "1dfc234e9967655dc66b04728a85ba05e5290115",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_2596d84c",
+        "filename": "provider/sync.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 339,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-04-11T15:41:04Z",
+      "side": 1,
+      "message": "We need to look at how we can identify an slu which doesnot have fsid and osd id populated in DB. This can happen because, ceph-installer doesn\u0027t return osdid/fsid after creation. We need a way map those",
+      "range": {
+        "startLine": 339,
+        "startChar": 10,
+        "endLine": 339,
+        "endChar": 52
+      },
+      "revId": "1dfc234e9967655dc66b04728a85ba05e5290115",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_a588a823",
+        "filename": "provider/sync.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 353,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-04-11T15:41:04Z",
+      "side": 1,
+      "message": "what we are passing here?",
+      "range": {
+        "startLine": 353,
+        "startChar": 5,
+        "endLine": 353,
+        "endChar": 21
+      },
+      "revId": "1dfc234e9967655dc66b04728a85ba05e5290115",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_0593d45c",
+        "filename": "provider/sync.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 393,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-04-11T15:41:04Z",
+      "side": 1,
+      "message": "why to generate the device uuid? this should be taken from nodes table right?",
+      "range": {
+        "startLine": 388,
+        "startChar": 3,
+        "endLine": 393,
+        "endChar": 9
+      },
+      "revId": "1dfc234e9967655dc66b04728a85ba05e5290115",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
