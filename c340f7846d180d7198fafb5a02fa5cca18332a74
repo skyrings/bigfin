@@ -22,6 +22,30 @@
       "revId": "c340f7846d180d7198fafb5a02fa5cca18332a74",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_9f7973ff",
+        "filename": "backend/salt/python/bigfin/saltwrapper.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 558,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-04-11T10:40:48Z",
+      "side": 1,
+      "message": "It will come if out[monitor] is not a dictionary I think it needs to be handled just to be safe from the env issue that we used to see before I am not seeing the issue anymore but I felt it safe to add it here just to avoid the same/similar issues",
+      "parentUuid": "baa041b7_bfef97af",
+      "range": {
+        "startLine": 558,
+        "startChar": 11,
+        "endLine": 558,
+        "endChar": 22
+      },
+      "revId": "c340f7846d180d7198fafb5a02fa5cca18332a74",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
