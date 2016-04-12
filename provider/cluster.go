@@ -87,15 +87,18 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 		return nil
 	}
 	var mons []backend.Mon
+
+	nodeRoleMapFromRequest := make(map[uuid.UUID][]string)
 	for _, req_node := range request.Nodes {
+		nodeid, _ := uuid.Parse(req_node.NodeId)
 		if util.StringInSlice("MON", req_node.NodeType) {
 			var mon backend.Mon
-			nodeid, _ := uuid.Parse(req_node.NodeId)
 			mon.Node = nodes[*nodeid].Hostname
 			mon.PublicIP4 = node_ips[*nodeid]["public"]
 			mon.ClusterIP4 = node_ips[*nodeid]["cluster"]
 			mons = append(mons, mon)
 		}
+		nodeRoleMapFromRequest[*nodeid] = req_node.NodeType
 	}
 	if len(mons) == 0 {
 		logger.Get().Error(fmt.Sprintf("%s-No mons mentioned in the node list while create cluster %s", ctxt, request.Name))
@@ -181,7 +184,9 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 							bson.M{"nodeid": node.NodeId},
 							bson.M{"$set": bson.M{
 								"clusterip4": node_ips[node.NodeId]["cluster"],
-								"publicip4":  node_ips[node.NodeId]["public"]}}); err != nil {
+								"publicip4":  node_ips[node.NodeId]["public"],
+								"roles":      nodeRoleMapFromRequest[node.NodeId],
+							}}); err != nil {
 							logger.Get().Error(
 								"%s-Error updating the details for node: %s. error: %v",
 								ctxt,
