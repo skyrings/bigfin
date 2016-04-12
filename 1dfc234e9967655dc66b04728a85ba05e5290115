@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_16a1c894",
+        "filename": "backend/installer/installer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-12T08:52:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_65b4e0f1",
+      "revId": "1dfc234e9967655dc66b04728a85ba05e5290115",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_c5c5ec5b",
         "filename": "provider/sync.go",
         "patchSetId": 1
@@ -30,6 +48,30 @@
       "writtenOn": "2016-04-11T15:41:04Z",
       "side": 1,
       "message": "rename appropriately",
+      "range": {
+        "startLine": 317,
+        "startChar": 1,
+        "endLine": 317,
+        "endChar": 6
+      },
+      "revId": "1dfc234e9967655dc66b04728a85ba05e5290115",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_f6ad4489",
+        "filename": "provider/sync.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 317,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-12T08:52:57Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_c5c5ec5b",
       "range": {
         "startLine": 317,
         "startChar": 1,
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_76b014de",
+        "filename": "provider/sync.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 339,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-12T08:52:57Z",
+      "side": 1,
+      "message": "As part of https://review.gerrithub.io/#/c/271675/, we are setting a name for the OSD while creation and lcuster fsid is created by us and passed.\n\nDo you still feel it could be un-safe doing this?",
+      "parentUuid": "baa041b7_2596d84c",
+      "range": {
+        "startLine": 339,
+        "startChar": 10,
+        "endLine": 339,
+        "endChar": 52
+      },
+      "revId": "1dfc234e9967655dc66b04728a85ba05e5290115",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_a588a823",
         "filename": "provider/sync.go",
         "patchSetId": 1
@@ -88,6 +154,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_96bb98c4",
+        "filename": "provider/sync.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 353,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-12T08:52:57Z",
+      "side": 1,
+      "message": "ignore case I remember",
+      "parentUuid": "baa041b7_a588a823",
+      "range": {
+        "startLine": 353,
+        "startChar": 5,
+        "endLine": 353,
+        "endChar": 21
+      },
+      "revId": "1dfc234e9967655dc66b04728a85ba05e5290115",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_0593d45c",
         "filename": "provider/sync.go",
         "patchSetId": 1
@@ -99,6 +189,30 @@
       "writtenOn": "2016-04-11T15:41:04Z",
       "side": 1,
       "message": "why to generate the device uuid? this should be taken from nodes table right?",
+      "range": {
+        "startLine": 388,
+        "startChar": 3,
+        "endLine": 393,
+        "endChar": 9
+      },
+      "revId": "1dfc234e9967655dc66b04728a85ba05e5290115",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_16c8a854",
+        "filename": "provider/sync.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 393,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-12T08:52:57Z",
+      "side": 1,
+      "message": "Will check this and change accordingly.",
+      "parentUuid": "baa041b7_0593d45c",
       "range": {
         "startLine": 388,
         "startChar": 3,
