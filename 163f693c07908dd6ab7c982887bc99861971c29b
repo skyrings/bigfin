@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_96303858",
+        "filename": "provider/cluster.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 609,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-12T09:01:43Z",
+      "side": 1,
+      "message": "So logic is like, when we pick a disk from list for mapping we remove from map so that its not considered in next loop. So its like reducing size map.",
+      "parentUuid": "baa041b7_e5beb0fe",
+      "range": {
+        "startLine": 609,
+        "startChar": 3,
+        "endLine": 609,
+        "endChar": 21
+      },
+      "revId": "163f693c07908dd6ab7c982887bc99861971c29b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_45cf9cb0",
         "filename": "provider/cluster.go",
         "patchSetId": 4
@@ -36,6 +60,30 @@
       "writtenOn": "2016-04-11T15:16:35Z",
       "side": 1,
       "message": "shall we take the disks with lowest sizes as journals rather than comparing it with next one alone?\nif you have 10 disks, 5 disks of lowest size should be taken as journals. Can you please explain the logic here?",
+      "range": {
+        "startLine": 611,
+        "startChar": 4,
+        "endLine": 611,
+        "endChar": 31
+      },
+      "revId": "163f693c07908dd6ab7c982887bc99861971c29b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_36404ca5",
+        "filename": "provider/cluster.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 611,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-12T09:01:43Z",
+      "side": 1,
+      "message": "You are correct. so the first disk it finds whose size is lesser than the selected disk, would be mapped as journal.\n\nMay be we can keep looping till the end next time and assign the least sized disk as journal here.\n\nWill give a try :)",
+      "parentUuid": "baa041b7_45cf9cb0",
       "range": {
         "startLine": 611,
         "startChar": 4,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_f649c4d1",
+        "filename": "provider/cluster.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 652,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-12T09:01:43Z",
+      "side": 1,
+      "message": "Yes, its should be added at line-646",
+      "parentUuid": "baa041b7_e56c709e",
+      "range": {
+        "startLine": 652,
+        "startChar": 3,
+        "endLine": 652,
+        "endChar": 9
+      },
+      "revId": "163f693c07908dd6ab7c982887bc99861971c29b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_650f40e2",
         "filename": "provider/cluster.go",
         "patchSetId": 4
@@ -94,6 +166,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_d646c0be",
+        "filename": "provider/cluster.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 657,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-12T09:01:43Z",
+      "side": 1,
+      "message": "I had thought of this already. Will add logic for the same.",
+      "parentUuid": "baa041b7_650f40e2",
+      "range": {
+        "startLine": 657,
+        "startChar": 1,
+        "endLine": 657,
+        "endChar": 37
+      },
+      "revId": "163f693c07908dd6ab7c982887bc99861971c29b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_853c8494",
         "filename": "provider/cluster.go",
         "patchSetId": 4
@@ -105,6 +201,30 @@
       "writtenOn": "2016-04-11T15:16:35Z",
       "side": 1,
       "message": "what if you have all SSDs?",
+      "range": {
+        "startLine": 695,
+        "startChar": 0,
+        "endLine": 695,
+        "endChar": 1
+      },
+      "revId": "163f693c07908dd6ab7c982887bc99861971c29b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_961718a3",
+        "filename": "provider/cluster.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 695,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-12T09:01:43Z",
+      "side": 1,
+      "message": "Taken care as part of line-601",
+      "parentUuid": "baa041b7_853c8494",
       "range": {
         "startLine": 695,
         "startChar": 0,
