@@ -46,6 +46,30 @@
       "revId": "c340f7846d180d7198fafb5a02fa5cca18332a74",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_eb9321f9",
+        "filename": "backend/salt/python/bigfin/saltwrapper.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 558,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-12T06:36:19Z",
+      "side": 1,
+      "message": "Ok. Can you add a comment for the same?\nAlso can you make it pep8 compliant?",
+      "parentUuid": "baa041b7_9f7973ff",
+      "range": {
+        "startLine": 558,
+        "startChar": 11,
+        "endLine": 558,
+        "endChar": 22
+      },
+      "revId": "c340f7846d180d7198fafb5a02fa5cca18332a74",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
