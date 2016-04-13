@@ -108,7 +108,7 @@ func (c *CephApi) LoadRoutes() {
 		{
 			Name:    "GetClusterConfig",
 			Pattern: "cluster/{cluster-fsid}/sync_object/config?format=json",
-			Method:  "POST",
+			Method:  "GET",
 			Version: 2,
 		},
 		{
