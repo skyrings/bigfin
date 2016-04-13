@@ -140,6 +140,7 @@ type Backend interface {
 	GetPartDeviceDetails(node string, partPath string, ctxt string) (DeviceDetail, error)
 	GetServiceCount(hostname string, ctxt string) (map[string]int, error)
 	GetRBDStats(mon string, poolName string, clusterName string, ctxt string) ([]RBDStats, error)
+	StartCalamari(node string, ctxt string) error
 }
 
 type OSDDetails struct {

@@ -814,3 +814,7 @@ func (c CephApi) GetPartDeviceDetails(node string, partPath string, ctxt string)
 func (c CephApi) GetServiceCount(hostname string, ctxt string) (service_details map[string]int, err error) {
 	return service_details, nil
 }
+
+func (c CephApi) StartCalamari(node string, ctxt string) error {
+	return nil
+}

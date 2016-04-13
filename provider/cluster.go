@@ -451,6 +451,14 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 			return err
 		}
 		logger.Get().Info(fmt.Sprintf("%s-Added mon node: %s", ctxt, mon))
+		if err := salt_backend.StartCalamari(mon, ctxt); err != nil {
+			logger.Get().Warning(
+				"%s-Could not start calamari on mon: %s. error: %v",
+				ctxt,
+				mon,
+				err)
+			return err
+		}
 	}
 
 	var osdPresent bool
