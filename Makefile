@@ -78,10 +78,12 @@ saltinstall:
 		[ -d /srv/salt/_modules ] || mkdir -p /srv/salt/_modules; \
 		cp backend/salt/sls/*.* /srv/salt; \
 		cp backend/salt/python/bigfin/utils.py /srv/salt/_modules; \
+		cp provider/ceph.evt /etc/skyring/providers.d; \
 	else \
 		echo "ERROR: unable to install salt files. Install them manually by"; \
 		echo "    sudo cp backend/salt/sls/*.* /srv/salt"; \
 		echo "    sudo cp backend/salt/python/bigfin/utils.py /srv/salt/_modules"; \
+		echo "    sudo cp provider/ceph.evt /etc/skyring/providers.d"; \
 	fi
 
 install: build saltinstall
