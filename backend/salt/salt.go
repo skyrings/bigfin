@@ -278,3 +278,14 @@ func (c Salt) GetPartDeviceDetails(node string, partPath string, ctxt string) (d
 	}
 	return
 }
+
+func (c Salt) StartCalamari(node string, ctxt string) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+	pyobj, err := pyFuncs["StartCalamari"].Call(node, ctxt)
+	if err == nil && pyobj != nil {
+		return nil
+	}
+
+	return err
+}
