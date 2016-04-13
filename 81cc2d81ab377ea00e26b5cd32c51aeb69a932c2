@@ -1,0 +1,44 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_9cef36b0",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 371,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-04-13T05:07:21Z",
+      "side": 1,
+      "message": "Duplicate event the actual event is raised below in line no. 373",
+      "range": {
+        "startLine": 369,
+        "startChar": 3,
+        "endLine": 371,
+        "endChar": 4
+      },
+      "revId": "81cc2d81ab377ea00e26b5cd32c51aeb69a932c2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_7c2b52ec",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 377,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-04-13T05:07:21Z",
+      "side": 1,
+      "message": "We need to raise event for all osds immaterial of being correlated or not so no delete line",
+      "revId": "81cc2d81ab377ea00e26b5cd32c51aeb69a932c2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
