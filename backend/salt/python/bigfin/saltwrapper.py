@@ -680,3 +680,13 @@ def GetServiceCount(node, ctxt=""):
             if val.startswith('/usr/bin/ceph-mon'):
                 service_count['MonServiceCount'] += 1
     return service_count
+
+
+def StartCalamari(node, ctxt=""):
+    out = run_state(local, [node], 'start_ceph_calamari', expr_form='list')
+    if out:
+        log.error("%s-start_ceph_calamari failed on %s. error=%s" %
+                  (ctxt, node, out))
+        raise Exception("start_cep_calamari failed on %s. error=%s" %
+                        (node, out))
+    return True

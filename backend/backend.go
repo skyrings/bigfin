@@ -139,6 +139,7 @@ type Backend interface {
 	ParticipatesInCluster(node string, ctxt string) bool
 	GetPartDeviceDetails(node string, partPath string, ctxt string) (DeviceDetail, error)
 	GetServiceCount(hostname string, ctxt string) (map[string]int, error)
+	StartCalamari(node string, ctxt string) error
 }
 
 type OSDDetails struct {
