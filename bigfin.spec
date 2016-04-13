@@ -46,6 +46,7 @@ install -Dm 0644 conf/ceph.dat.sample $RPM_BUILD_ROOT/%{_sysconfdir}/skyring/pro
 chmod -x $RPM_BUILD_ROOT/srv/salt/add_ceph_mon.sls
 chmod -x $RPM_BUILD_ROOT/srv/salt/prepare_ceph_osd.sls
 chmod -x $RPM_BUILD_ROOT/srv/salt/start_ceph_mon.sls
+chmod -x $RPM_BUILD_ROOT/srv/salt/start_ceph_calamari.sls
 chmod -x $RPM_BUILD_ROOT/%{python2_sitelib}/bigfin/__init__.py
 chmod -x $RPM_BUILD_ROOT/%{python2_sitelib}/bigfin/saltwrapper.py
 chmod -x $RPM_BUILD_ROOT/%{python2_sitelib}/bigfin/utils.py

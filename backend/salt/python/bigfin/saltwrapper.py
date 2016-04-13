@@ -663,3 +663,13 @@ def GetPartDeviceDetails(node, partPath, ctxt=""):
             dev_info["Size"] = long(dev["SIZE"])
 
     return dev_info
+
+
+def StartCalamari(node, ctxt=""):
+    out = run_state(local, [node], 'start_ceph_calamari', expr_form='list')
+    if out:
+        log.error("%s-start_ceph_calamari failed on %s. error=%s" %
+                  (ctxt, node, out))
+        raise Exception("start_cep_calamari failed on %s. error=%s" %
+                        (node, out))
+    return True

@@ -136,6 +136,7 @@ type Backend interface {
 	GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt string) (MonNodeStatus, error)
 	ParticipatesInCluster(node string, ctxt string) bool
 	GetPartDeviceDetails(node string, partPath string, ctxt string) (DeviceDetail, error)
+	StartCalamari(node string, ctxt string) error
 }
 
 type OSDDetails struct {

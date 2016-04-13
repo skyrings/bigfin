@@ -740,3 +740,7 @@ func (c CephApi) ParticipatesInCluster(node string, ctxt string) bool {
 func (c CephApi) GetPartDeviceDetails(node string, partPath string, ctxt string) (backend.DeviceDetail, error) {
 	return backend.DeviceDetail{}, nil
 }
+
+func (c CephApi) StartCalamari(node string, ctxt string) error {
+	return nil
+}
