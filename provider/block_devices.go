@@ -81,7 +81,7 @@ func (s *CephProvider) CreateBlockDevice(req models.RpcRequest, resp *models.Rpc
 				}
 
 				t.UpdateStatus("Getting a mon from cluster")
-				monnode, err := GetRandomMon(*cluster_id)
+				monnode, err := GetCalamariMonNode(*cluster_id, ctxt)
 				if err != nil {
 					utils.FailTask(fmt.Sprintf("Error getting mon node details for cluster: %v", *cluster_id), fmt.Errorf("%s - %v", ctxt, err), t)
 					return
@@ -217,7 +217,7 @@ func (s *CephProvider) DeleteBlockDevice(req models.RpcRequest, resp *models.Rpc
 					return
 				}
 				t.UpdateStatus("Getting a mon from cluster")
-				monnode, err := GetRandomMon(*cluster_id)
+				monnode, err := GetCalamariMonNode(*cluster_id, ctxt)
 				if err != nil {
 					utils.FailTask(fmt.Sprintf("Error getting mon node details for cluster: %v", *cluster_id), fmt.Errorf("%s - %v", ctxt, err), t)
 					return
@@ -324,7 +324,7 @@ func (s *CephProvider) ResizeBlockDevice(req models.RpcRequest, resp *models.Rpc
 					return
 				}
 				t.UpdateStatus("Getting a mon from cluster")
-				monnode, err := GetRandomMon(*cluster_id)
+				monnode, err := GetCalamariMonNode(*cluster_id, ctxt)
 				if err != nil {
 					utils.FailTask(fmt.Sprintf("Error getting mon node details for cluster: %v", *cluster_id), fmt.Errorf("%s - %v", ctxt, err), t)
 					return
