@@ -16,6 +16,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/skyrings/bigfin/backend/cephapi"
+	"github.com/skyrings/bigfin/backend/cephapi/handler"
+	cephapi_models "github.com/skyrings/bigfin/backend/cephapi/models"
 	"github.com/skyrings/bigfin/backend/salt"
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/conf"
@@ -25,7 +27,9 @@ import (
 	"github.com/skyrings/skyring-common/provisioner"
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/uuid"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
+	"time"
 
 	bigfin_conf "github.com/skyrings/bigfin/conf"
 )
@@ -74,6 +78,79 @@ func GetRandomMon(clusterId uuid.UUID) (*models.Node, error) {
 		return nil, err
 	}
 	return &monnode, nil
+}
+
+func GetCalamariMonNode(clusterId uuid.UUID, ctxt string) (*models.Node, error) {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	var calamariMonNode models.Node
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
+	err := coll.
+		Find(bson.M{
+		"clusterid":        clusterId,
+		"options.mon":      models.Yes,
+		"options.calamari": models.Yes}).
+		One(&calamariMonNode)
+	if err == nil {
+		// Check availability of calamari
+		dummyUrl := fmt.Sprintf(
+			"https://%s:%d/%s/v%d/auth/login",
+			calamariMonNode.Hostname,
+			cephapi_models.CEPH_API_PORT,
+			cephapi_models.CEPH_API_DEFAULT_PREFIX,
+			cephapi_models.CEPH_API_DEFAULT_VERSION)
+		_, err := handler.HttpGet(calamariMonNode.Hostname, dummyUrl)
+		if err != nil {
+			// Not a valid calamari. start another one
+			if err := coll.Update(
+				bson.M{"clusterid": clusterId, "hostname": calamariMonNode.Hostname},
+				bson.M{"$set": bson.M{"options.calamari": "N"}}); err != nil {
+				return nil, fmt.Errorf("Error disabling invalid calamari node: %s. error: %v", calamariMonNode.Hostname, err)
+			}
+		} else {
+			return &calamariMonNode, nil
+		}
+	} else {
+		if err == mgo.ErrNotFound {
+			var monNodes models.Nodes
+			if err := coll.
+				Find(bson.M{
+				"clusterid":        clusterId,
+				"options.mon":      models.Yes,
+				"options.calamari": "N"}).
+				All(&monNodes); err != nil {
+				return nil, err
+			}
+
+			for _, monNode := range monNodes {
+				if err := salt_backend.StartCalamari(monNode.Hostname, ctxt); err != nil {
+					logger.Get().Warning(
+						"%s-Could not start calamari on mon: %s. error: %v",
+						ctxt,
+						monNode.Hostname,
+						err)
+					continue
+				}
+				// Wait for calamari to start serving
+				time.Sleep(60 * time.Second)
+				if err := coll.Update(
+					bson.M{"hostname": monNode.Hostname},
+					bson.M{"$set": bson.M{
+						"options.calamari": "Y"}}); err != nil {
+					logger.Get().Warning(
+						"%s-Failed to start calamari on new mon: %s",
+						ctxt,
+						monNode.Hostname)
+					continue
+				}
+				return &monNode, nil
+			}
+		} else {
+			return nil, err
+		}
+	}
+
+	return nil, fmt.Errorf("No valid active calamari mon node found")
 }
 
 func InitializeDb() error {

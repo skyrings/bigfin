@@ -103,7 +103,7 @@ func (s *CephProvider) MonitorCluster(req models.RpcRequest, resp *models.RpcRes
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unable to get cluster with id %v.Err %v", cluster_id, err.Error()))
 		return fmt.Errorf("Unable to get cluster with id %v.Err %v", cluster_id, err.Error())
 	}
-	monnode, err = GetRandomMon(*cluster_id)
+	monnode, err = GetCalamariMonNode(*cluster_id, ctxt)
 	if err != nil {
 		logger.Get().Error("%s-Unable to pick a random mon from cluster %v.Error: %v", ctxt, cluster.Name, err.Error())
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unable to pick a random mon from cluster %v.Error: %v", cluster.Name, err.Error()))
@@ -161,7 +161,7 @@ func (s *CephProvider) GetClusterSummary(req models.RpcRequest, resp *models.Rpc
 		Fetch pg count
 	*/
 	pgNum := make(map[string]uint64)
-	mon, monErr := GetRandomMon(*clusterId)
+	mon, monErr := GetCalamariMonNode(*clusterId, ctxt)
 	if monErr != nil {
 		err_str = err_str + fmt.Sprintf("%s - Failed to get the mon from cluster %v", ctxt, *clusterId)
 	} else {
