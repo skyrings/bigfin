@@ -341,7 +341,7 @@ func osd_add_or_delete_handler(event models.AppEvent, osdname string, ctxt strin
 		var retrievedMonSuccessfully bool
 		var monHostname string
 		for count := 0; count < 12; count++ {
-			monnode, err := GetRandomMon(event.ClusterId)
+			monnode, err := GetCalamariMonNode(event.ClusterId, ctxt)
 			monHostname = monnode.Hostname
 			if err != nil {
 				if err.Error() == mgo.ErrNotFound.Error() {
@@ -448,7 +448,7 @@ func osd_state_change_handler(event models.AppEvent, osdname string, ctxt string
 	event.Notify = true
 
 	//update the state of osd in DB
-	monnode, err := GetRandomMon(event.ClusterId)
+	monnode, err := GetCalamariMonNode(event.ClusterId, ctxt)
 	if err != nil {
 		logger.Get().Error("%s-Error getting a mon node in cluster: %s. error: %v", ctxt, event.ClusterId, err)
 		return event, err
@@ -660,7 +660,7 @@ func ceph_pool_add_handler(event models.AppEvent, ctxt string) (models.AppEvent,
 	event.NodeName = ""
 	event.Severity = models.ALARM_STATUS_CLEARED
 	event.Notify = false
-	monnode, err := GetRandomMon(event.ClusterId)
+	monnode, err := GetCalamariMonNode(event.ClusterId, ctxt)
 	if err != nil {
 		logger.Get().Error(
 			"%s-Error getting a mon node in cluster: %v. error: %v",
