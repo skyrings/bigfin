@@ -48,8 +48,8 @@ func (s *CephProvider) SyncBlockDevices(req models.RpcRequest, resp *models.RpcR
 		return err
 	}
 
-	// Get a random mon node
-	monnode, err := GetRandomMon(*cluster_id)
+	// Pick a random mon from the list
+	monnode, err := GetCalamariMonNode(*cluster_id, ctxt)
 	if err != nil {
 		logger.Get().Error(
 			"%s-Error getting a mon node in cluster: %v. error: %v",
@@ -309,7 +309,7 @@ func (s *CephProvider) SyncStorageLogicalUnits(req models.RpcRequest, resp *mode
 	}
 
 	// Get a random mon node
-	monnode, err := GetRandomMon(*cluster_id)
+	monnode, err := GetCalamariMonNode(*cluster_id, ctxt)
 	if err != nil {
 		logger.Get().Error(
 			"%s-Error getting a mon node in cluster: %v. error: %v",
@@ -478,7 +478,7 @@ func (s *CephProvider) SyncStorages(req models.RpcRequest, resp *models.RpcRespo
 				cluster_id_str))
 		return err
 	}
-	monnode, err := GetRandomMon(*cluster_id)
+	monnode, err := GetCalamariMonNode(*cluster_id, ctxt)
 	if err != nil {
 		logger.Get().Error(
 			"%s-Error getting a mon node in cluster: %v. error: %v",
@@ -691,7 +691,7 @@ func (s *CephProvider) SyncStorageNodes(req models.RpcRequest, resp *models.RpcR
 				cluster_id_str))
 		return err
 	}
-	monnode, err := GetRandomMon(*cluster_id)
+	monnode, err := GetCalamariMonNode(*cluster_id, ctxt)
 	if err != nil {
 		logger.Get().Error(
 			"%s-Error getting a mon node in cluster: %v. error: %v",
