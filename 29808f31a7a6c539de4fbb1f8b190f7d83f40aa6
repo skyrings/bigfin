@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_31596c5b",
+        "filename": "bigfin.spec",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1006236
+      },
+      "writtenOn": "2016-04-14T05:51:30Z",
+      "side": 1,
+      "message": "Is this file addition missed ?",
+      "range": {
+        "startLine": 49,
+        "startChar": 34,
+        "endLine": 49,
+        "endChar": 53
+      },
+      "revId": "29808f31a7a6c539de4fbb1f8b190f7d83f40aa6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
