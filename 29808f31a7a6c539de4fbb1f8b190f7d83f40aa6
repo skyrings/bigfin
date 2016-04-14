@@ -22,6 +22,30 @@
       "revId": "29808f31a7a6c539de4fbb1f8b190f7d83f40aa6",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_510ab027",
+        "filename": "bigfin.spec",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-14T06:00:46Z",
+      "side": 1,
+      "message": "Its a new file introduced now. Forgot to add to the patch I feel. Will update patchset.",
+      "parentUuid": "baa041b7_31596c5b",
+      "range": {
+        "startLine": 49,
+        "startChar": 34,
+        "endLine": 49,
+        "endChar": 53
+      },
+      "revId": "29808f31a7a6c539de4fbb1f8b190f7d83f40aa6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
