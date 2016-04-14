@@ -89,7 +89,7 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 				}
 
 				t.UpdateStatus("Getting a mon from cluster")
-				monnode, err := GetRandomMon(*cluster_id)
+				monnode, err := GetCalamariMonNode(*cluster_id, ctxt)
 				if err != nil {
 					utils.FailTask(fmt.Sprintf("Error getting mon node details for cluster: %v", *cluster_id), fmt.Errorf("%s - %v", ctxt, err), t)
 					return
@@ -173,7 +173,7 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 	}
 
 	t.UpdateStatus("Getting a mon from cluster")
-	monnode, err := GetRandomMon(clusterId)
+	monnode, err := GetCalamariMonNode(clusterId, ctxt)
 	if err != nil {
 		utils.FailTask(fmt.Sprintf("Error getting mon node details for cluster: %v", clusterId), fmt.Errorf("%s - %v", ctxt, err), t)
 		return nil, false
@@ -411,7 +411,7 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error parsing the cluster id: %s", cluster_id_str))
 		return err
 	}
-	monnode, err := GetRandomMon(*cluster_id)
+	monnode, err := GetCalamariMonNode(*cluster_id, ctxt)
 	if err != nil {
 		logger.Get().Error("%s-Error getting a mon node in cluster: %v. error: %v", ctxt, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting a mon node in cluster. error: %v", err))
@@ -539,7 +539,7 @@ func (s *CephProvider) RemoveStorage(req models.RpcRequest, resp *models.RpcResp
 				}
 
 				t.UpdateStatus("Getting a mon from cluster")
-				monnode, err := GetRandomMon(*cluster_id)
+				monnode, err := GetCalamariMonNode(*cluster_id, ctxt)
 				if err != nil {
 					utils.FailTask("Error getting a mon node for cluster", fmt.Errorf("%s - %v", ctxt, err), t)
 					return
@@ -712,7 +712,7 @@ func (s *CephProvider) UpdateStorage(req models.RpcRequest, resp *models.RpcResp
 					}
 				}
 				t.UpdateStatus("Getting a radom mon from cluster")
-				monnode, err := GetRandomMon(*cluster_id)
+				monnode, err := GetCalamariMonNode(*cluster_id, ctxt)
 				if err != nil {
 					utils.FailTask(
 						fmt.Sprintf(

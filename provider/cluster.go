@@ -207,7 +207,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 
 				// Delete the default created pool "rbd"
 				t.UpdateStatus("Removing default created pool \"rbd\"")
-				monnode, err := GetRandomMon(*cluster_uuid)
+				monnode, err := GetCalamariMonNode(*cluster_uuid, ctxt)
 				if err != nil {
 					logger.Get().Error("%s-Could not get random mon", ctxt)
 					t.UpdateStatus("Could not get the Monitor for configuration")
@@ -364,6 +364,7 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 	)
 	t.UpdateStatus("Configuring the mons")
 
+	var count int
 	for _, req_node := range request.Nodes {
 		if util.StringInSlice(MON, req_node.NodeType) {
 			mon := make(map[string]interface{})
@@ -373,7 +374,11 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 				t.UpdateStatus(fmt.Sprintf("Failed to add MON node: %v", req_node.NodeId))
 				continue
 			}
-			mon["calamari"] = true
+			if count == 0 {
+				mon["calamari"] = true
+			} else {
+				mon["calamari"] = false
+			}
 			mon["host"] = nodes[*nodeid].Hostname
 			//mon["address"] = node_ips[*nodeid]["cluster"]
 			mon["interface"] = "eth0"
@@ -414,7 +419,7 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 	t.UpdateStatus("Persisting mons")
-	for _, mon := range succeededMons {
+	for idx, mon := range succeededMons {
 		if err := coll.Update(
 			bson.M{"hostname": mon},
 			bson.M{"$set": bson.M{
@@ -423,13 +428,22 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 			return err
 		}
 		logger.Get().Info(fmt.Sprintf("%s-Added mon node: %s", ctxt, mon))
-		if err := salt_backend.StartCalamari(mon, ctxt); err != nil {
-			logger.Get().Warning(
-				"%s-Could not start calamari on mon: %s. error: %v",
-				ctxt,
-				mon,
-				err)
-			return err
+		if idx == 0 {
+			t.UpdateStatus("Starting calamari on: %s", mon)
+			if err := salt_backend.StartCalamari(mon, ctxt); err != nil {
+				logger.Get().Warning(
+					"%s-Could not start calamari on mon: %s. error: %v",
+					ctxt,
+					mon,
+					err)
+				return err
+			}
+			if err := coll.Update(
+				bson.M{"hostname": mon},
+				bson.M{"$set": bson.M{
+					"options.calamari": "Y"}}); err != nil {
+				return err
+			}
 		}
 	}
 
@@ -1209,7 +1223,7 @@ func (s *CephProvider) UpdateStorageLogicalUnitParams(req models.RpcRequest, res
 	}
 
 	// Get a random mon node
-	monnode, err := GetRandomMon(*cluster_id)
+	monnode, err := GetCalamariMonNode(*cluster_id, ctxt)
 	if err != nil {
 		logger.Get().Error("%s-Error getting a mon node in cluster: %s. error: %v", ctxt, *cluster_id, err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error getting a mon node in cluster: %s. error: %v", *cluster_id, err))
@@ -1327,7 +1341,7 @@ func (s *CephProvider) GetClusterConfig(req models.RpcRequest, resp *models.RpcR
 		return err
 	}
 
-	monnode, err := GetRandomMon(*cluster_id)
+	monnode, err := GetCalamariMonNode(*cluster_id, ctxt)
 	if err != nil {
 		logger.Get().Error(
 			"%s-Error getting a mon from cluster: %v. error: %v",
@@ -1375,7 +1389,7 @@ func (s *CephProvider) GetClusterConfig(req models.RpcRequest, resp *models.RpcR
 
 func cluster_status(clusterId uuid.UUID, clusterName string, ctxt string) (models.ClusterStatus, error) {
 	// Pick a random mon from the list
-	monnode, err := GetRandomMon(clusterId)
+	monnode, err := GetCalamariMonNode(clusterId, ctxt)
 	if err != nil {
 		logger.Get().Error("%s-Error getting a mon from cluster: %s. error: %v", ctxt, clusterName, err)
 		return models.CLUSTER_STATUS_UNKNOWN, errors.New(fmt.Sprintf("Error getting a mon. error: %v", err))
@@ -1406,7 +1420,7 @@ func RecalculatePgnum(ctxt string, clusterId uuid.UUID, t *task.Task) bool {
 	}
 
 	t.UpdateStatus("Getting a mon from cluster")
-	monnode, err := GetRandomMon(clusterId)
+	monnode, err := GetCalamariMonNode(clusterId, ctxt)
 	if err != nil {
 		utils.FailTask(fmt.Sprintf("Error getting mon node for cluster: %v", clusterId), fmt.Errorf("%s-%v", ctxt, err), t)
 		return false
@@ -1452,7 +1466,7 @@ func RecalculatePgnum(ctxt string, clusterId uuid.UUID, t *task.Task) bool {
 
 func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUnit, ctxt string) error {
 	// Get a random mon node
-	monnode, err := GetRandomMon(clusterId)
+	monnode, err := GetCalamariMonNode(clusterId, ctxt)
 	if err != nil {
 		logger.Get().Error(
 			"%s-Error getting a mon node in cluster: %s. error: %v",
@@ -1520,7 +1534,7 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 func SyncOsdStatus(clusterId uuid.UUID, ctxt string) error {
 
 	// Get a random mon node
-	monnode, err := GetRandomMon(clusterId)
+	monnode, err := GetCalamariMonNode(clusterId, ctxt)
 	if err != nil {
 		logger.Get().Error("%s-Error getting a mon node in cluster: %s. error: %v", ctxt, clusterId, err)
 		return err
@@ -1659,7 +1673,7 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID) error {
 		return err
 	}
 
-	monnode, err := GetRandomMon(clusterId)
+	monnode, err := GetCalamariMonNode(clusterId, ctxt)
 	if err != nil {
 		logger.Get().Error("%s-Could not get random mon. Err:%v", ctxt, err)
 		return err
