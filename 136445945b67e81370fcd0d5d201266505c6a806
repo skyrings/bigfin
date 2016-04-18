@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_d82375a6",
+        "filename": "provider/cluster.go",
+        "patchSetId": 19
+      },
+      "lineNbr": 351,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-18T05:24:20Z",
+      "side": 1,
+      "message": "Setting cluster_id for the OSD node is not happening here. The same was taken care earlier as part of startAndPersistMon() in old salt way.",
+      "range": {
+        "startLine": 351,
+        "startChar": 5,
+        "endLine": 351,
+        "endChar": 32
+      },
+      "revId": "136445945b67e81370fcd0d5d201266505c6a806",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
