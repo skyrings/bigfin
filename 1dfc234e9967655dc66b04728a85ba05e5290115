@@ -37,6 +37,24 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_a3741dfd",
+        "filename": "backend/installer/installer.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-20T09:04:07Z",
+      "side": 1,
+      "message": "Getting removed in next patch https://review.gerrithub.io/#/c/271522 which is dependent on this patch.",
+      "parentUuid": "baa041b7_16a1c894",
+      "revId": "1dfc234e9967655dc66b04728a85ba05e5290115",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_c5c5ec5b",
         "filename": "provider/sync.go",
         "patchSetId": 1
