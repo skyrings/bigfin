@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_788fbecc",
+        "filename": "provider/cluster.go",
+        "patchSetId": 20
+      },
+      "lineNbr": 552,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-20T06:30:22Z",
+      "side": 1,
+      "message": "This comment is not valid for below code. May be remove it.",
+      "range": {
+        "startLine": 552,
+        "startChar": 1,
+        "endLine": 552,
+        "endChar": 36
+      },
+      "revId": "b190bea12ebd6e595738f6b378634c235e70664e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
