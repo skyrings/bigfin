@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_33def73f",
+        "filename": "provider/sync.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-04-20T08:41:29Z",
+      "side": 1,
+      "message": "As discussed, we need to have the hostname as the key here",
+      "range": {
+        "startLine": 327,
+        "startChar": 37,
+        "endLine": 327,
+        "endChar": 53
+      },
+      "revId": "c333222575207aa737257cd084ab17c87e3b3321",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
