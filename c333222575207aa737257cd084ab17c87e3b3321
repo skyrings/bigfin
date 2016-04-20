@@ -22,6 +22,30 @@
       "revId": "c333222575207aa737257cd084ab17c87e3b3321",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_b377a739",
+        "filename": "provider/sync.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 327,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-20T09:04:07Z",
+      "side": 1,
+      "message": "I feel rather we should use nodeid and it would be available in both the cases for fetched slus from DB and for slus from cluster we are getting the node details.\nUsing UUID makes sure its always unique :)",
+      "parentUuid": "baa041b7_33def73f",
+      "range": {
+        "startLine": 327,
+        "startChar": 37,
+        "endLine": 327,
+        "endChar": 53
+      },
+      "revId": "c333222575207aa737257cd084ab17c87e3b3321",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
