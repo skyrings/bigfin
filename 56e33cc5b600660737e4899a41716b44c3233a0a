@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_f33befcf",
+        "filename": "provider/cluster.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 634,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-04-20T07:19:33Z",
+      "side": 1,
+      "message": "Please put some comments around this logic",
+      "range": {
+        "startLine": 624,
+        "startChar": 2,
+        "endLine": 634,
+        "endChar": 3
+      },
+      "revId": "56e33cc5b600660737e4899a41716b44c3233a0a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_9319437c",
+        "filename": "provider/cluster.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 659,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-04-20T07:19:33Z",
+      "side": 1,
+      "message": "There is no point in continuing at this stage. you can break out?",
+      "range": {
+        "startLine": 659,
+        "startChar": 2,
+        "endLine": 659,
+        "endChar": 3
+      },
+      "revId": "56e33cc5b600660737e4899a41716b44c3233a0a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_336f17c7",
+        "filename": "provider/cluster.go",
+        "patchSetId": 7
+      },
+      "lineNbr": 663,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-04-20T07:19:33Z",
+      "side": 1,
+      "message": "I hope the testing is done with one ssd or 1 ssd disk ramaining",
+      "range": {
+        "startLine": 662,
+        "startChar": 1,
+        "endLine": 663,
+        "endChar": 62
+      },
+      "revId": "56e33cc5b600660737e4899a41716b44c3233a0a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
