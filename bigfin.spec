@@ -18,7 +18,6 @@ BuildRequires: python-setuptools
 
 Requires: skyring
 Requires: salt-master >= 2015.5.5
-Requires: ceph
 
 %description
 SKYRING Ceph provider
