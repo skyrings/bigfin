@@ -375,10 +375,11 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 			}
 			mon["calamari"] = true
 			mon["host"] = nodes[*nodeid].Hostname
-			//mon["address"] = node_ips[*nodeid]["cluster"]
-			mon["interface"] = "eth0"
+			mon["address"] = node_ips[*nodeid]["cluster"]
+			//mon["interface"] = "eth0"
 			mon["fsid"] = cluster_uuid.String()
 			mon["monitor_secret"] = "AQA7P8dWAAAAABAAH/tbiZQn/40Z8pr959UmEA=="
+			mon["cluster_name"] = request.Name
 			mon["cluster_network"] = request.Networks.Cluster
 			mon["public_network"] = request.Networks.Public
 			mon["redhat_storage"] = conf.SystemConfig.Provisioners[bigfin_conf.ProviderName].RedhatStorage
@@ -395,8 +396,8 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 
 				clusterMon := make(map[string]interface{})
 				clusterMon["host"] = nodes[*nodeid].Hostname
-				//clusterMon["address"] = node_ips[*nodeid]["cluster"]
-				clusterMon["interface"] = "eth0"
+				clusterMon["address"] = node_ips[*nodeid]["cluster"]
+				//clusterMon["interface"] = "eth0"
 				clusterMons = append(clusterMons, clusterMon)
 			}
 
@@ -466,7 +467,7 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 	}
 	t.UpdateStatus("Configuring the OSDs")
 	var successNodeIds []uuid.UUID
-	var osdId int
+	//var osdId int
 	for _, requestNode := range request.Nodes {
 		if !util.StringInSlice(models.NODE_TYPE_OSD, requestNode.NodeType) {
 			continue
@@ -512,7 +513,7 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 			osd["fsid"] = clusterId.String()
 			osd["host"] = storageNode.Hostname
 			osd["journal_size"] = JOURNALSIZE
-			//osd["cluster_name"] = request.Name
+			osd["cluster_name"] = request.Name
 			osd["cluster_network"] = request.Networks.Cluster
 			osd["public_network"] = request.Networks.Public
 			osd["redhat_storage"] = conf.SystemConfig.Provisioners[bigfin_conf.ProviderName].RedhatStorage
@@ -523,8 +524,8 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 				logger.Get().Error("%s-Failed to add OSD: %v on Host: %v. error: %v", ctxt, osd["devices"], osd["host"].(string), err)
 				break
 			}
-			osdName := fmt.Sprintf("osd.%d", osdId)
-			osdId++
+			//osdName := fmt.Sprintf("osd.%d", osdId)
+			//osdId++
 			var options = make(map[string]interface{})
 			options["node"] = osd["host"].(string)
 			options["publicip4"] = storageNode.PublicIP4
@@ -534,7 +535,7 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 			//	TODO: OSD Names needs to be taken care by sync calls
 			//
 			slu := models.StorageLogicalUnit{
-				Name:              osdName,
+				//Name:              osdName,
 				Type:              models.CEPH_OSD,
 				ClusterId:         clusterId,
 				NodeId:            storageNode.NodeId,
@@ -551,7 +552,7 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 				failedOSDs = append(failedOSDs, fmt.Sprintf("%s:%s", osd["host"].(string), osd["devices"]))
 				break
 			}
-			slus[osdName] = slu
+			slus[fmt.Sprintf("%s:%s", slu.NodeId.String(), slu.Options["device"])] = slu
 			succeededOSDs = append(succeededOSDs, fmt.Sprintf("%v:%v", osd["host"].(string), osd["devices"]))
 			successNodeIds = append(successNodeIds, *uuid)
 		}
@@ -582,7 +583,7 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 		//
 		time.Sleep(60 * time.Second)
 		for count := 0; count < 3; count++ {
-			if err := syncOsdDetails(clusterId, slus, ctxt); err != nil || len(slus) > 0 {
+			if err := syncOsdDetails(clusterId, slus, ctxt); err != nil {
 				logger.Get().Warning(
 					"%s-Error syncing the OSD status. error: %v",
 					ctxt,
@@ -1534,7 +1535,7 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 		return err
 	}
 
-	fetchedOSDs, err := cephapi_backend.GetOSDs(monnode.Hostname, clusterId, ctxt)
+	osds, err := cephapi_backend.GetOSDs(monnode.Hostname, clusterId, ctxt)
 	if err != nil {
 		logger.Get().Error(
 			"%s-Error getting OSD details for cluster: %v. error: %v",
@@ -1550,6 +1551,63 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 	}
 
 	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll_slu := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
+	coll_nodes := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
+
+	for _, osd := range osds {
+		// Get the node details for SLU
+		var node models.Node
+		if err := coll_nodes.Find(
+			bson.M{"hostname": bson.M{
+				"$regex":   osd.Server,
+				"$options": "$i"}}).One(&node); err != nil {
+
+			logger.Get().Error(
+				"%s-Error fetching node details for SLU id: %d on cluster: %v. error: %v",
+				ctxt,
+				osd.Id,
+				clusterId,
+				err)
+			continue
+		}
+
+		deviceDetails, err := salt_backend.GetPartDeviceDetails(
+			node.Hostname,
+			osd.OsdData,
+			ctxt)
+		if err != nil {
+			logger.Get().Error(
+				"%s-Error getting device details of osd.%d. error: %v",
+				ctxt,
+				osd.Id,
+				err)
+			continue
+		}
+
+		if slu, ok := slus[fmt.Sprintf("%s:%s", node.NodeId.String(), deviceDetails.DevName)]; ok {
+			status := mapOsdStatus(osd.Up, osd.In)
+			state := mapOsdState(osd.In)
+			slu.Options["in"] = strconv.FormatBool(osd.In)
+			slu.Options["up"] = strconv.FormatBool(osd.Up)
+			slu.Options["pgsummary"] = pgSummary.ByOSD[strconv.Itoa(osd.Id)]
+			slu.State = state
+			slu.Status = status
+			slu.SluId = osd.Uuid
+			slu.Name = fmt.Sprintf("osd.%d", osd.Id)
+			if err := coll_slu.Update(
+				bson.M{
+					"nodeid":         node.NodeId,
+					"clusterid":      clusterId,
+					"options.device": deviceDetails.DevName}, slu); err != nil {
+				logger.Get().Error("%s-Error updating the slu: %s. error: %v", ctxt, osd.Uuid.String(), err)
+				continue
+			}
+			logger.Get().Info("%s-Updated the slu: osd.%d on cluster: %v", ctxt, osd.Id, clusterId)
+		}
+	}
+
+	/*sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
 	for _, slu := range slus {
@@ -1585,7 +1643,7 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 				delete(slus, slu.Name)
 			}
 		}
-	}
+	}*/
 	return nil
 }
 
