@@ -33,6 +33,11 @@ const (
 
 	MONITOR_AVAILABILTY = "monitor_availability"
 	OSD_AVAILABILITY    = "osd_availability"
+
+	OSD_ADD_MESSAGE    = "added to the cluster map"
+	OSD_REMOVE_MESSAGE = "removed from the cluster map"
+	OSD_DOWN_MESSAGE   = "went down"
+	OSD_UP_MESSAGE     = "came up"
 )
 
 type CrushInfo struct {

@@ -2,5 +2,8 @@
 	"slu_utilization":            "OSD Utilization",
 	"cluster_utilization":        "Cluster Utilization",
 	"storage_utilzation":         "Pool Utilization",
-	"storage_profile_utilzation": "Storage Profile Utilization"
+	"storage_profile_utilzation": "Storage Profile Utilization",
+	"osd_added_or_removed":       "OSD Added/Removed",
+	"osd_state_changed":          "OSD State changed",
+	"cluster_health_changed":     "Cluster health changed"
 }
