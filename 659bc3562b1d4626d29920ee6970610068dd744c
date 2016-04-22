@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_c4ddbc43",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 379,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-22T05:23:56Z",
+      "side": 1,
+      "message": "Remove the commented lines",
+      "range": {
+        "startLine": 379,
+        "startChar": 3,
+        "endLine": 379,
+        "endChar": 30
+      },
+      "revId": "659bc3562b1d4626d29920ee6970610068dd744c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
