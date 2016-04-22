@@ -35,6 +35,11 @@ const (
 	OSD_AVAILABILITY    = "osd_availability"
 	SLU_SERVICE_COUNT   = "SluServiceCount"
 	MON_SERVICE_COUNT   = "MonServiceCount"
+
+	OSD_ADD_MESSAGE    = "added to the cluster map"
+	OSD_REMOVE_MESSAGE = "removed from the cluster map"
+	OSD_DOWN_MESSAGE   = "went down"
+	OSD_UP_MESSAGE     = "came up"
 )
 
 type CrushInfo struct {

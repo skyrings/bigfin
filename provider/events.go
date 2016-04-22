@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/skyrings/bigfin/bigfinmodels"
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/conf"
 	"github.com/skyrings/skyring-common/db"
@@ -35,16 +36,7 @@ import (
 
 var (
 	handlermap = map[string]interface{}{
-		"skyring/calamari/ceph/calamari/started":                         calamari_server_start_handler,
-		"skyring/calamari/ceph/server/added":                             ceph_server_add_handler,
-		"skyring/calamari/ceph/server/reboot":                            ceph_server_reboot_handler,
-		"skyring/calamari/ceph/server/package/changed":                   ceph_server_package_change_handler,
-		"skyring/calamari/ceph/server/lateReporting":                     ceph_server_late_reporting_handler,
-		"skyring/calamari/ceph/server/regainedContact":                   ceph_server_contact_regained_handler,
-		"skyring/calamari/ceph/cluster/lateReporting":                    ceph_cluster_late_reporting_handler,
-		"skyring/calamari/ceph/cluster/regainedContact":                  ceph_cluster_contact_regained_handler,
 		"skyring/calamari/ceph/osd/propertyChanged":                      ceph_osd_property_changed_handler,
-		"skyring/calamari/ceph/mon/propertyChanged":                      ceph_mon_property_changed_handler,
 		"skyring/calamari/ceph/cluster/health/changed":                   ceph_cluster_health_changed,
 		"skyring/ceph/cluster/*/threshold/slu_utilization/*":             ceph_osd_utilization_threshold_changed,
 		"skyring/ceph/cluster/*/threshold/cluster_utilization/*":         ceph_cluster_utilization_threshold_changed,
@@ -327,82 +319,242 @@ func ceph_storage_utilization_threshold_changed(event models.Event, ctxt string)
 	return appEvent, nil
 }
 
-func calamari_server_start_handler(event models.Event, ctxt string) error {
-	return nil
-}
+func osd_add_or_delete_handler(event models.AppEvent, osdname string, ctxt string) (models.AppEvent, error) {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
 
-func ceph_server_add_handler(event models.Event, ctxt string) error {
-	return nil
-}
+	event.Name = EventTypes["osd_added_or_removed"]
+	event.Severity = models.ALARM_STATUS_CLEARED
+	event.Notify = false
 
-func ceph_server_reboot_handler(event models.Event, ctxt string) error {
-	return nil
-}
-
-func ceph_server_package_change_handler(event models.Event, ctxt string) error {
-	return nil
-}
-
-func ceph_server_late_reporting_handler(event models.Event, ctxt string) error {
-	return nil
-}
-
-func ceph_server_contact_regained_handler(event models.Event, ctxt string) error {
-	return nil
-}
-
-func ceph_cluster_late_reporting_handler(event models.Event, ctxt string) error {
-	return nil
-}
-
-func ceph_cluster_contact_regained_handler(event models.Event, ctxt string) error {
-	return nil
-}
-
-func ceph_osd_property_changed_handler(event models.Event, ctxt string) error {
-	if strings.HasPrefix(event.Message, "OSD") && strings.HasSuffix(event.Message, "added to the cluster map") {
-		sessionCopy := db.GetDatastore().Copy()
-		defer sessionCopy.Close()
-		coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
-		osdname := fmt.Sprintf("osd.%s", event.Tags["service_id"])
-		osduuid, err := uuid.Parse(event.Tags["osd_uuid"])
-		if err != nil {
-			logger.Get().Error("%s-Error parsing the uuid for slu: %s. error: %v", ctxt, osdname, err)
-			return errors.New(fmt.Sprintf("Error parsing the uuid for slu: %s. error: %v", osdname, err))
-		}
-		clusteruuid, err := uuid.Parse(event.Tags["fsid"])
-		if err != nil {
-			logger.Get().Error("%s-Error parsing the cluster uuid for slu: %s. error: %v", ctxt, osdname, err)
-			return errors.New(fmt.Sprintf("Error parsing the cluster uuid for slu: %s. error: %v", osdname, err))
-		}
-		var updated bool
+	if strings.HasSuffix(event.Message, bigfinmodels.OSD_ADD_MESSAGE) {
+		// this is needed because while cluster is created before even
+		// the Cluster is added in DB this event might come.
+		var retrievedMonSuccessfully bool
+		var monHostname string
 		for count := 0; count < 12; count++ {
-			if err := coll.Update(bson.M{"name": osdname, "clusterid": *clusteruuid}, bson.M{"$set": bson.M{"sluid": *osduuid}}); err != nil {
+			monnode, err := GetRandomMon(event.ClusterId)
+			monHostname = monnode.Hostname
+			if err != nil {
 				if err.Error() == mgo.ErrNotFound.Error() {
 					time.Sleep(5 * time.Second)
 					continue
 				}
-				logger.Get().Error("%s-Error updating the uuid for slu: %s. error: %v", ctxt, osdname, err)
-				return errors.New(fmt.Sprintf("Error updating the uuid for slu: %s. error: %v", osdname, err))
+				logger.Get().Error("%s-Error getting a mon node in cluster: %s. error: %v", ctxt, event.ClusterId, err)
+				return event, err
 			} else {
-				updated = true
+				retrievedMonSuccessfully = true
 				break
 			}
 		}
-		if !updated {
-			logger.Get().Error("%s-Sluid update failed for: %s", ctxt, osdname)
+		if !retrievedMonSuccessfully {
+			logger.Get().Error("%s-Error getting a mon node in cluster: %s.", ctxt, event.ClusterId)
+			return event, fmt.Errorf("Could not retrieve the mon node for this cluster")
+		}
+		osd, err := cephapi_backend.GetOSD(monHostname, event.ClusterId, event.Tags["service_id"], ctxt)
+		if err != nil {
+			logger.Get().Critical("%s-Error Getting osd:%v", ctxt, err)
+			return event, err
+		}
+
+		node_coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
+		var node models.Node
+		if err := node_coll.Find(bson.M{"hostname": bson.M{"$regex": fmt.Sprintf("%s.*", osd.Server), "$options": "$i"}}).One(&node); err != nil {
+			logger.Get().Error("%s-Error fetching node details for SLU id: %d on cluster: %v. error: %v", ctxt, osd.Id, event.ClusterId, err)
+			return event, err
+		}
+
+		event.NodeId = node.NodeId
+		event.NodeName = node.Hostname
+
+		deviceDetails, err := salt_backend.GetPartDeviceDetails(
+			node.Hostname,
+			osd.OsdData,
+			ctxt)
+		if err != nil {
+			logger.Get().Error(
+				"%s-Error getting device details of osd.%d. error: %v",
+				ctxt,
+				osd.Id,
+				err)
+		}
+
+		newSlu := models.StorageLogicalUnit{
+			SluId:     osd.Uuid,
+			Name:      fmt.Sprintf("osd.%d", osd.Id),
+			Type:      models.CEPH_OSD,
+			ClusterId: event.ClusterId,
+			NodeId:    event.NodeId,
+			Status:    mapOsdStatus(osd.Up, osd.In),
+			State:     mapOsdState(osd.In),
+		}
+		newSlu.StorageDeviceId = deviceDetails.Uuid
+		newSlu.StorageDeviceSize = deviceDetails.Size
+		newSlu.StorageProfile = get_disk_profile(node.StorageDisks, deviceDetails.PartName)
+		var options = make(map[string]interface{})
+		options["in"] = strconv.FormatBool(osd.In)
+		options["up"] = strconv.FormatBool(osd.Up)
+		options["node"] = node.NodeId.String()
+		options["publicip4"] = node.PublicIP4
+		options["clusterip4"] = node.ClusterIP4
+		options["device"] = deviceDetails.DevName
+		options["fstype"] = deviceDetails.FSType
+		newSlu.Options = options
+
+		if err := coll.Update(bson.M{"name": osdname, "clusterid": event.ClusterId}, newSlu); err != nil {
+			if err.Error() == mgo.ErrNotFound.Error() {
+				if err := coll.Insert(newSlu); err != nil {
+					logger.Get().Error("%s-Error creating the new SLU for cluster: %v. error: %v", ctxt, event.ClusterId, err)
+					return event, err
+				}
+				logger.Get().Info("%s-Added new slu: osd.%d on cluster: %v", ctxt, osd.Id, event.ClusterId)
+				return event, nil
+			} else {
+				logger.Get().Error("%s-Error updating the SLU: %s", ctxt, osdname)
+				return event, err
+			}
 		} else {
-			logger.Get().Info("%s-Updated sluid for: %s", ctxt, osdname)
+			logger.Get().Info("%s-Successfully updated the SLU: %s", ctxt, osdname)
+			return event, nil
+		}
+	} else {
+		if err := coll.Remove(bson.M{"sluid": event.EntityId}); err != nil {
+			logger.Get().Warning(
+				"%s-Error removing the slu: %s for cluster: %v. error: %v",
+				ctxt,
+				event.EntityId,
+				event.ClusterId,
+				err)
+			return event, err
+		} else {
+			return event, nil
 		}
 	}
+}
+
+func osd_state_change_handler(event models.AppEvent, osdname string, ctxt string) (models.AppEvent, error) {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
+
+	event.Name = EventTypes["osd_state_changed"]
+	event.Notify = true
+
+	//update the state of osd in DB
+	monnode, err := GetRandomMon(event.ClusterId)
+	if err != nil {
+		logger.Get().Error("%s-Error getting a mon node in cluster: %s. error: %v", ctxt, event.ClusterId, err)
+		return event, err
+	}
+
+	osd, err := cephapi_backend.GetOSD(monnode.Hostname, event.ClusterId, event.Tags["service_id"], ctxt)
+	if err != nil {
+		logger.Get().Critical("%s-Error Getting osd:%v", ctxt, err)
+		return event, err
+	}
+	node_coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
+	var node models.Node
+	if err := node_coll.Find(bson.M{"hostname": bson.M{"$regex": fmt.Sprintf("%s.*", osd.Server), "$options": "$i"}}).One(&node); err != nil {
+		logger.Get().Error("%s-Error fetching node details for SLU id: %d on cluster: %v. error: %v", ctxt, osd.Id, node.ClusterId, err)
+		return event, err
+	}
+
+	event.NodeId = node.NodeId
+	event.NodeName = node.Hostname
+	status := mapOsdStatus(osd.Up, osd.In)
+	state := mapOsdState(osd.In)
+
+	if err := coll.Update(bson.M{"sluid": osd.Uuid, "clusterid": event.ClusterId}, bson.M{"$set": bson.M{"status": status, "state": state}}); err != nil {
+		logger.Get().Error("%s-Error updating the status for slu: %s. error: %v", ctxt, osd.Uuid.String(), err)
+		return event, err
+	}
+	logger.Get().Info("%s-Updated the status of slu: osd.%d on cluster: %v", ctxt, osd.Id, event.ClusterId)
+
+	if strings.Contains(event.Message, bigfinmodels.OSD_DOWN_MESSAGE) {
+		event.Severity = models.ALARM_STATUS_WARNING
+		event.Message = fmt.Sprintf("OSD %s on %s cluster went down", osdname, event.ClusterName)
+	} else {
+		event.Severity = models.ALARM_STATUS_CLEARED
+		event.Message = fmt.Sprintf("OSD %s on %s cluster came up", osdname, event.ClusterName)
+	}
+
+	clearedSeverity, err := common_event.ClearCorrespondingAlert(event, ctxt)
+	if err != nil && event.Severity == models.ALARM_STATUS_CLEARED {
+		logger.Get().Warning("%s-could not clear corresponding"+
+			" alert for: %s. Error: %v", ctxt, event.EventId.String(), err)
+		return event, err
+	}
+
+	if err = common_event.UpdateNodeAlarmCount(
+		event,
+		clearedSeverity,
+		ctxt); err != nil {
+		logger.Get().Error("%s-Could not update Alarm state and"+
+			" count for event:%v .Error: %v", ctxt, event.EventId, err)
+		return event, err
+	}
+
+	if err = common_event.UpdateSluAlarmCount(
+		event,
+		clearedSeverity,
+		ctxt); err != nil {
+		logger.Get().Error("%s-Could not update Alarm state and"+
+			" count for event:%v .Error: %v", ctxt, event.EventId, err)
+		return event, err
+	}
+
+	if err = common_event.UpdateClusterAlarmCount(
+		event,
+		clearedSeverity,
+		ctxt); err != nil {
+		logger.Get().Error("%s-Could not update Alarm state and count for"+
+			" event:%v .Error: %v", ctxt, event.EventId, err)
+		return event, err
+	}
+
+	return event, nil
+}
+
+func ceph_osd_property_changed_handler(event models.AppEvent, ctxt string) (models.AppEvent, error) {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	osdname := fmt.Sprintf("osd.%s", event.Tags["service_id"])
+	osduuid, err := uuid.Parse(event.Tags["osd_uuid"])
+	if err != nil {
+		logger.Get().Error("%s-Error parsing the uuid for slu: %s. error: %v", ctxt, osdname, err)
+		return event, errors.New(fmt.Sprintf("Error parsing the uuid for slu: %s. error: %v", osdname, err))
+	}
+	event.EntityId = *osduuid
+	event.NotificationEntity = models.NOTIFICATION_ENTITY_SLU
+
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	var cluster models.Cluster
+	if err := coll.Find(bson.M{"clusterid": event.ClusterId}).One(&cluster); err == nil {
+		event.ClusterName = cluster.Name
+	}
+
+	if strings.HasSuffix(event.Message, bigfinmodels.OSD_ADD_MESSAGE) || strings.HasSuffix(event.Message, bigfinmodels.OSD_REMOVE_MESSAGE) {
+		event, err = osd_add_or_delete_handler(event, osdname, ctxt)
+		if err != nil {
+			return event, err
+		}
+	} else if strings.Contains(event.Message, bigfinmodels.OSD_DOWN_MESSAGE) || strings.Contains(event.Message, bigfinmodels.OSD_UP_MESSAGE) {
+
+		event, err = osd_state_change_handler(event, osdname, ctxt)
+		if err != nil {
+			return event, err
+		}
+	}
+
+	return event, nil
+}
+
+func ceph_mon_property_changed_handler(event models.AppEvent, ctxt string) error {
 	return nil
 }
 
-func ceph_mon_property_changed_handler(event models.Event, ctxt string) error {
-	return nil
-}
-
-func update_cluster_status(clusterStatus int, event models.Event, ctxt string) error {
+func update_cluster_status(clusterStatus int, event models.AppEvent, ctxt string) error {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
@@ -413,19 +565,57 @@ func update_cluster_status(clusterStatus int, event models.Event, ctxt string) e
 	return nil
 }
 
-func ceph_cluster_health_changed(event models.Event, ctxt string) error {
+func ceph_cluster_health_changed(event models.AppEvent, ctxt string) (models.AppEvent, error) {
 	cluster, err := getCluster(event.ClusterId)
+	event.EntityId = event.ClusterId
+	event.NotificationEntity = models.NOTIFICATION_ENTITY_CLUSTER
+	event.NodeName = ""
+	event.Name = EventTypes["cluster_health_changed"]
+	status := strings.SplitAfter(event.Message, " ")[len(strings.SplitAfter(event.Message, " "))-1]
+	cluster_status, ok := cluster_status_in_enum[status]
+	if !ok {
+		event.Severity = models.ALARM_STATUS_INDETERMINATE
+	} else {
+		switch cluster_status {
+		case models.CLUSTER_STATUS_ERROR:
+			event.Severity = models.ALARM_STATUS_CRITICAL
+		case models.CLUSTER_STATUS_WARN:
+			event.Severity = models.ALARM_STATUS_WARNING
+		case models.CLUSTER_STATUS_OK:
+			event.Severity = models.ALARM_STATUS_CLEARED
+		default:
+			event.Severity = models.ALARM_STATUS_INDETERMINATE
+		}
+	}
+	event.Notify = true
+
 	if err != nil {
 		logger.Get().Error("%s-Error getting the  cluster: %v. error: %v", ctxt, event.ClusterId, err)
-		return err
+		return event, err
 	}
 	if cluster.State == models.CLUSTER_STATE_ACTIVE {
 		status := strings.SplitAfter(event.Message, " ")[len(strings.SplitAfter(event.Message, " "))-1]
 		if err := update_cluster_status(cluster_status_in_enum[status], event, ctxt); err != nil {
-			return err
+			return event, err
 		}
 	}
-	return nil
+
+	clearedSeverity, err := common_event.ClearCorrespondingAlert(event, ctxt)
+	if err != nil && event.Severity == models.ALARM_STATUS_CLEARED {
+		logger.Get().Warning("%s-could not clear corresponding"+
+			" alert for: %s. Error: %v", ctxt, event.EventId.String(), err)
+		return event, err
+	}
+
+	if err = common_event.UpdateClusterAlarmCount(
+		event,
+		clearedSeverity,
+		ctxt); err != nil {
+		logger.Get().Error("%s-Could not update Alarm state and count for"+
+			" event:%v .Error: %v", ctxt, event.EventId, err)
+		return event, err
+	}
+	return event, nil
 }
 
 func HandleEvent(e models.Event, ctxt string) (err error, statusCode int) {
@@ -452,17 +642,38 @@ func HandleEvent(e models.Event, ctxt string) (err error, statusCode int) {
 	return fmt.Errorf("Handler not defined for event %s", e.Tag), http.StatusNotImplemented
 }
 
+func HandleCalamariEvent(e models.AppEvent, ctxt string) (err error, statusCode int) {
+	for tag, handler := range handlermap {
+		if match, err := filepath.Match(tag, e.Name); err != nil {
+			return fmt.Errorf("Error while maping handler for event: %s. error: %v",
+				e.Name, err), http.StatusInternalServerError
+		} else if match {
+			appEvent, err := handler.(func(models.AppEvent, string) (models.AppEvent, error))(e, ctxt)
+			if err != nil {
+				return fmt.Errorf("Event Handling Failed for event: %s. error: %v",
+					e.Name, err), http.StatusInternalServerError
+			}
+			if err = common_event.AuditLog(ctxt, appEvent, GetDbProvider()); err != nil {
+				return fmt.Errorf("Could not persist the event: %s to DB. error: %v",
+					e.Name, err), http.StatusInternalServerError
+			} else {
+				return nil, http.StatusOK
+			}
+		}
+	}
+	return fmt.Errorf("Handler not defined for event %s", e.Name), http.StatusNotImplemented
+}
+
 func (s *CephProvider) ProcessEvent(req models.RpcRequest, resp *models.RpcResponse) error {
 	ctxt := req.RpcRequestContext
-	var e models.Event
-
+	var e models.AppEvent
 	if err := json.Unmarshal(req.RpcRequestData, &e); err != nil {
 		logger.Get().Error("%s-Unbale to parse the request. error: %v", ctxt, err)
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unbale to parse the request. error: %v", err))
 		return err
 	}
 
-	err, statusCode := HandleEvent(e, ctxt)
+	err, statusCode := HandleCalamariEvent(e, ctxt)
 	var err_str string
 	if err != nil {
 		err_str = err.Error()
