@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_247d88b1",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 379,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-22T09:39:50Z",
+      "side": 1,
+      "message": "Remove the commented lines",
+      "range": {
+        "startLine": 379,
+        "startChar": 3,
+        "endLine": 379,
+        "endChar": 30
+      },
+      "revId": "59cea36aac9b591868d7f2eb01d42f52cf3d7d3c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_4482cc95",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1646,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-22T09:39:50Z",
+      "side": 1,
+      "message": "Do we need this?",
+      "range": {
+        "startLine": 1610,
+        "startChar": 1,
+        "endLine": 1646,
+        "endChar": 4
+      },
+      "revId": "59cea36aac9b591868d7f2eb01d42f52cf3d7d3c",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
