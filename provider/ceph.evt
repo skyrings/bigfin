@@ -5,5 +5,6 @@
 	"storage_profile_utilzation": "Storage Profile Utilization",
 	"osd_added_or_removed":       "OSD Added/Removed",
 	"osd_state_changed":          "OSD State changed",
+	"mon_state_changed":          "MON State changed",
 	"cluster_health_changed":     "Cluster health changed"
 }

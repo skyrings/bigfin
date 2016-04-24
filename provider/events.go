@@ -36,6 +36,7 @@ import (
 var (
 	handlermap = map[string]interface{}{
 		"skyring/calamari/ceph/osd/propertyChanged":                      ceph_osd_property_changed_handler,
+		"skyring/calamari/ceph/mon/propertyChanged":                      ceph_mon_property_changed_handler,
 		"skyring/calamari/ceph/cluster/health/changed":                   ceph_cluster_health_changed,
 		"skyring/ceph/cluster/*/threshold/slu_utilization/*":             ceph_osd_utilization_threshold_changed,
 		"skyring/ceph/cluster/*/threshold/cluster_utilization/*":         ceph_cluster_utilization_threshold_changed,
@@ -533,8 +534,33 @@ func ceph_osd_property_changed_handler(event models.AppEvent, ctxt string) (mode
 	return event, nil
 }
 
-func ceph_mon_property_changed_handler(event models.AppEvent, ctxt string) error {
-	return nil
+func ceph_mon_property_changed_handler(event models.AppEvent, ctxt string) (models.AppEvent, error) {
+	event.EntityId = event.NodeId
+	event.NotificationEntity = models.NOTIFICATION_ENTITY_HOST
+	event.Name = EventTypes["mon_state_changed"]
+	event.Notify = true
+	if strings.Contains(event.Message, "joined quorum") {
+		event.Severity = models.ALARM_STATUS_CLEARED
+	} else {
+		event.Severity = models.ALARM_STATUS_WARNING
+	}
+
+	clearedSeverity, err := common_event.ClearCorrespondingAlert(event, ctxt)
+	if err != nil && event.Severity == models.ALARM_STATUS_CLEARED {
+		logger.Get().Warning("%s-could not clear corresponding"+
+			" alert for: %s. Error: %v", ctxt, event.EventId.String(), err)
+		return event, err
+	}
+
+	if err = common_event.UpdateClusterAlarmCount(
+		event,
+		clearedSeverity,
+		ctxt); err != nil {
+		logger.Get().Error("%s-Could not update Alarm state and count for"+
+			" event:%v .Error: %v", ctxt, event.EventId, err)
+		return event, err
+	}
+	return event, nil
 }
 
 func update_cluster_status(clusterStatus int, event models.AppEvent, ctxt string) error {
