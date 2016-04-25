@@ -716,3 +716,6 @@ func (c CephApi) GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt
 	}
 	return monStatus, nil
 }
+func (c CephApi) GetServiceCount(hostname string, ctxt string) (service_details map[string]int, err error) {
+	return service_details, nil
+}

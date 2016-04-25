@@ -166,3 +166,7 @@ func (c Installer) GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string)
 func (c Installer) GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt string) (backend.MonNodeStatus, error) {
 	return backend.MonNodeStatus{}, nil
 }
+
+func (c Installer) GetServiceCount(Hostname string, ctxt string) (service_details map[string]int, err error) {
+	return service_details, nil
+}

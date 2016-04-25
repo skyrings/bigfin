@@ -33,6 +33,7 @@ var funcNames = [...]string{
 	"GetOSDDetails",
 	"GetObjectCount",
 	"RemovePool",
+	"GetServiceCount",
 }
 
 var pyFuncs map[string]*gopy.PyFunction
@@ -265,4 +266,16 @@ func (c Salt) GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string) ([]b
 
 func (c Salt) GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt string) (backend.MonNodeStatus, error) {
 	return backend.MonNodeStatus{}, nil
+}
+
+func (c Salt) GetServiceCount(Hostname string, ctxt string) (service_details map[string]int, err error) {
+	service_details = make(map[string]int)
+	mutex.Lock()
+	defer mutex.Unlock()
+	if pyobj, loc_err := pyFuncs["GetServiceCount"].Call(Hostname, ctxt); loc_err == nil {
+		err = gopy.Convert(pyobj, &service_details)
+	} else {
+		err = loc_err
+	}
+	return
 }
