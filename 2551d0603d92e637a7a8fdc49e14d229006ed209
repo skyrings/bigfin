@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_85368be5",
+        "filename": "provider/events.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 334,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-25T09:05:10Z",
+      "side": 1,
+      "message": "spelling",
+      "range": {
+        "startLine": 334,
+        "startChar": 6,
+        "endLine": 334,
+        "endChar": 29
+      },
+      "revId": "2551d0603d92e637a7a8fdc49e14d229006ed209",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_453083e8",
+        "filename": "provider/events.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 380,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-25T09:05:10Z",
+      "side": 1,
+      "message": "Calamari does provide the mount point details and using the same you may get the device details and populate here. Check the sync job logic for the same..",
+      "range": {
+        "startLine": 376,
+        "startChar": 3,
+        "endLine": 380,
+        "endChar": 20
+      },
+      "revId": "2551d0603d92e637a7a8fdc49e14d229006ed209",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_05515b0e",
+        "filename": "provider/events.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 521,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-25T09:05:10Z",
+      "side": 1,
+      "message": "These strings I feel should be defined in constants and used. Also is it the only way for figure out the event? Dont we get some key which can tell us the type of event?",
+      "range": {
+        "startLine": 521,
+        "startChar": 38,
+        "endLine": 521,
+        "endChar": 63
+      },
+      "revId": "2551d0603d92e637a7a8fdc49e14d229006ed209",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_e5579700",
+        "filename": "provider/events.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 632,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-25T09:05:10Z",
+      "side": 1,
+      "message": "Can we merge these conditions using \u0026\u0026 ?",
+      "range": {
+        "startLine": 631,
+        "startChar": 48,
+        "endLine": 632,
+        "endChar": 13
+      },
+      "revId": "2551d0603d92e637a7a8fdc49e14d229006ed209",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
