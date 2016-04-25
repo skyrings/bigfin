@@ -651,3 +651,49 @@ func getCluster(cluster_id uuid.UUID) (cluster models.Cluster, err error) {
 	}
 	return cluster, nil
 }
+
+func (s *CephProvider) GetServiceCount(req models.RpcRequest, resp *models.RpcResponse) error {
+	ctxt := req.RpcRequestContext
+	request := make(map[string]interface{})
+	if err := json.Unmarshal(req.RpcRequestData, &request); err != nil {
+		logger.Get().Error(fmt.Sprintf("%s-Unbale to parse the Get Service Count request. error: %v", ctxt, err))
+		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unbale to parse the request. error: %v", err))
+		return err
+	}
+	Hostname := request["hostname"].(string)
+	TotalSluCount := request["totalslu"].(float64)
+	NodeRoles := request["noderoles"]
+	ServiceDetails := make(map[string]interface{})
+	ServiceCount, err := salt_backend.GetServiceCount(Hostname, ctxt)
+	if err != nil {
+		logger.Get().Error(
+			"%s-Error fetching service count for node: %s. error: %v",
+			ctxt,
+			Hostname,
+			err)
+		*resp = utils.WriteResponse(http.StatusInternalServerError,
+			fmt.Sprintf("Error fetching service count for node %s. error %v", Hostname, err))
+		return err
+
+	}
+	for _, role := range NodeRoles.([]interface{}) {
+		switch role.(string) {
+		case strings.ToUpper(bigfin_models.NODE_SERVICE_OSD):
+			SluUp := ServiceCount[bigfin_models.SLU_SERVICE_COUNT]
+			SluDown := int(TotalSluCount) - ServiceCount[bigfin_models.SLU_SERVICE_COUNT]
+			ServiceDetails["slu"] = map[string]int{"up": SluUp, "down": SluDown}
+		case strings.ToUpper(bigfin_models.NODE_SERVICE_MON):
+			ServiceDetails["mon"] = ServiceCount[bigfin_models.MON_SERVICE_COUNT]
+		}
+	}
+	var bytes []byte
+	bytes, err = json.Marshal(ServiceDetails)
+	if err != nil {
+		logger.Get().Error("%s-Unable to marshal the service count details :%s", ctxt, err)
+		*resp = utils.WriteResponse(http.StatusInternalServerError,
+			fmt.Sprintf("Unable to marshal the service count details for node :%s . error %v", Hostname, err))
+		return err
+	}
+	*resp = utils.WriteResponseWithData(http.StatusOK, "", bytes)
+	return nil
+}
