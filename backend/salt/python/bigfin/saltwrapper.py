@@ -658,3 +658,15 @@ def GetPartDeviceDetails(node, partPath, ctxt=""):
             dev_info["Size"] = long(dev["SIZE"])
 
     return dev_info
+
+
+def GetServiceCount(node, ctxt=""):
+    service_count = {'SluServiceCount':0,'MonServiceCount':0}
+    out = local.cmd(node, 'status.procs')
+    for key, value in out[node].iteritems():
+        for key, val in value.iteritems():
+	    if val.startswith('/usr/bin/ceph-osd'):
+                service_count['SluServiceCount']+=1
+            if val.startswith('/usr/bin/ceph-mon'):
+                service_count['MonServiceCount']+=1
+    return service_count

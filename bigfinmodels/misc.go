@@ -33,6 +33,8 @@ const (
 
 	MONITOR_AVAILABILTY = "monitor_availability"
 	OSD_AVAILABILITY    = "osd_availability"
+	SLU_SERVICE_COUNT   = "SluServiceCount"
+	MON_SERVICE_COUNT   = "MonServiceCount"
 )
 
 type CrushInfo struct {
