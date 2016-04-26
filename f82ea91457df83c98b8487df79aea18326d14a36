@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_7b69e624",
+        "filename": "backend/salt/python/bigfin/saltwrapper.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 669,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-26T04:16:46Z",
+      "side": 1,
+      "message": "Put space around this operator for better readability",
+      "range": {
+        "startLine": 669,
+        "startChar": 48,
+        "endLine": 669,
+        "endChar": 50
+      },
+      "revId": "f82ea91457df83c98b8487df79aea18326d14a36",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_5b7862f2",
+        "filename": "backend/salt/python/bigfin/saltwrapper.py",
+        "patchSetId": 2
+      },
+      "lineNbr": 671,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-26T04:16:46Z",
+      "side": 1,
+      "message": "Put space around this operator for better readability",
+      "range": {
+        "startLine": 671,
+        "startChar": 48,
+        "endLine": 671,
+        "endChar": 50
+      },
+      "revId": "f82ea91457df83c98b8487df79aea18326d14a36",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
