@@ -238,11 +238,8 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 				if err := updateCrushMap(ctxt, monnode.Hostname, *cluster_uuid); err != nil {
 					logger.Get().Error("%s-Error updating the Crush map for cluster: %s. error: %v", ctxt, request.Name, err)
 					t.UpdateStatus("Failed to update Crush map")
-					t.Done(models.TASK_STATUS_SUCCESS)
-					return
 				}*/
-
-				t.UpdateStatus("Success")
+				t.UpdateStatus("Successfully created the cluster")
 				t.Done(models.TASK_STATUS_SUCCESS)
 				return
 
@@ -424,19 +421,28 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 		logger.Get().Info(fmt.Sprintf("%s-Added mon node: %s", ctxt, mon))
 	}
 
-	failedOSDs, succeededOSDs, err := configureOSDs(*cluster_uuid, request, clusterMons, t, ctxt)
-	if err != nil {
-		return err
+	var osdPresent bool
+	for _, req_node := range request.Nodes {
+		if util.StringInSlice(OSD, req_node.NodeType) {
+			osdPresent = true
+			break
+		}
 	}
-	if len(failedOSDs) != 0 {
-		t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", failedOSDs))
-		if len(succeededOSDs) == 0 {
-			t.UpdateStatus("Failed adding all OSDs")
-			logger.Get().Error(
-				"%s-Failed adding all OSDs while create cluster %s. error: %v",
-				ctxt,
-				request.Name,
-				err)
+	if osdPresent {
+		failedOSDs, succeededOSDs, err := configureOSDs(*cluster_uuid, request, clusterMons, t, ctxt)
+		if err != nil {
+			return err
+		}
+		if len(failedOSDs) != 0 {
+			t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", failedOSDs))
+			if len(succeededOSDs) == 0 {
+				t.UpdateStatus("Failed adding all OSDs")
+				logger.Get().Error(
+					"%s-Failed adding all OSDs while create cluster %s. error: %v",
+					ctxt,
+					request.Name,
+					err)
+			}
 		}
 	}
 	return nil
@@ -1032,18 +1038,6 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 		return nil
 	}
 
-	var mons []backend.Mon
-	for _, new_node := range new_nodes {
-		if util.StringInSlice("MON", new_node.NodeType) {
-			var mon backend.Mon
-			nodeid, _ := uuid.Parse(new_node.NodeId)
-			mon.Node = nodes[*nodeid].Hostname
-			mon.PublicIP4 = node_ips[*nodeid]["public"]
-			mon.ClusterIP4 = node_ips[*nodeid]["cluster"]
-			mons = append(mons, mon)
-		}
-	}
-
 	// If mon node already exists for the cluster, error out
 	for _, new_node := range new_nodes {
 		if util.StringInSlice("MON", new_node.NodeType) {
@@ -1075,102 +1069,17 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 				return
 			default:
 				t.UpdateStatus("Started ceph provider task for cluster expansion: %v", t.ID)
-				var failedMons, succeededMons []string
-				if len(mons) > 0 {
-					t.UpdateStatus("Adding mons")
-					for _, mon := range mons {
-						if ret_val, err := salt_backend.AddMon(
-							cluster.Name,
-							[]backend.Mon{mon},
-							ctxt); err != nil || !ret_val {
-							failedMons = append(failedMons, mon.Node)
-						} else {
-							succeededMons = append(succeededMons, mon.Node)
-							t.UpdateStatus(fmt.Sprintf("Added mon node: %s", mon.Node))
-						}
-					}
-				}
-				if len(failedMons) > 0 {
-					t.UpdateStatus(fmt.Sprintf("Failed to add mon(s) %v", failedMons))
-				}
-
-				t.UpdateStatus("Updating node details for cluster")
-				// Update nodes details
-				coll1 := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
-				for _, node := range nodes {
-					if err := coll1.Update(
-						bson.M{"nodeid": node.NodeId},
-						bson.M{"$set": bson.M{
-							"clusterip4": node_ips[node.NodeId]["cluster"],
-							"publicip4":  node_ips[node.NodeId]["public"]}}); err != nil {
-						logger.Get().Error(
-							"%s-Error updating the details for node: %s. error: %v",
-							ctxt,
-							node.Hostname,
-							err)
-						t.UpdateStatus(fmt.Sprintf("Failed to update details of node: %s", node.Hostname))
-					}
-				}
-				// Start and persist the mons
-				if len(succeededMons) > 0 {
-					t.UpdateStatus("Starting and persisting mons")
-					ret_val, err := startAndPersistMons(*cluster_id, succeededMons, ctxt)
-					if !ret_val || err != nil {
-						logger.Get().Error(
-							"%s-Error starting/persisting mons. error: %v",
-							ctxt,
-							err)
-						t.UpdateStatus("Failed to start/persist mons")
-					}
-				}
-
-				// Add OSDs
-				t.UpdateStatus("Getting updated nodes for OSD creation")
-				updated_nodes, err := util.GetNodes(new_nodes)
-				if err != nil {
-					utils.FailTask(fmt.Sprintf(
-						"Error getting updated nodes while expand cluster: %v",
-						*cluster_id),
-						fmt.Errorf("%s-%v", ctxt, err),
-						t)
-					return
-				}
-				failedOSDs, succeededOSDs := addOSDs(
-					*cluster_id,
-					cluster.Name,
-					updated_nodes,
-					new_nodes,
-					t,
-					ctxt)
-				if len(succeededOSDs) == 0 {
+				var request models.AddClusterRequest
+				request.Name = cluster.Name
+				request.Nodes = new_nodes
+				if err := ExpandClusterUsingInstaller(cluster_id, request, nodes, node_ips, t, ctxt); err != nil {
 					utils.FailTask(
-						fmt.Sprintf("Failed to add all OSDs while expand cluster: %v", *cluster_id),
+						fmt.Sprintf("Error expanding the cluster:%v", *cluster_id),
 						fmt.Errorf("%s-%v", ctxt, err),
 						t)
 					return
 				}
-				if len(failedOSDs) != 0 {
-					var osds []string
-					for _, osd := range failedOSDs {
-						osds = append(osds, fmt.Sprintf("%s:%s", osd.Node, osd.Device))
-					}
-					t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", osds))
-				}
-				if len(succeededOSDs) > 0 {
-					t.UpdateStatus("Recalculating pgnum/pgpnum")
-					if ok := RecalculatePgnum(ctxt, *cluster_id, t); !ok {
-						logger.Get().Warning(
-							"%s-Could not re-calculate pgnum/pgpnum for cluster: %v",
-							ctxt,
-							*cluster_id)
-					}
-					//Update the CRUSH MAP
-					t.UpdateStatus("Updating the CRUSH Map")
-					if err := UpdateCrushNodeItems(ctxt, *cluster_id); err != nil {
-						logger.Get().Error("%s-Error updating the Crush map for cluster: %v. error: %v", ctxt, *cluster_id, err)
-					}
-				}
-				t.UpdateStatus("Success")
+				t.UpdateStatus("Successfully expanded the cluster")
 				t.Done(models.TASK_STATUS_SUCCESS)
 				return
 			}
@@ -1191,6 +1100,269 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 		*resp = utils.WriteAsyncResponse(taskId, fmt.Sprintf("Task Created for expand cluster: %v", *cluster_id), []byte{})
 	}
 
+	return nil
+}
+
+func ExpandClusterUsingSalt(cluster_uuid *uuid.UUID, request models.AddClusterRequest,
+	nodes map[uuid.UUID]models.Node, node_ips map[uuid.UUID]map[string]string,
+	t *task.Task, ctxt string) error {
+
+	var mons []backend.Mon
+
+	nodeRoleMapFromRequest := make(map[string][]string)
+
+	for _, req_node := range request.Nodes {
+		if util.StringInSlice(MON, req_node.NodeType) {
+			var mon backend.Mon
+			nodeid, _ := uuid.Parse(req_node.NodeId)
+			mon.Node = nodes[*nodeid].Hostname
+			mon.PublicIP4 = node_ips[*nodeid]["public"]
+			mon.ClusterIP4 = node_ips[*nodeid]["cluster"]
+			mons = append(mons, mon)
+		}
+		nodeRoleMapFromRequest[req_node.NodeId] = req_node.NodeType
+	}
+
+	var failedMons, succeededMons []string
+
+	// Add other mons
+	if len(mons) > 0 {
+		t.UpdateStatus("Adding mons")
+		for _, mon := range mons {
+			if ret_val, err := salt_backend.AddMon(
+				request.Name,
+				[]backend.Mon{mon},
+				ctxt); err != nil || !ret_val {
+				failedMons = append(failedMons, mon.Node)
+			} else {
+				succeededMons = append(succeededMons, mon.Node)
+				t.UpdateStatus(fmt.Sprintf("Added mon node: %s", mon.Node))
+			}
+		}
+	}
+	if len(failedMons) > 0 {
+		t.UpdateStatus(fmt.Sprintf("Failed to add mon(s) %v", failedMons))
+	}
+
+	t.UpdateStatus("Updating node details for cluster")
+	// Update nodes details
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll_snodes := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
+	for _, node := range nodes {
+		if err := coll_snodes.Update(
+			bson.M{"nodeid": node.NodeId},
+			bson.M{"$set": bson.M{
+				"clusterip4": node_ips[node.NodeId]["cluster"],
+				"publicip4":  node_ips[node.NodeId]["public"],
+				"roles":      nodeRoleMapFromRequest[node.NodeId.String()]}}); err != nil {
+			logger.Get().Error(
+				"%s-Error updating the details for node: %s. error: %v",
+				ctxt,
+				node.Hostname,
+				err)
+			t.UpdateStatus(fmt.Sprintf("Failed to update details of node: %s", node.Hostname))
+		}
+	}
+
+	// Start and persist the mons
+	t.UpdateStatus("Starting and persisting mons")
+	ret_val, err := startAndPersistMons(*cluster_uuid, succeededMons, ctxt)
+	if !ret_val || err != nil {
+		logger.Get().Error(
+			"%s-Error starting/persisting mons. error: %v",
+			ctxt,
+			err)
+		t.UpdateStatus("Failed to start/persist mons")
+	}
+
+	// Add OSDs
+	t.UpdateStatus("Getting updated nodes list for OSD creation")
+	updated_nodes, err := util.GetNodes(request.Nodes)
+	if err != nil {
+		logger.Get().Error(
+			"%s-Error getting updated nodes list post create cluster %s. error: %v",
+			ctxt,
+			request.Name,
+			err)
+		return err
+	}
+	failedOSDs, succeededOSDs := addOSDs(
+		*cluster_uuid,
+		request.Name,
+		updated_nodes,
+		request.Nodes,
+		t,
+		ctxt)
+
+	if len(failedOSDs) != 0 {
+		var osds []string
+		for _, osd := range failedOSDs {
+			osds = append(osds, fmt.Sprintf("%s:%s", osd.Node, osd.Device))
+		}
+		t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", osds))
+		if len(succeededOSDs) == 0 {
+			t.UpdateStatus("Failed adding all OSDs")
+			logger.Get().Error(
+				"%s-Failed adding all OSDs while create cluster %s. error: %v",
+				ctxt,
+				request.Name,
+				err)
+		}
+		if len(succeededOSDs) > 0 {
+			t.UpdateStatus("Recalculating pgnum/pgpnum")
+			if ok := RecalculatePgnum(ctxt, *cluster_uuid, t); !ok {
+				logger.Get().Warning(
+					"%s-Could not re-calculate pgnum/pgpnum for cluster: %v",
+					ctxt,
+					*cluster_uuid)
+			}
+			//Update the CRUSH MAP
+			t.UpdateStatus("Updating the CRUSH Map")
+			if err := UpdateCrushNodeItems(ctxt, *cluster_uuid); err != nil {
+				logger.Get().Error("%s-Error updating the Crush map for cluster: %v. error: %v", ctxt, *cluster_uuid, err)
+			}
+		}
+	}
+	return nil
+}
+
+func ExpandClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClusterRequest,
+	nodes map[uuid.UUID]models.Node, node_ips map[uuid.UUID]map[string]string,
+	t *task.Task, ctxt string) error {
+
+	var (
+		clusterMons               []map[string]interface{}
+		failedMons, succeededMons []string
+		monReqNodes, osdReqNodes  []models.ClusterNode
+	)
+
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	//Get the Mons of the cluster
+	coll_nodes := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
+	var monNodes models.Nodes
+	if err := coll_nodes.Find(bson.M{"clusterid": *cluster_uuid, "options.mon": "Y"}).All(&monNodes); err != nil {
+		logger.Get().Error("%s-Error getting mons while expand cluster: %v. error: %v", ctxt, *cluster_uuid, err)
+		return err
+	}
+	for _, mon := range monNodes {
+		clusterMon := make(map[string]interface{})
+		clusterMon["host"] = mon.Hostname
+		clusterMon["address"] = mon.ClusterIP4
+		clusterMons = append(clusterMons, clusterMon)
+	}
+	nodeRoleMapFromRequest := make(map[string][]string)
+	for _, req_node := range request.Nodes {
+		if util.StringInSlice(MON, req_node.NodeType) {
+			monReqNodes = append(monReqNodes, req_node)
+		} else if util.StringInSlice(OSD, req_node.NodeType) {
+			osdReqNodes = append(osdReqNodes, req_node)
+		}
+		nodeRoleMapFromRequest[req_node.NodeId] = req_node.NodeType
+	}
+
+	if len(monReqNodes) > 0 {
+		t.UpdateStatus("Configuring the mons")
+
+		for _, req_node := range request.Nodes {
+			if util.StringInSlice(MON, req_node.NodeType) {
+				mon := make(map[string]interface{})
+				nodeid, err := uuid.Parse(req_node.NodeId)
+				if err != nil {
+					logger.Get().Error("%s-Failed to parse uuid for node %v. error: %v", ctxt, req_node.NodeId, err)
+					t.UpdateStatus(fmt.Sprintf("Failed to add MON node: %v", req_node.NodeId))
+					continue
+				}
+				mon["calamari"] = true
+				mon["host"] = nodes[*nodeid].Hostname
+				mon["address"] = node_ips[*nodeid]["cluster"]
+				mon["fsid"] = cluster_uuid.String()
+				mon["monitor_secret"] = "AQA7P8dWAAAAABAAH/tbiZQn/40Z8pr959UmEA=="
+				mon["cluster_name"] = request.Name
+				mon["cluster_network"] = request.Networks.Cluster
+				mon["public_network"] = request.Networks.Public
+				mon["redhat_storage"] = conf.SystemConfig.Provisioners[bigfin_conf.ProviderName].RedhatStorage
+				if len(clusterMons) > 0 {
+					mon["monitors"] = clusterMons
+				}
+
+				if err := installer_backend.Configure(ctxt, t, MON, mon); err != nil {
+					failedMons = append(failedMons, mon["host"].(string))
+					logger.Get().Error("%s-Failed to add MON %v. error: %v", ctxt, mon["host"].(string), err)
+				} else {
+					t.UpdateStatus(fmt.Sprintf("Added mon node: %s", mon["host"].(string)))
+					succeededMons = append(succeededMons, mon["host"].(string))
+
+					clusterMon := make(map[string]interface{})
+					clusterMon["host"] = nodes[*nodeid].Hostname
+					clusterMon["address"] = node_ips[*nodeid]["cluster"]
+					clusterMons = append(clusterMons, clusterMon)
+				}
+
+			}
+		}
+
+		if len(failedMons) > 0 {
+			t.UpdateStatus(fmt.Sprintf("Failed to add mon(s) %v", failedMons))
+		}
+
+		t.UpdateStatus("Persisting mons")
+		for _, mon := range succeededMons {
+			if err := coll_nodes.Update(
+				bson.M{"hostname": mon},
+				bson.M{"$set": bson.M{
+					"clusterid":   *cluster_uuid,
+					"options.mon": "Y"}}); err != nil {
+				return err
+			}
+			logger.Get().Info(fmt.Sprintf("%s-Added mon node: %s", ctxt, mon))
+		}
+	}
+
+	t.UpdateStatus("Updating node details for cluster")
+	// Update nodes details
+	for _, node := range nodes {
+		if err := coll_nodes.Update(
+			bson.M{"nodeid": node.NodeId},
+			bson.M{"$set": bson.M{
+				"clusterip4": node_ips[node.NodeId]["cluster"],
+				"publicip4":  node_ips[node.NodeId]["public"],
+				"roles":      nodeRoleMapFromRequest[node.NodeId.String()]}}); err != nil {
+			logger.Get().Error(
+				"%s-Error updating the details for node: %s. error: %v",
+				ctxt,
+				node.Hostname,
+				err)
+			t.UpdateStatus(fmt.Sprintf("Failed to update details of node: %s", node.Hostname))
+		}
+	}
+
+	if len(osdReqNodes) > 0 {
+		failedOSDs, succeededOSDs, err := configureOSDs(*cluster_uuid, request, clusterMons, t, ctxt)
+		if err != nil {
+			return err
+		}
+		if len(failedOSDs) != 0 {
+			t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", failedOSDs))
+		}
+		if len(succeededOSDs) > 0 {
+			t.UpdateStatus("Recalculating pgnum/pgpnum")
+			if ok := RecalculatePgnum(ctxt, *cluster_uuid, t); !ok {
+				logger.Get().Warning(
+					"%s-Could not re-calculate pgnum/pgpnum for cluster: %v",
+					ctxt,
+					*cluster_uuid)
+				t.UpdateStatus("Recalculating pgnum/pgpnum failed")
+			}
+			//Update the CRUSH MAP
+			/*t.UpdateStatus("Updating the CRUSH Map")
+			if err := UpdateCrushNodeItems(ctxt, *cluster_uuid); err != nil {
+				logger.Get().Error("%s-Error updating the Crush map for cluster: %v. error: %v", ctxt, *cluster_uuid, err)
+				t.UpdateStatus("Updating the CRUSH Map failed")
+			}*/
+		}
+	}
 	return nil
 }
 
@@ -1468,14 +1640,13 @@ func RecalculatePgnum(ctxt string, clusterId uuid.UUID, t *task.Task) bool {
 	var storages []models.Storage
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
 	if err := coll.Find(bson.M{"clusterid": clusterId}).All(&storages); err != nil {
-		utils.FailTask(fmt.Sprintf("Error getting storage pools for cluster: %v", clusterId), fmt.Errorf("%s-%v", ctxt, err), t)
+		logger.Get().Error("%s-Error getting storage pools for cluster: %s. error: %v", ctxt, clusterId, err)
 		return false
 	}
 
-	t.UpdateStatus("Getting a mon from cluster")
 	monnode, err := GetRandomMon(clusterId)
 	if err != nil {
-		utils.FailTask(fmt.Sprintf("Error getting mon node for cluster: %v", clusterId), fmt.Errorf("%s-%v", ctxt, err), t)
+		logger.Get().Error("%s-Error getting a mon from cluster: %s. error: %v", ctxt, clusterId, err)
 		return false
 	}
 
@@ -1489,10 +1660,10 @@ func RecalculatePgnum(ctxt string, clusterId uuid.UUID, t *task.Task) bool {
 		} else {
 			pgNum = DerivePgNum(clusterId, storage.Size, storage.Replicas)
 		}
-		currentPgNum, err := strconv.Atoi(storage.Options["pgnum"])
+		currentPgNum, err := strconv.Atoi(storage.Options["pg_num"])
 		if err != nil {
-			utils.FailTask(fmt.Sprintf("Error getting details of pool: %s for cluster: %v", storage.Name, clusterId), fmt.Errorf("%s-%v", ctxt, err), t)
-			return false
+			logger.Get().Error("%s-Error getting pgnum of pool: %s for cluster: %v. error: %v", ctxt, storage.Name, clusterId, err)
+			continue
 		}
 		if pgNum == uint(currentPgNum) {
 			logger.Get().Info("No change in PgNum .. Continuing ..")
@@ -1500,8 +1671,8 @@ func RecalculatePgnum(ctxt string, clusterId uuid.UUID, t *task.Task) bool {
 		}
 		id, err := strconv.Atoi(storage.Options["id"])
 		if err != nil {
-			utils.FailTask(fmt.Sprintf("Error getting details of pool: %s for cluster: %v", storage.Name, clusterId), fmt.Errorf("%s-%v", ctxt, err), t)
-			return false
+			logger.Get().Error("%s-Error getting id of pool: %s for cluster: %v. error: %v", ctxt, storage.Name, clusterId, err)
+			continue
 		}
 		// Update the PG Num for the cluster
 		t.UpdateStatus(fmt.Sprintf("Updating the pgnum and pgpnum for pool %s", storage.Name))
@@ -1511,6 +1682,7 @@ func RecalculatePgnum(ctxt string, clusterId uuid.UUID, t *task.Task) bool {
 		}
 		ok, err := cephapi_backend.UpdatePool(monnode.Hostname, clusterId, id, poolData, ctxt)
 		if err != nil || !ok {
+			logger.Get().Error("%s-Error updating pgnum/pgnum of pool: %s for cluster: %v. error: %v", ctxt, storage.Name, clusterId, err)
 			t.UpdateStatus(fmt.Sprintf("Could not update pgnum/pgnum for pool: %s of cluster: %v", storage.Name, clusterId))
 		}
 	}
