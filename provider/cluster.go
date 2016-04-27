@@ -56,6 +56,12 @@ const (
 	MAX_JOURNALS_ON_SSD = 6
 )
 
+type JournalDetail struct {
+	JournalDisk string `json:"journaldisk"`
+	SSD         bool   `json:"type"`
+	Size        uint64 `json:"size"`
+}
+
 func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResponse) error {
 	var request models.AddClusterRequest
 
@@ -455,7 +461,7 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 		}
 	}
 	if osdPresent {
-		failedOSDs, succeededOSDs, err := configureOSDs(*cluster_uuid, request, clusterMons, t, ctxt)
+		failedOSDs, succeededOSDs, err := configureOSDs(*cluster_uuid, request, clusterMons, t, false, ctxt)
 		if err != nil {
 			return err
 		}
@@ -476,7 +482,7 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 
 func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 	clusterMons []map[string]interface{}, t *task.Task,
-	ctxt string) ([]string, []string, error) {
+	expand bool, ctxt string) ([]string, []string, error) {
 
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
@@ -485,11 +491,26 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 		succeededOSDs []string
 		slus          = make(map[string]models.StorageLogicalUnit)
 	)
+	// In case of expand cluster journal size to be taken from DB
+	if request.JournalSize == "" {
+		var cluster models.Cluster
+		collClusters := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+		if err := collClusters.Find(bson.M{"clusterid": clusterId}).One(&cluster); err != nil {
+			logger.Get().Error(
+				"%s-Error getting cluster details for %v. error: %v",
+				ctxt,
+				clusterId,
+				err)
+			return failedOSDs, succeededOSDs, err
+		}
+		request.JournalSize = cluster.JournalSize
+	}
+	jSize := utils.SizeFromStr(request.JournalSize)
 
 	nodes, err := util.GetNodes(request.Nodes)
 	if err != nil {
 		logger.Get().Error(
-			"%s-Error getting updated nodes list post create cluster %s. error: %v",
+			"%s-Error getting updated nodes list for cluster %s. error: %v",
 			ctxt,
 			request.Name,
 			err)
@@ -515,9 +536,35 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 
 		devices := make(map[string]models.Disk)
 		storageNode := nodes[*uuid]
+		var consumedCount int
+		var disksMap map[string]JournalDetail = make(map[string]JournalDetail)
+		if expand {
+			disksMap, consumedCount = mapPendingSSDJournalDisks(*uuid, requestNode, jSize, t, ctxt)
+			// Still left with unused rotational disks
+			if consumedCount < len(requestNode.Devices) {
+				for _, storageDisk := range storageNode.StorageDisks {
+					if storageDisk.Type == "disk" &&
+						storageDisk.Used == false &&
+						storageDisk.Name != requestNode.Devices[consumedCount].Name {
+						var journal = JournalDetail{
+							JournalDisk: storageDisk.Name,
+							SSD:         false,
+							Size:        storageDisk.Size,
+						}
+						disksMap[requestNode.Devices[consumedCount].Name] = journal
+						consumedCount++
+					}
+					if consumedCount >= len(requestNode.Devices) {
+						break
+					}
+				}
+			}
+		}
+
+		// Prepare left out disks for journal mapping
 		for _, storageDisk := range storageNode.StorageDisks {
-			for _, device := range requestNode.Devices {
-				if storageDisk.Name == device.Name {
+			for idx := consumedCount; idx < len(requestNode.Devices); idx++ {
+				if storageDisk.Name == requestNode.Devices[idx].Name {
 					if storageDisk.Used {
 						logger.Get().Warning(
 							"%s-Used Disk :%v. skipping",
@@ -525,7 +572,7 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 							storageDisk.Name)
 						break
 					}
-					devices[device.Name] = storageDisk
+					devices[requestNode.Devices[idx].Name] = storageDisk
 				} else {
 					continue
 				}
@@ -534,14 +581,18 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 
 		// Get the journal mapping for the disks
 		diskWithJournalMapped := getDiskWithJournalMapped(devices, request.JournalSize)
-		for disk, journalDisk := range diskWithJournalMapped {
+		for disk, journal := range disksMap {
+			diskWithJournalMapped[disk] = journal
+		}
+		for disk, journal := range diskWithJournalMapped {
 			var osdDet = make(map[string]string)
-			osdDet[disk] = journalDisk
+			osdDet[disk] = journal.JournalDisk
 			osd := make(map[string]interface{})
 			osd["devices"] = osdDet
 			osd["fsid"] = clusterId.String()
 			osd["host"] = storageNode.Hostname
-			osd["journal_size"] = JOURNALSIZE
+			// Convert the journal size to MB and set
+			osd["journal_size"] = jSize / 1024
 			osd["cluster_name"] = request.Name
 			osd["cluster_network"] = request.Networks.Cluster
 			osd["public_network"] = request.Networks.Public
@@ -558,6 +609,7 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 			options["publicip4"] = storageNode.PublicIP4
 			options["clusterip4"] = storageNode.ClusterIP4
 			options["device"] = disk
+			options["journal"] = journal
 			//
 			//	TODO: OSD Names needs to be taken care by sync calls
 			//
@@ -623,6 +675,68 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 	return failedOSDs, succeededOSDs, nil
 }
 
+func mapPendingSSDJournalDisks(
+	nodeId uuid.UUID,
+	requestNode models.ClusterNode,
+	jSize uint64,
+	t *task.Task,
+	ctxt string) (map[string]JournalDetail, int) {
+
+	var consumedCount int
+	var disksMap map[string]JournalDetail = make(map[string]JournalDetail)
+
+	// Get the journal disks from the node
+	existingJournals, err := getJournalDisks(nodeId)
+	if err != nil {
+		logger.Get().Error(
+			"%s-Error assessing existing journal disks for mapping of node: %s. error: %v",
+			ctxt,
+			requestNode.NodeId,
+			err)
+		t.UpdateStatus(
+			"Failed to assess existing journal disks for node: %s",
+			requestNode.NodeId)
+	}
+
+	// Map to existing journal disk if space available
+	for journal, count := range existingJournals {
+		if journal.SSD && count < 6 && (journal.Size-jSize*uint64(count)) > jSize {
+			for idx := consumedCount; idx < len(requestNode.Devices); idx++ {
+				disksMap[requestNode.Devices[idx].Name] = journal
+				count++
+				consumedCount++
+				if count == 6 || (journal.Size-jSize*uint64(count)) < jSize {
+					break
+				}
+			}
+		}
+	}
+	return disksMap, consumedCount
+}
+
+func getJournalDisks(nodeId uuid.UUID) (map[JournalDetail]uint, error) {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
+	var slus []models.StorageLogicalUnit
+	if err := coll.Find(bson.M{"nodeid": nodeId}).All(&slus); err != nil {
+		logger.Get().Error("Not found")
+		return map[JournalDetail]uint{}, err
+	}
+	var retVal map[JournalDetail]uint = make(map[JournalDetail]uint)
+	for _, slu := range slus {
+		journalDet := slu.Options["journal"].(map[string]interface{})
+		var journal = JournalDetail{
+			JournalDisk: journalDet["journaldisk"].(string),
+			SSD:         journalDet["ssd"].(bool),
+			Size:        uint64(journalDet["size"].(int64)),
+		}
+		retVal[journal] += 1
+	}
+	logger.Get().Error("Done")
+	return retVal, nil
+}
+
 /**
  * This fuction works based on a simple algorithm which maps
  * smaller sized disks as journla for bigger sized disks.
@@ -685,10 +799,10 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
  *	SUB CASE-3b: More SSDs are left
  *	LOGIC: Logic in case-2 is repeated for the left out disks
  */
-func getDiskWithJournalMapped(disks map[string]models.Disk, journalSize string) map[string]string {
+func getDiskWithJournalMapped(disks map[string]models.Disk, journalSize string) map[string]JournalDetail {
 	jSize := utils.SizeFromStr(journalSize)
 
-	var mappedDisks = make(map[string]string)
+	var mappedDisks = make(map[string]JournalDetail)
 	var ssdCount, rotationalCount, osdCount int
 
 	for _, disk := range disks {
@@ -714,7 +828,12 @@ func getDiskWithJournalMapped(disks map[string]models.Disk, journalSize string) 
 		}
 
 		for idx := 0; idx < validCount; idx++ {
-			mappedDisks[sortedDisks[idx].DevName] = sortedDisks[(len(disks)-idx)-1].DevName
+			var journal = JournalDetail{
+				JournalDisk: sortedDisks[(len(disks)-idx)-1].DevName,
+				SSD:         false,
+				Size:        sortedDisks[(len(disks)-idx)-1].Size,
+			}
+			mappedDisks[sortedDisks[idx].DevName] = journal
 		}
 		return mappedDisks
 	}
@@ -732,7 +851,12 @@ func getDiskWithJournalMapped(disks map[string]models.Disk, journalSize string) 
 			ssdDiskSize = sortedDisks[(len(sortedDisks)-journalDiskIdx)-1].Size - jSize
 			mappedDiskCountForJournal++
 			osdCount++
-			mappedDisks[sortedDisks[idx].DevName] = sortedDisks[(len(sortedDisks)-journalDiskIdx)-1].DevName
+			var journal = JournalDetail{
+				JournalDisk: sortedDisks[(len(sortedDisks)-journalDiskIdx)-1].DevName,
+				SSD:         true,
+				Size:        sortedDisks[(len(sortedDisks)-journalDiskIdx)-1].Size,
+			}
+			mappedDisks[sortedDisks[idx].DevName] = journal
 			if mappedDiskCountForJournal == MAX_JOURNALS_ON_SSD || ssdDiskSize < jSize {
 				mappedDiskCountForJournal = 0
 				journalDiskIdx++
@@ -750,6 +874,7 @@ func getDiskWithJournalMapped(disks map[string]models.Disk, journalSize string) 
 			rotationalDisks = append(rotationalDisks, disk)
 		}
 	}
+	logger.Get().Error("HEre-----")
 	journalDiskIdx = 0
 	mappedDiskCountForJournal = 0
 	for _, disk := range rotationalDisks {
@@ -757,13 +882,19 @@ func getDiskWithJournalMapped(disks map[string]models.Disk, journalSize string) 
 			ssdDiskSize = ssdDisks[journalDiskIdx].Size - jSize
 			mappedDiskCountForJournal++
 			osdCount++
-			mappedDisks[disk.DevName] = ssdDisks[journalDiskIdx].DevName
+			var journal = JournalDetail{
+				JournalDisk: ssdDisks[journalDiskIdx].DevName,
+				SSD:         true,
+				Size:        ssdDisks[journalDiskIdx].Size,
+			}
+			mappedDisks[disk.DevName] = journal
 			if mappedDiskCountForJournal == MAX_JOURNALS_ON_SSD || ssdDiskSize < jSize {
 				mappedDiskCountForJournal = 0
 				journalDiskIdx++
 			}
+		} else {
+			break
 		}
-		break
 	}
 
 	// If still ssd disks pending, map them among themselves
@@ -781,7 +912,12 @@ func getDiskWithJournalMapped(disks map[string]models.Disk, journalSize string) 
 			ssdDiskSize = sortedDisks[(len(sortedDisks)-journalDiskIdx)-1].Size - jSize
 			mappedDiskCountForJournal++
 			osdCount++
-			mappedDisks[sortedDisks[idx1].DevName] = sortedDisks[(len(sortedDisks)-journalDiskIdx)-1].DevName
+			var journal = JournalDetail{
+				JournalDisk: sortedDisks[(len(sortedDisks)-journalDiskIdx)-1].DevName,
+				SSD:         true,
+				Size:        sortedDisks[(len(sortedDisks)-journalDiskIdx)-1].Size,
+			}
+			mappedDisks[sortedDisks[idx1].DevName] = journal
 			if mappedDiskCountForJournal == MAX_JOURNALS_ON_SSD || ssdDiskSize < jSize {
 				mappedDiskCountForJournal = 0
 				journalDiskIdx++
@@ -804,7 +940,12 @@ func getDiskWithJournalMapped(disks map[string]models.Disk, journalSize string) 
 		}
 		sortedDisks := SortDisksOnSize(pendingDisks)
 		for idx2 := 0; idx2 < validCount; idx2++ {
-			mappedDisks[sortedDisks[idx2].DevName] = sortedDisks[(len(pendingDisks)-idx2)-1].DevName
+			var journal = JournalDetail{
+				JournalDisk: sortedDisks[(len(pendingDisks)-idx2)-1].DevName,
+				SSD:         false,
+				Size:        sortedDisks[(len(pendingDisks)-idx2)-1].Size,
+			}
+			mappedDisks[sortedDisks[idx2].DevName] = journal
 		}
 		return mappedDisks
 	}
@@ -1365,7 +1506,7 @@ func ExpandClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 	}
 
 	if len(osdReqNodes) > 0 {
-		failedOSDs, succeededOSDs, err := configureOSDs(*cluster_uuid, request, clusterMons, t, ctxt)
+		failedOSDs, succeededOSDs, err := configureOSDs(*cluster_uuid, request, clusterMons, t, true, ctxt)
 		if err != nil {
 			return err
 		}
