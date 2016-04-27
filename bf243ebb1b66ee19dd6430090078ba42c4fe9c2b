@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_6e27dfca",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 242,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-27T13:52:45Z",
+      "side": 1,
+      "message": "I remember Kanagaraj saying that UI somewhere looks for Status message \"Success\" as such. @Ramesh/Karnan, can you confirm the same? If not required I am ok with this change.",
+      "range": {
+        "startLine": 242,
+        "startChar": 20,
+        "endLine": 242,
+        "endChar": 53
+      },
+      "revId": "bf243ebb1b66ee19dd6430090078ba42c4fe9c2b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
