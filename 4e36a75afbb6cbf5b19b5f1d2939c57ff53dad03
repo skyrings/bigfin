@@ -25,6 +25,53 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_d45e7511",
+        "filename": "backend/cephapi/api.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 208,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-28T11:46:55Z",
+      "side": 1,
+      "message": "Its either \"completed\" or \"submitted\"",
+      "parentUuid": "baa041b7_9ef24e6e",
+      "range": {
+        "startLine": 208,
+        "startChar": 49,
+        "endLine": 208,
+        "endChar": 57
+      },
+      "revId": "4e36a75afbb6cbf5b19b5f1d2939c57ff53dad03",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_b49c11c1",
+        "filename": "backend/salt/python/bigfin/saltwrapper.py",
+        "patchSetId": 13
+      },
+      "lineNbr": 546,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-28T11:46:55Z",
+      "side": 1,
+      "message": "Not a foolproof way as discussed. Will change it to do \"ls /var/lib/ceph/mon/*\" and \"ls /var/lib/ceph/osd/*\"",
+      "range": {
+        "startLine": 546,
+        "startChar": 4,
+        "endLine": 546,
+        "endChar": 65
+      },
+      "revId": "4e36a75afbb6cbf5b19b5f1d2939c57ff53dad03",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_fefdda3a",
         "filename": "conf/ceph.conf",
         "patchSetId": 13
@@ -48,6 +95,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_949fcdb3",
+        "filename": "conf/ceph.conf",
+        "patchSetId": 13
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-28T11:46:55Z",
+      "side": 1,
+      "message": "Actually in production redhatstorage\u003dtrue is required. In dev we can always change it manullay and test..\n\nBut yes QE also would fail for the time being, so would change it as suggested.",
+      "parentUuid": "baa041b7_fefdda3a",
+      "range": {
+        "startLine": 10,
+        "startChar": 9,
+        "endLine": 11,
+        "endChar": 28
+      },
+      "revId": "4e36a75afbb6cbf5b19b5f1d2939c57ff53dad03",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_d419d57a",
         "filename": "provider/import_cluster.go",
         "patchSetId": 13
@@ -59,6 +130,30 @@
       "writtenOn": "2016-04-28T11:30:31Z",
       "side": 1,
       "message": "I think after the basic cluster info is populated, we should not worry about failure. we can log the failure, update task and continue",
+      "range": {
+        "startLine": 236,
+        "startChar": 3,
+        "endLine": 237,
+        "endChar": 9
+      },
+      "revId": "4e36a75afbb6cbf5b19b5f1d2939c57ff53dad03",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_f4ba9922",
+        "filename": "provider/import_cluster.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 237,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-04-28T11:46:55Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_d419d57a",
       "range": {
         "startLine": 236,
         "startChar": 3,
