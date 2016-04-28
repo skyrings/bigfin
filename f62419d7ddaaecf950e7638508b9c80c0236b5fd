@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_def8d64b",
+        "filename": "main.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-04-28T11:30:31Z",
+      "side": 0,
+      "message": "Why this is removed?",
+      "range": {
+        "startLine": 32,
+        "startChar": 2,
+        "endLine": 32,
+        "endChar": 63
+      },
+      "revId": "f62419d7ddaaecf950e7638508b9c80c0236b5fd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
