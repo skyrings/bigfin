@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_80ac27a1",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 481,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-04-29T14:02:56Z",
+      "side": 1,
+      "message": "if it is a cluster create case and if journal size is empty we need to set it to JOURNALSIZE",
+      "range": {
+        "startLine": 481,
+        "startChar": 2,
+        "endLine": 481,
+        "endChar": 42
+      },
+      "revId": "b8c2c2d689f1a228c39c6beb4e7a5028f5629633",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_80de673d",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 516,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-04-29T14:02:56Z",
+      "side": 1,
+      "message": "As discussed, move this out into a different function",
+      "range": {
+        "startLine": 514,
+        "startChar": 2,
+        "endLine": 516,
+        "endChar": 13
+      },
+      "revId": "b8c2c2d689f1a228c39c6beb4e7a5028f5629633",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_e07d33b2",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 547,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-04-29T14:02:56Z",
+      "side": 1,
+      "message": "As we discussed, these can be moved out and can be part of getDiskWithJournalMapped",
+      "range": {
+        "startLine": 543,
+        "startChar": 1,
+        "endLine": 547,
+        "endChar": 10
+      },
+      "revId": "b8c2c2d689f1a228c39c6beb4e7a5028f5629633",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_40973f48",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 591,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-04-29T14:02:56Z",
+      "side": 1,
+      "message": "Use request.JournalSize",
+      "range": {
+        "startLine": 591,
+        "startChar": 25,
+        "endLine": 591,
+        "endChar": 36
+      },
+      "revId": "b8c2c2d689f1a228c39c6beb4e7a5028f5629633",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
