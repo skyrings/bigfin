@@ -46,6 +46,30 @@
       "revId": "7a4fc16bc035585b7b0747d58aed5d37e84b24fa",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_609da358",
+        "filename": "provider/events.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 372,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-04-29T12:42:50Z",
+      "side": 1,
+      "message": "ok",
+      "parentUuid": "baa041b7_0550295c",
+      "range": {
+        "startLine": 368,
+        "startChar": 2,
+        "endLine": 372,
+        "endChar": 17
+      },
+      "revId": "7a4fc16bc035585b7b0747d58aed5d37e84b24fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
