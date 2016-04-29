@@ -22,6 +22,30 @@
       "revId": "7a4fc16bc035585b7b0747d58aed5d37e84b24fa",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_0550295c",
+        "filename": "provider/events.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 372,
+      "author": {
+        "id": 1006236
+      },
+      "writtenOn": "2016-04-29T12:37:10Z",
+      "side": 1,
+      "message": "yes, in line 405 as you can see, I try to update the OSD details first if it gives does not exist err, only then I insert the OSD, thus ensuring no duplicates are added.",
+      "parentUuid": "baa041b7_efb52631",
+      "range": {
+        "startLine": 368,
+        "startChar": 2,
+        "endLine": 372,
+        "endChar": 17
+      },
+      "revId": "7a4fc16bc035585b7b0747d58aed5d37e84b24fa",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
