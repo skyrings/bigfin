@@ -281,13 +281,13 @@ func (c Salt) GetPartDeviceDetails(node string, partPath string, ctxt string) (d
 }
 
 func (c Salt) GetServiceCount(Hostname string, ctxt string) (service_details map[string]int, err error) {
-        service_details = make(map[string]int)
-        mutex.Lock()
-        defer mutex.Unlock()
-        if pyobj, loc_err := pyFuncs["GetServiceCount"].Call(Hostname, ctxt); loc_err == nil {
-                err = gopy.Convert(pyobj, &service_details)
-	 } else {
-                err = loc_err
-        }
-        return
+	service_details = make(map[string]int)
+	mutex.Lock()
+	defer mutex.Unlock()
+	if pyobj, loc_err := pyFuncs["GetServiceCount"].Call(Hostname, ctxt); loc_err == nil {
+		err = gopy.Convert(pyobj, &service_details)
+	} else {
+		err = loc_err
+	}
+	return
 }
