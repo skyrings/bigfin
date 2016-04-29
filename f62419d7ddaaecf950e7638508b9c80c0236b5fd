@@ -46,6 +46,30 @@
       "revId": "f62419d7ddaaecf950e7638508b9c80c0236b5fd",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_205b1b56",
+        "filename": "main.go",
+        "patchSetId": 13
+      },
+      "lineNbr": 32,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-04-29T14:12:53Z",
+      "side": 0,
+      "message": "This required, otherwise cephinstaller package will not be loaded. This written as a plugin and the plugin init fail which essentially cause the cluster creation to fail",
+      "parentUuid": "baa041b7_54a945de",
+      "range": {
+        "startLine": 32,
+        "startChar": 2,
+        "endLine": 32,
+        "endChar": 63
+      },
+      "revId": "f62419d7ddaaecf950e7638508b9c80c0236b5fd",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
