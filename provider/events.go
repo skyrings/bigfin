@@ -368,57 +368,61 @@ func osd_add_or_delete_handler(event models.AppEvent, osdname string, ctxt strin
 
 		event.NodeId = node.NodeId
 		event.NodeName = node.Hostname
+		return event, nil
+		//Commenting below section because of race condition
+		//that is happening during cluster creation
+		/*
+			deviceDetails, err := salt_backend.GetPartDeviceDetails(
+				node.Hostname,
+				osd.OsdData,
+				ctxt)
+			if err != nil {
+				logger.Get().Error(
+					"%s-Error getting device details of osd.%d. error: %v",
+					ctxt,
+					osd.Id,
+					err)
+			}
 
-		deviceDetails, err := salt_backend.GetPartDeviceDetails(
-			node.Hostname,
-			osd.OsdData,
-			ctxt)
-		if err != nil {
-			logger.Get().Error(
-				"%s-Error getting device details of osd.%d. error: %v",
-				ctxt,
-				osd.Id,
-				err)
-		}
+			newSlu := models.StorageLogicalUnit{
+				SluId:     osd.Uuid,
+				Name:      fmt.Sprintf("osd.%d", osd.Id),
+				Type:      models.CEPH_OSD,
+				ClusterId: event.ClusterId,
+				NodeId:    event.NodeId,
+				Status:    mapOsdStatus(osd.Up, osd.In),
+				State:     mapOsdState(osd.In),
+			}
+			newSlu.StorageDeviceId = deviceDetails.Uuid
+			newSlu.StorageDeviceSize = deviceDetails.Size
+			newSlu.StorageProfile = get_disk_profile(node.StorageDisks, deviceDetails.PartName)
+			var options = make(map[string]interface{})
+			options["in"] = strconv.FormatBool(osd.In)
+			options["up"] = strconv.FormatBool(osd.Up)
+			options["node"] = node.NodeId.String()
+			options["publicip4"] = node.PublicIP4
+			options["clusterip4"] = node.ClusterIP4
+			options["device"] = deviceDetails.DevName
+			options["fstype"] = deviceDetails.FSType
+			newSlu.Options = options
 
-		newSlu := models.StorageLogicalUnit{
-			SluId:     osd.Uuid,
-			Name:      fmt.Sprintf("osd.%d", osd.Id),
-			Type:      models.CEPH_OSD,
-			ClusterId: event.ClusterId,
-			NodeId:    event.NodeId,
-			Status:    mapOsdStatus(osd.Up, osd.In),
-			State:     mapOsdState(osd.In),
-		}
-		newSlu.StorageDeviceId = deviceDetails.Uuid
-		newSlu.StorageDeviceSize = deviceDetails.Size
-		newSlu.StorageProfile = get_disk_profile(node.StorageDisks, deviceDetails.PartName)
-		var options = make(map[string]interface{})
-		options["in"] = strconv.FormatBool(osd.In)
-		options["up"] = strconv.FormatBool(osd.Up)
-		options["node"] = node.NodeId.String()
-		options["publicip4"] = node.PublicIP4
-		options["clusterip4"] = node.ClusterIP4
-		options["device"] = deviceDetails.DevName
-		options["fstype"] = deviceDetails.FSType
-		newSlu.Options = options
-
-		if err := coll.Update(bson.M{"name": osdname, "clusterid": event.ClusterId}, newSlu); err != nil {
-			if err.Error() == mgo.ErrNotFound.Error() {
-				if err := coll.Insert(newSlu); err != nil {
-					logger.Get().Error("%s-Error creating the new SLU for cluster: %v. error: %v", ctxt, event.ClusterId, err)
+			if err := coll.Update(bson.M{"name": osdname, "clusterid": event.ClusterId}, newSlu); err != nil {
+				if err.Error() == mgo.ErrNotFound.Error() {
+					if err := coll.Insert(newSlu); err != nil {
+						logger.Get().Error("%s-Error creating the new SLU for cluster: %v. error: %v", ctxt, event.ClusterId, err)
+						return event, err
+					}
+					logger.Get().Info("%s-Added new slu: osd.%d on cluster: %v", ctxt, osd.Id, event.ClusterId)
+					return event, nil
+				} else {
+					logger.Get().Error("%s-Error updating the SLU: %s", ctxt, osdname)
 					return event, err
 				}
-				logger.Get().Info("%s-Added new slu: osd.%d on cluster: %v", ctxt, osd.Id, event.ClusterId)
-				return event, nil
 			} else {
-				logger.Get().Error("%s-Error updating the SLU: %s", ctxt, osdname)
-				return event, err
+				logger.Get().Info("%s-Successfully updated the SLU: %s", ctxt, osdname)
+				return event, nil
 			}
-		} else {
-			logger.Get().Info("%s-Successfully updated the SLU: %s", ctxt, osdname)
-			return event, nil
-		}
+		*/
 	} else {
 		if err := coll.Remove(bson.M{"sluid": event.EntityId}); err != nil {
 			logger.Get().Warning(
