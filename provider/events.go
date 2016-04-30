@@ -403,7 +403,9 @@ func osd_add_or_delete_handler(event models.AppEvent, osdname string, ctxt strin
 		options["fstype"] = deviceDetails.FSType
 		newSlu.Options = options
 
-		if err := coll.Update(bson.M{"name": osdname, "clusterid": event.ClusterId}, newSlu); err != nil {
+		if err := coll.Update(bson.M{"nodeid": node.NodeId,
+			"clusterid":      event.ClusterId,
+			"options.device": deviceDetails.DevName}, newSlu); err != nil {
 			if err.Error() == mgo.ErrNotFound.Error() {
 				if err := coll.Insert(newSlu); err != nil {
 					logger.Get().Error("%s-Error creating the new SLU for cluster: %v. error: %v", ctxt, event.ClusterId, err)
