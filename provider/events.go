@@ -36,9 +36,9 @@ import (
 
 var (
 	handlermap = map[string]interface{}{
-		"skyring/calamari/ceph/osd/propertyChanged":                      ceph_osd_property_changed_handler,
-		"skyring/calamari/ceph/mon/propertyChanged":                      ceph_mon_property_changed_handler,
-		"skyring/calamari/ceph/cluster/health/changed":                   ceph_cluster_health_changed,
+		"calamari/ceph/osd/propertyChanged":                              ceph_osd_property_changed_handler,
+		"calamari/ceph/mon/propertyChanged":                              ceph_mon_property_changed_handler,
+		"calamari/ceph/cluster/health/changed":                           ceph_cluster_health_changed,
 		"skyring/ceph/cluster/*/threshold/slu_utilization/*":             ceph_osd_utilization_threshold_changed,
 		"skyring/ceph/cluster/*/threshold/cluster_utilization/*":         ceph_cluster_utilization_threshold_changed,
 		"skyring/ceph/cluster/*/threshold/storage_utilization/*":         ceph_storage_utilization_threshold_changed,
