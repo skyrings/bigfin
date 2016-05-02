@@ -1001,16 +1001,25 @@ func persistOSD(slu models.StorageLogicalUnit, t *task.Task, ctxt string) (bool,
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
-	if err := coll.Insert(slu); err != nil {
-		return false, err
+	var existing_slu models.StorageLogicalUnit
+	if err := coll.Find(bson.M{"nodeid": slu.NodeId,
+		"clusterid":      slu.ClusterId,
+		"options.device": slu.Options["device"]}).One(&existing_slu); err != nil {
+		if err.Error() == mgo.ErrNotFound.Error() {
+			if err := coll.Insert(slu); err != nil {
+				return false, err
+			}
+			logger.Get().Info(
+				fmt.Sprintf("%s-Added %s (%s %s) for cluster: %v",
+					ctxt,
+					slu.Name,
+					slu.Options["node"],
+					slu.Options["device"],
+					slu.ClusterId))
+		} else {
+			return false, err
+		}
 	}
-	logger.Get().Info(
-		fmt.Sprintf("%s-Added %s (%s %s) for cluster: %v",
-			ctxt,
-			slu.Name,
-			slu.Options["node"],
-			slu.Options["device"],
-			slu.ClusterId))
 	t.UpdateStatus(
 		"Added %s (%s %s)",
 		slu.Name,
