@@ -422,7 +422,7 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 			var options = make(map[string]interface{})
 			options["in"] = strconv.FormatBool(osd.In)
 			options["up"] = strconv.FormatBool(osd.Up)
-			options["node"] = node.NodeId.String()
+			options["node"] = node.Hostname
 			options["publicip4"] = node.PublicIP4
 			options["clusterip4"] = node.ClusterIP4
 			options["device"] = deviceDetails.DevName
