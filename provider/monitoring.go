@@ -603,6 +603,26 @@ func FetchPGSummary(ctxt string, cluster models.Cluster, monName string) (map[st
 		metrics[metric_name] = statMap
 
 	}
+
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	var slus []models.StorageLogicalUnit
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
+	if err := coll.Find(bson.M{"clusterid": cluster.ClusterId}).All(&slus); err != nil {
+		logger.Get().Error("%s-Error getting the slus for cluster: %v. error: %v", ctxt, cluster.ClusterId, err)
+		return metrics, nil
+	}
+
+	for _, slu := range slus {
+		slu.Options["pgsummary"] = statistics.ByOSD[strings.Replace(slu.Name, "osd.", "", 1)]
+		if err := coll.Update(
+			bson.M{"clusterid": cluster.ClusterId, "name": slu.Name},
+			bson.M{"$set": bson.M{"options": slu.Options}}); err != nil {
+			logger.Get().Error("%s-Error updating the slu: %s. error: %v", ctxt, slu.Name, err)
+			continue
+		}
+	}
+
 	return metrics, nil
 }
 
