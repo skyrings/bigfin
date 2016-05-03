@@ -76,6 +76,12 @@ func (c *CephApi) LoadRoutes() {
 			Version: 2,
 		},
 		{
+			Name:    "GetPool",
+			Pattern: "cluster/{cluster-fsid}/pool/{pool-id}?format=json",
+			Method:  "GET",
+			Version: 2,
+		},
+		{
 			Name:    "UpdatePool",
 			Pattern: "cluster/{cluster-fsid}/pool/{pool-id}",
 			Method:  "PATCH",

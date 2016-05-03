@@ -15,6 +15,7 @@ package provider
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/skyrings/bigfin/bigfinmodels"
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/conf"
 	"github.com/skyrings/skyring-common/db"
@@ -22,6 +23,7 @@ import (
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/task"
 	"github.com/skyrings/skyring-common/tools/uuid"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"strconv"
@@ -322,9 +324,17 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 				storage.Options = options
 
 				coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
-				if err := coll.Insert(storage); err != nil {
-					utils.FailTask(fmt.Sprintf("Error persisting pool %s for cluster: %s", request.Name, cluster.Name), fmt.Errorf("%s - %v", ctxt, err), t)
-					return nil, false
+				var existing_storage models.Storage
+				if err := coll.Find(bson.M{"name": storage.Name, "clusterid": storage.ClusterId}).One(&existing_storage); err != nil {
+					if err.Error() == mgo.ErrNotFound.Error() {
+						if err := coll.Insert(storage); err != nil {
+							utils.FailTask(fmt.Sprintf("Error persisting pool %s for cluster: %s", request.Name, cluster.Name), fmt.Errorf("%s - %v", ctxt, err), t)
+							return nil, false
+						}
+					} else {
+						utils.FailTask(fmt.Sprintf("Error persisting pool %s for cluster: %s", request.Name, cluster.Name), fmt.Errorf("%s - %v", ctxt, err), t)
+						return nil, false
+					}
 				}
 				break
 			}
@@ -438,11 +448,6 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 		*resp = utils.WriteResponse(http.StatusInternalServerError, fmt.Sprintf("Error getting storages. error: %v", err))
 		return err
 	}
-	type ECProfileDet struct {
-		Pool      string `json:"pool"`
-		PoolId    int    `json:"pool_id"`
-		ECProfile string `json:"erasure_code_profile"`
-	}
 	var storages []models.AddStorageRequest
 	for _, pool := range pools {
 		storage := models.AddStorageRequest{
@@ -475,7 +480,7 @@ func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcRespon
 			storage.Type = models.STORAGE_TYPE_REPLICATED
 			logger.Get().Warning("%s-Error getting EC profile details of pool: %s of cluster: %s", ctxt, pool.Name, cluster.Name)
 		} else {
-			var ecprofileDet ECProfileDet
+			var ecprofileDet bigfinmodels.ECProfileDet
 			if err := json.Unmarshal([]byte(out), &ecprofileDet); err != nil {
 				logger.Get().Warning("%s-Error parsing EC profile details of pool: %s of cluster: %s", ctxt, pool.Name, cluster.Name)
 			} else {

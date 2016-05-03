@@ -113,6 +113,7 @@ type Backend interface {
 	ListPoolNames(mon string, clusterName string, ctxt string) ([]string, error)
 	GetClusterStatus(mon string, clusterId uuid.UUID, clusterName string, ctxt string) (string, error)
 	GetPools(mon string, clusterId uuid.UUID, ctxt string) ([]CephPool, error)
+	GetPool(mon string, clusterId uuid.UUID, pool_id int, ctxt string) (CephPool, error)
 	UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool map[string]interface{}, ctxt string) (bool, error)
 	RemovePool(mon string, clusterId uuid.UUID, clusterName string, pool string, poolId int, ctxt string) (bool, error)
 	GetClusterStats(mon string, clusterName string, ctxt string) (ClusterUtilization, error)
