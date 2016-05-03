@@ -522,11 +522,6 @@ func syncStoragePools(mon string, clusterId uuid.UUID, ctxt string) error {
 	if err != nil {
 		return err
 	}
-	type ECProfileDet struct {
-		Pool      string `json:"pool"`
-		PoolId    int    `json:"pool_id"`
-		ECProfile string `json:"erasure_code_profile"`
-	}
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	coll1 := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
@@ -577,7 +572,7 @@ func syncStoragePools(mon string, clusterId uuid.UUID, ctxt string) error {
 				pool.Name,
 				cluster.Name)
 		} else {
-			var ecprofileDet ECProfileDet
+			var ecprofileDet bigfinmodels.ECProfileDet
 			if err := json.Unmarshal([]byte(out), &ecprofileDet); err != nil {
 				logger.Get().Warning(
 					"%s-Error parsing EC profile details of pool: %s of cluster: %s",

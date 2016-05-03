@@ -36,6 +36,8 @@ import (
 
 var (
 	handlermap = map[string]interface{}{
+		"calamari/ceph/pool/added":                                       ceph_pool_add_handler,
+		"calamari/ceph/pool/deleted":                                     ceph_pool_delete_handler,
 		"calamari/ceph/osd/propertyChanged":                              ceph_osd_property_changed_handler,
 		"calamari/ceph/mon/propertyChanged":                              ceph_mon_property_changed_handler,
 		"calamari/ceph/cluster/health/changed":                           ceph_cluster_health_changed,
@@ -638,6 +640,199 @@ func ceph_cluster_health_changed(event models.AppEvent, ctxt string) (models.App
 		ctxt); err != nil {
 		logger.Get().Error("%s-Could not update Alarm state and count for"+
 			" event:%v .Error: %v", ctxt, event.EventId, err)
+		return event, err
+	}
+	return event, nil
+}
+
+func ceph_pool_add_handler(event models.AppEvent, ctxt string) (models.AppEvent, error) {
+	// if pool is created through skyring let the details be updated by
+	// creator itself. This is mainly to handle pool creation from backend
+	// So this sleep will make sure that the pool details are updated before
+	// this function tries to update.
+	time.Sleep(60 * time.Second)
+	event.NotificationEntity = models.NOTIFICATION_ENTITY_STORAGE
+	event.Name = EventTypes["pool_added_or_removed"]
+	event.NodeName = ""
+	event.Severity = models.ALARM_STATUS_CLEARED
+	event.Notify = false
+	monnode, err := GetRandomMon(event.ClusterId)
+	if err != nil {
+		logger.Get().Error(
+			"%s-Error getting a mon node in cluster: %v. error: %v",
+			ctxt,
+			event.ClusterId, err)
+		return event, err
+	}
+	pool_id, err := strconv.Atoi(event.Tags["service_id"])
+	if err != nil {
+		logger.Get().Error("%s-Error converting pool-id to integer", ctxt)
+		return event, err
+	}
+
+	pool, err := cephapi_backend.GetPool(monnode.Hostname,
+		event.ClusterId,
+		pool_id,
+		ctxt)
+	if err != nil {
+		return event, err
+	}
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll1 := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	var cluster models.Cluster
+	if err := coll1.Find(bson.M{"clusterid": event.ClusterId}).One(&cluster); err != nil {
+		return event, fmt.Errorf(
+			"%s-Error getting details of cluster: %v. error: %v",
+			ctxt,
+			event.ClusterId,
+			err)
+	}
+	event.ClusterName = cluster.Name
+
+	storage := models.Storage{
+		Name:     pool.Name,
+		Replicas: pool.Size,
+	}
+	event.Message = fmt.Sprintf("Detected addition of new pool %s in cluster %s", pool.Name,
+		cluster.Name)
+	event.Description = fmt.Sprintf("%s. The new pool will be added to skyring.", event.Message)
+	if pool.QuotaMaxObjects != 0 && pool.QuotaMaxBytes != 0 {
+		storage.QuotaEnabled = true
+		quotaParams := make(map[string]string)
+		quotaParams["quota_max_objects"] = strconv.Itoa(pool.QuotaMaxObjects)
+		quotaParams["quota_max_bytes"] = strconv.FormatUint(pool.QuotaMaxBytes, 10)
+		storage.QuotaParams = quotaParams
+	}
+	options := make(map[string]string)
+	options["id"] = strconv.Itoa(pool.Id)
+	options["pg_num"] = strconv.Itoa(pool.PgNum)
+	options["pgp_num"] = strconv.Itoa(pool.PgpNum)
+	options["full"] = strconv.FormatBool(pool.Full)
+	options["hashpspool"] = strconv.FormatBool(pool.HashPsPool)
+	options["min_size"] = strconv.FormatUint(pool.MinSize, 10)
+	options["crash_replay_interval"] = strconv.Itoa(pool.CrashReplayInterval)
+	options["crush_ruleset"] = strconv.Itoa(pool.CrushRuleSet)
+	// Get EC profile details of pool
+	ok, out, err := cephapi_backend.ExecCmd(
+		monnode.Hostname,
+		event.ClusterId,
+		fmt.Sprintf(
+			"ceph --cluster %s osd pool get %s erasure_code_profile --format=json",
+			cluster.Name,
+			pool.Name),
+		ctxt)
+	if err != nil || !ok {
+		storage.Type = models.STORAGE_TYPE_REPLICATED
+		logger.Get().Warning(
+			"%s-Error getting EC profile details of pool: %s of cluster: %s",
+			ctxt,
+			pool.Name,
+			cluster.Name)
+	} else {
+		var ecprofileDet bigfinmodels.ECProfileDet
+		if err := json.Unmarshal([]byte(out), &ecprofileDet); err != nil {
+			logger.Get().Warning(
+				"%s-Error parsing EC profile details of pool: %s of cluster: %s",
+				ctxt,
+				pool.Name,
+				cluster.Name)
+		} else {
+			storage.Type = models.STORAGE_TYPE_ERASURE_CODED
+			options["ecprofile"] = ecprofileDet.ECProfile
+		}
+	}
+	storage.Options = options
+	storage.ClusterId = event.ClusterId
+
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+
+	var existing_storage models.Storage
+
+	if err := coll.Find(bson.M{"name": storage.Name, "clusterid": storage.ClusterId}).One(&existing_storage); err != nil {
+		if err.Error() == mgo.ErrNotFound.Error() {
+			uuid, err := uuid.New()
+			if err != nil {
+				logger.Get().Error(
+					"%s-Error creating id for the new storage entity: %s. error: %v",
+					ctxt,
+					storage.Name,
+					err)
+				return event, nil
+			}
+			storage.StorageId = *uuid
+			if err := coll.Insert(storage); err != nil {
+				logger.Get().Error(
+					"%s-Error adding storage:%s to DB on cluster: %s. error: %v",
+					ctxt,
+					storage.Name,
+					cluster.Name,
+					err)
+				return event, nil
+			}
+			logger.Get().Info(
+				"%s-Added the new storage entity: %s on cluster: %s",
+				ctxt,
+				storage.Name,
+				cluster.Name)
+			return event, nil
+		} else {
+			logger.Get().Error("%s-Error reading storage info from DB. Error: %v", ctxt, err)
+			return event, err
+		}
+	} else {
+		return event, fmt.Errorf("pool already added in DB")
+	}
+}
+
+func ceph_pool_delete_handler(event models.AppEvent, ctxt string) (models.AppEvent, error) {
+	// if pool is deleted through skyring let the details be updated by
+	// skyring itself else the task fails. This is mainly to handle pool
+	// deletion from backend  So this sleep will make sure that the pool
+	// details are updated before it comes here, if done through skyring.
+	time.Sleep(60 * time.Second)
+	event.NotificationEntity = models.NOTIFICATION_ENTITY_STORAGE
+	event.Name = EventTypes["pool_added_or_removed"]
+	event.NodeName = ""
+	event.Severity = models.ALARM_STATUS_CLEARED
+	event.Notify = false
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+
+	coll1 := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	var cluster models.Cluster
+	if err := coll1.Find(bson.M{"clusterid": event.ClusterId}).One(&cluster); err != nil {
+		return event, fmt.Errorf(
+			"%s-Error getting details of cluster: %v. error: %v",
+			ctxt,
+			event.ClusterId,
+			err)
+	}
+	event.ClusterName = cluster.Name
+
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+	var s models.Storage
+	if err := coll.Find(bson.M{"options.id": event.Tags["service_id"],
+		"clusterid": event.ClusterId}).One(&s); err != nil {
+		logger.Get().Error(
+			"%s-Error finding the storage: %s(id) from cluster: %v. error: %v",
+			ctxt,
+			event.Tags["service_id"],
+			event.ClusterId,
+			err)
+		return event, err
+	}
+	event.Message = fmt.Sprintf("Detected deletion of pool %s from cluster %s", s.Name,
+		cluster.Name)
+	event.Description = fmt.Sprintf("%s. This pool will be removed from the DB", event.Message)
+
+	if err := coll.Remove(bson.M{"options.id": event.Tags["service_id"],
+		"clusterid": event.ClusterId}); err != nil {
+		logger.Get().Error(
+			"%s-Error removing the storage from cluster: %v. error: %v",
+			ctxt,
+			event.ClusterId,
+			err)
 		return event, err
 	}
 	return event, nil

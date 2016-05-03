@@ -51,3 +51,9 @@ var NOTIFICATIONS_SUPPORTED = []string{
 	MONITOR_AVAILABILTY,
 	OSD_AVAILABILITY,
 }
+
+type ECProfileDet struct {
+	Pool      string `json:"pool"`
+	PoolId    int    `json:"pool_id"`
+	ECProfile string `json:"erasure_code_profile"`
+}

@@ -269,6 +269,25 @@ func (c CephApi) GetPools(mon string, clusterId uuid.UUID, ctxt string) ([]backe
 	return pools, nil
 }
 
+func (c CephApi) GetPool(mon string, clusterId uuid.UUID, pool_id int, ctxt string) (backend.CephPool, error) {
+	getPoolRoute := CEPH_API_ROUTES["GetPool"]
+	getPoolRoute.Pattern = strings.Replace(getPoolRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+	getPoolRoute.Pattern = strings.Replace(getPoolRoute.Pattern, "{pool-id}", string(pool_id), 1)
+	resp, err := route_request(getPoolRoute, mon, bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return backend.CephPool{}, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return backend.CephPool{}, err
+	}
+	var pool backend.CephPool
+	if err := json.Unmarshal(respBody, &pool); err != nil {
+		return backend.CephPool{}, err
+	}
+	return pool, nil
+}
+
 func (c CephApi) UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool map[string]interface{}, ctxt string) (bool, error) {
 	// Replace cluster id in route pattern
 	updatePoolRoute := CEPH_API_ROUTES["UpdatePool"]
