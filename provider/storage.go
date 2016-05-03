@@ -22,6 +22,7 @@ import (
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/task"
 	"github.com/skyrings/skyring-common/tools/uuid"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"strconv"
@@ -322,9 +323,17 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 				storage.Options = options
 
 				coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
-				if err := coll.Insert(storage); err != nil {
-					utils.FailTask(fmt.Sprintf("Error persisting pool %s for cluster: %s", request.Name, cluster.Name), fmt.Errorf("%s - %v", ctxt, err), t)
-					return nil, false
+				var s models.Storage
+				if err := coll.Find(bson.M{"name": storage.Name, "clusterid": storage.ClusterId}).One(&s); err != nil {
+					if err.Error() == mgo.ErrNotFound.Error() {
+						if err := coll.Insert(storage); err != nil {
+							utils.FailTask(fmt.Sprintf("Error persisting pool %s for cluster: %s", request.Name, cluster.Name), fmt.Errorf("%s - %v", ctxt, err), t)
+							return nil, false
+						}
+					} else {
+						utils.FailTask(fmt.Sprintf("Error persisting pool %s for cluster: %s", request.Name, cluster.Name), fmt.Errorf("%s - %v", ctxt, err), t)
+						return nil, false
+					}
 				}
 				break
 			}
