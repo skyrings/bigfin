@@ -22,6 +22,30 @@
       "revId": "fa15c62dd301e74e2c4f90c9dcd87168f109fc13",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_864b1587",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-05-04T04:56:20Z",
+      "side": 1,
+      "message": "Yes this uses the pgsummary fetching and does this fetching once every 10 mins(currently and is likely to be configurable ).This is done bcoz gregory opined that pg states are likely to change frequently and having that handled as events might not be efficient and so we are doing it through monitoring.This patch frequently syncs the info to our slu table options section.",
+      "parentUuid": "baa041b7_26ba096f",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 40
+      },
+      "revId": "fa15c62dd301e74e2c4f90c9dcd87168f109fc13",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
