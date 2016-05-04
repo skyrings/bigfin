@@ -214,7 +214,8 @@ func (s *CephProvider) ImportCluster(req models.RpcRequest, resp *models.RpcResp
 		}
 		// Get and update nodes of the cluster
 		t.UpdateStatus("Updating cluster nodes")
-		if err := PopulateClusterNodes(request.BootstrapNode, *cluster_uuid, request.Nodes, ctxt); err != nil {
+		failedNodes, err := PopulateClusterNodes(request.BootstrapNode, *cluster_uuid, request.Nodes, ctxt)
+		if err != nil {
 			utils.FailTask(
 				fmt.Sprintf(
 					"Failed populating node details for cluster: %s",
@@ -223,6 +224,9 @@ func (s *CephProvider) ImportCluster(req models.RpcRequest, resp *models.RpcResp
 				t)
 			setClusterState(*cluster_uuid, models.CLUSTER_STATE_FAILED, ctxt)
 			return
+		}
+		if len(failedNodes) > 0 {
+			t.UpdateStatus("Failed to updated details of nodes: %v", failedNodes)
 		}
 		// Get and update storage pools
 		t.UpdateStatus("Updating cluster storages")
@@ -400,26 +404,26 @@ func PopulateClusterStatus(bootstrapNode string, clusterId uuid.UUID, ctxt strin
 	return nil
 }
 
-func PopulateClusterNodes(bootstrapNode string, clusterId uuid.UUID, nodes []string, ctxt string) error {
+func PopulateClusterNodes(bootstrapNode string, clusterId uuid.UUID, nodes []string, ctxt string) ([]string, error) {
 	nodes = append(nodes, bootstrapNode)
-	if err := PopulateNodeNetworkDetails(clusterId, nodes, ctxt); err != nil {
-		return fmt.Errorf(
+	if failedNodes, err := PopulateNodeNetworkDetails(clusterId, nodes, ctxt); err != nil {
+		return failedNodes, fmt.Errorf(
 			"%s-Error populating node network details for cluster: %v. error: %v",
 			ctxt,
 			clusterId,
 			err)
 	}
 	if err := syncStorageNodes(bootstrapNode, clusterId, ctxt); err != nil {
-		return fmt.Errorf(
+		return []string{}, fmt.Errorf(
 			"%s-Error fetching and populating storages node for cluster: %v. error: %v",
 			ctxt,
 			clusterId,
 			err)
 	}
-	return nil
+	return []string{}, nil
 }
 
-func PopulateNodeNetworkDetails(clusterId uuid.UUID, nodes []string, ctxt string) error {
+func PopulateNodeNetworkDetails(clusterId uuid.UUID, nodes []string, ctxt string) ([]string, error) {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
@@ -427,7 +431,7 @@ func PopulateNodeNetworkDetails(clusterId uuid.UUID, nodes []string, ctxt string
 
 	var cluster models.Cluster
 	if err := coll.Find(bson.M{"clusterid": clusterId}).One(&cluster); err != nil {
-		return fmt.Errorf("Error fetching the cluster details. error: %v", clusterId)
+		return []string{}, fmt.Errorf("Error fetching the cluster details. error: %v", clusterId)
 	}
 
 	var fetchedNode models.Node
@@ -435,13 +439,25 @@ func PopulateNodeNetworkDetails(clusterId uuid.UUID, nodes []string, ctxt string
 	var updates bson.M = make(map[string]interface{})
 	for _, node := range nodes {
 		if err := coll1.Find(bson.M{"hostname": node}).One(&fetchedNode); err != nil {
-			return fmt.Errorf("Error getting details of node: %s", node)
+			logger.Get().Error(
+				"%s-Error getting details of node: %s. error: %v",
+				ctxt,
+				fetchedNode.Hostname,
+				err)
+			failedNodes = append(failedNodes, fetchedNode.Hostname)
+			continue
 		}
 		if fetchedNode.State == models.NODE_STATE_INITIALIZING {
 			for count := 0; count < 30; count++ {
 				time.Sleep(10 * time.Second)
 				if err := coll1.Find(bson.M{"hostname": node}).One(&fetchedNode); err != nil {
-					return fmt.Errorf("Error getting details of node: %s", node)
+					logger.Get().Error(
+						"%s-Error getting details of node: %s. error: %v",
+						ctxt,
+						fetchedNode.Hostname,
+						err)
+					failedNodes = append(failedNodes, fetchedNode.Hostname)
+					continue
 				}
 				if fetchedNode.State == models.NODE_STATE_ACTIVE {
 					break
@@ -453,6 +469,7 @@ func PopulateNodeNetworkDetails(clusterId uuid.UUID, nodes []string, ctxt string
 			logger.Get().Error(
 				"Node %s still in initializing state. Continuing to other",
 				node)
+			failedNodes = append(failedNodes, fetchedNode.Hostname)
 			continue
 		}
 		updates["clusterid"] = clusterId
@@ -477,9 +494,9 @@ func PopulateNodeNetworkDetails(clusterId uuid.UUID, nodes []string, ctxt string
 		}
 	}
 	if len(failedNodes) > 0 {
-		return fmt.Errorf("Error updating nodes: %v", failedNodes)
+		return failedNodes, fmt.Errorf("Error updating nodes: %v", failedNodes)
 	}
-	return nil
+	return failedNodes, nil
 }
 
 func PopulateStoragePools(bootstrapNode string, clusterId uuid.UUID, ctxt string) error {
