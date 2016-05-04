@@ -551,7 +551,7 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 			if err := installer_backend.Configure(ctxt, t, OSD, osd); err != nil {
 				failedOSDs = append(failedOSDs, fmt.Sprintf("%v:%v", osd["host"].(string), osd["devices"]))
 				logger.Get().Error("%s-Failed to add OSD: %v on Host: %v. error: %v", ctxt, osd["devices"], osd["host"].(string), err)
-				break
+				continue
 			}
 			var options = make(map[string]interface{})
 			options["node"] = osd["host"].(string)
@@ -576,7 +576,7 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 			if ok, err := persistOSD(slu, t, ctxt); err != nil || !ok {
 				logger.Get().Error("%s-Error persising %s for cluster: %s. error: %v", ctxt, slu.Name, request.Name, err)
 				failedOSDs = append(failedOSDs, fmt.Sprintf("%s:%s", osd["host"].(string), osd["devices"]))
-				break
+				continue
 			}
 			slus[fmt.Sprintf("%s:%s", slu.NodeId.String(), slu.Options["device"])] = slu
 			succeededOSDs = append(succeededOSDs, fmt.Sprintf("%v:%v", osd["host"].(string), osd["devices"]))
