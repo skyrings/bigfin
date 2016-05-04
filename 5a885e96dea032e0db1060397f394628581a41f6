@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_067945c8",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 1004,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-04T04:24:07Z",
+      "side": 1,
+      "message": "better name?",
+      "range": {
+        "startLine": 1004,
+        "startChar": 5,
+        "endLine": 1004,
+        "endChar": 6
+      },
+      "revId": "5a885e96dea032e0db1060397f394628581a41f6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_e67301e6",
+        "filename": "provider/events.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 398,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-04T04:24:07Z",
+      "side": 1,
+      "message": "Check other places that we are not using this field as NodeId anywhere elese...",
+      "range": {
+        "startLine": 398,
+        "startChar": 25,
+        "endLine": 398,
+        "endChar": 33
+      },
+      "revId": "5a885e96dea032e0db1060397f394628581a41f6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
