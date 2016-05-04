@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_26ba096f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-04T04:11:36Z",
+      "side": 1,
+      "message": "I remember there is already a fetching of pgsummary updated in slu post creation.\n\nIs this patch in addition to that for freguent syncing??",
+      "range": {
+        "startLine": 7,
+        "startChar": 0,
+        "endLine": 7,
+        "endChar": 40
+      },
+      "revId": "fa15c62dd301e74e2c4f90c9dcd87168f109fc13",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
