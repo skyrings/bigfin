@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_e6ac2137",
+        "filename": "provider/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 681,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-04T04:19:26Z",
+      "side": 1,
+      "message": "I remember this I have used in some other place as well. Can we define in models??",
+      "range": {
+        "startLine": 677,
+        "startChar": 1,
+        "endLine": 681,
+        "endChar": 2
+      },
+      "revId": "56553c99b2818368400d4f2b60ec60f0b0541635",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_c6ab5d1c",
+        "filename": "provider/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 705,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-04T04:19:26Z",
+      "side": 1,
+      "message": "will be added ??",
+      "range": {
+        "startLine": 705,
+        "startChar": 52,
+        "endLine": 705,
+        "endChar": 63
+      },
+      "revId": "56553c99b2818368400d4f2b60ec60f0b0541635",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_a6a61951",
+        "filename": "provider/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 757,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-04T04:19:26Z",
+      "side": 1,
+      "message": "Use a better name :))",
+      "range": {
+        "startLine": 757,
+        "startChar": 5,
+        "endLine": 757,
+        "endChar": 7
+      },
+      "revId": "56553c99b2818368400d4f2b60ec60f0b0541635",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_86643522",
+        "filename": "provider/storage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 326,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-04T04:19:26Z",
+      "side": 1,
+      "message": "better name?",
+      "range": {
+        "startLine": 326,
+        "startChar": 8,
+        "endLine": 326,
+        "endChar": 9
+      },
+      "revId": "56553c99b2818368400d4f2b60ec60f0b0541635",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
