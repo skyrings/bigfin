@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_927d8bb3",
+        "filename": "provider/events.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 685,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-05T04:23:34Z",
+      "side": 1,
+      "message": "I feel yes that should be possible. Fetch from SLU table with custerId and poolId..\n\nI remember this kind of looping is done in some other place as well. We can try to fix that as well if possible..",
+      "parentUuid": "baa041b7_f2c5f78d",
+      "range": {
+        "startLine": 668,
+        "startChar": 1,
+        "endLine": 685,
+        "endChar": 29
+      },
+      "revId": "222622e58434b471915222fb556d7bf2431b9c33",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_b2bf6ffa",
         "filename": "provider/events.go",
         "patchSetId": 2
@@ -36,6 +60,30 @@
       "writtenOn": "2016-05-04T19:46:42Z",
       "side": 1,
       "message": "Is there any other way to figure out ec or replicated. this doesn\u0027t sound clean to me??",
+      "range": {
+        "startLine": 712,
+        "startChar": 2,
+        "endLine": 722,
+        "endChar": 48
+      },
+      "revId": "222622e58434b471915222fb556d7bf2431b9c33",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_724b2788",
+        "filename": "provider/events.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 722,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-05T04:23:34Z",
+      "side": 1,
+      "message": "ceph api does not return type in pool. Rather if erasure_code_profile is set for the pool, we mark the pool as EC pool.. Not sure if there is any other way at the moment.",
+      "parentUuid": "baa041b7_b2bf6ffa",
       "range": {
         "startLine": 712,
         "startChar": 2,
