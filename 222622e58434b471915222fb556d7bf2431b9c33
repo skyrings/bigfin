@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_307a3878",
+        "filename": "provider/events.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 685,
+      "author": {
+        "id": 1006236
+      },
+      "writtenOn": "2016-05-05T07:26:41Z",
+      "side": 1,
+      "message": "Have addressed it. I am getting details of only needed pool.",
+      "parentUuid": "baa041b7_927d8bb3",
+      "range": {
+        "startLine": 668,
+        "startChar": 1,
+        "endLine": 685,
+        "endChar": 29
+      },
+      "revId": "222622e58434b471915222fb556d7bf2431b9c33",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_b2bf6ffa",
         "filename": "provider/events.go",
         "patchSetId": 2
@@ -84,6 +108,30 @@
       "side": 1,
       "message": "ceph api does not return type in pool. Rather if erasure_code_profile is set for the pool, we mark the pool as EC pool.. Not sure if there is any other way at the moment.",
       "parentUuid": "baa041b7_b2bf6ffa",
+      "range": {
+        "startLine": 712,
+        "startChar": 2,
+        "endLine": 722,
+        "endChar": 48
+      },
+      "revId": "222622e58434b471915222fb556d7bf2431b9c33",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_107f3467",
+        "filename": "provider/events.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 722,
+      "author": {
+        "id": 1006236
+      },
+      "writtenOn": "2016-05-05T07:26:41Z",
+      "side": 1,
+      "message": "retaining it as is unless there are any other suggestions.",
+      "parentUuid": "baa041b7_724b2788",
       "range": {
         "startLine": 712,
         "startChar": 2,
