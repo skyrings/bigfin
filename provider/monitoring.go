@@ -569,6 +569,8 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 	if statistics.Total != 0 {
 		percentUsed = (float64(statistics.Used*100) / float64(statistics.Total))
 	}
+	metrics[metric_name+skyring_monitoring.USAGE_PERCENTAGE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", percentUsed)}
+
 	if err := updateDB(bson.M{"clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"usage": models.Utilization{Used: statistics.Used, Total: statistics.Total, PercentUsed: percentUsed}}}, models.COLL_NAME_STORAGE_CLUSTERS); err != nil {
 		logger.Get().Error("%s-Updating the cluster statistics to db for the cluster %v failed.Error %v", ctxt, cluster.Name, err.Error())
 	}
