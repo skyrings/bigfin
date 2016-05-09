@@ -37,6 +37,7 @@ import (
 var (
 	handlermap = map[string]interface{}{
 		"calamari/ceph/pool/added":                                       ceph_pool_add_handler,
+		"calamari/ceph/mon/leaderChanged":                                ceph_leader_change_handler,
 		"calamari/ceph/pool/deleted":                                     ceph_pool_delete_handler,
 		"calamari/ceph/osd/propertyChanged":                              ceph_osd_property_changed_handler,
 		"calamari/ceph/mon/propertyChanged":                              ceph_mon_property_changed_handler,
@@ -640,6 +641,28 @@ func ceph_cluster_health_changed(event models.AppEvent, ctxt string) (models.App
 		ctxt); err != nil {
 		logger.Get().Error("%s-Could not update Alarm state and count for"+
 			" event:%v .Error: %v", ctxt, event.EventId, err)
+		return event, err
+	}
+	return event, nil
+}
+
+func ceph_leader_change_handler(event models.AppEvent, ctxt string) (models.AppEvent, error) {
+	event.NotificationEntity = models.NOTIFICATION_ENTITY_CLUSTER
+	event.EntityId = event.ClusterId
+	event.NodeName = ""
+	event.Name = EventTypes["mon_leader_changed"]
+	event.Severity = models.ALARM_STATUS_CLEARED
+	event.Notify = false
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
+	if _, err := coll.UpdateAll(bson.M{"clusterid": event.ClusterId}, bson.M{"$set": bson.M{"options.leader": false}}); err != nil {
+		logger.Get().Error("%s-Error updating the leader status for nodes of cluster: %v. error: %v", ctxt, event.ClusterId, err)
+		return event, err
+	}
+
+	if err := coll.Update(bson.M{"nodeid": event.Tags["fqdn"]}, bson.M{"$set": bson.M{"options.leader": true}}); err != nil {
+		logger.Get().Error("%s-Error updating the leader status for node : %v. error: %v", ctxt, event.ClusterId, err)
 		return event, err
 	}
 	return event, nil

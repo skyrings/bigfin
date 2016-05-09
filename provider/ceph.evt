@@ -7,5 +7,6 @@
 	"pool_added_or_removed":      "Pool Added/Removed",
 	"osd_state_changed":          "OSD State changed",
 	"mon_state_changed":          "MON State changed",
+	"mon_leader_changed":         "MON leader changed",
 	"cluster_health_changed":     "Cluster health changed"
 }
