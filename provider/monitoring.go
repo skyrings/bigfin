@@ -207,13 +207,19 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 
+	mon_down_count := 0
 	mons, monErr := GetMons(nil)
+	for _, mon := range mons {
+		if mon.Status == models.NODE_STATUS_ERROR {
+			mon_down_count = mon_down_count + 1
+		}
+	}
 	var err_str string
 	if monErr != nil {
 		err_str = fmt.Sprintf("Unable to fetch monitor nodes.Error %v", monErr.Error())
 		logger.Get().Error("%s - Unable to fetch monitor nodes.Error %v", ctxt, monErr.Error())
 	} else {
-		result[models.Monitor] = len(mons)
+		result[models.Monitor] = map[string]int{skyring_monitoring.TOTAL: len(mons), models.STATUS_DOWN: mon_down_count}
 	}
 
 	clusters, clustersFetchErr := getClustersByType(bigfin_models.CLUSTER_TYPE)
@@ -225,24 +231,7 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 	var objectCount int64
 	var degradedObjectCount int64
 
-	/*
-		Fetch pg count
-	*/
-	collection := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
-	var storages models.Storages
-	if sorageFetchErr := collection.Find(nil).All(&storages); sorageFetchErr != nil {
-		err_str = fmt.Sprintf("Error getting the storage list error: %v", sorageFetchErr)
-		logger.Get().Error("%s - Error getting the storage list error: %v", ctxt, sorageFetchErr)
-	} else {
-		var pg_count uint64
-		for _, storage := range storages {
-			if pgnum, ok := storage.Options["pgnum"]; ok {
-				val, _ := strconv.ParseUint(pgnum, 10, 64)
-				pg_count = pg_count + val
-			}
-		}
-		result["pgnum"] = pg_count
-	}
+	pgNum := make(map[string]uint64)
 
 	for _, cluster := range clusters {
 		/*
@@ -250,6 +239,24 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 		*/
 		objectCount = objectCount + cluster.ObjectCount[bigfin_models.NUMBER_OF_OBJECTS]
 		degradedObjectCount = degradedObjectCount + cluster.ObjectCount[bigfin_models.NUMBER_OF_DEGRADED_OBJECTS]
+
+		mon, monErr := GetRandomMon(cluster.ClusterId)
+		if monErr != nil {
+			err_str = err_str + fmt.Sprintf("%s - Failed to get the mon from cluster %v", ctxt, cluster.ClusterId)
+		} else {
+			pgCount, pgCountError := cephapi_backend.GetPGCount((*mon).Hostname, cluster.ClusterId, ctxt)
+			if pgCountError != nil {
+				err_str = err_str + fmt.Sprintf("%s - Failed to fetch the number of pgs from cluster %v", ctxt, cluster.ClusterId)
+			} else {
+				for status, statusCount := range pgCount {
+					if status == skyring_monitoring.CRITICAL {
+						pgNum[models.STATUS_ERR] = pgNum[models.STATUS_ERR] + statusCount
+					}
+					pgNum[models.TOTAL] = pgNum[models.TOTAL] + statusCount
+				}
+			}
+		}
+		result["pgnum"] = pgNum
 	}
 	result[bigfin_models.OBJECTS] = map[string]interface{}{bigfin_models.NUMBER_OF_OBJECTS: objectCount, bigfin_models.NUMBER_OF_DEGRADED_OBJECTS: degradedObjectCount}
 
