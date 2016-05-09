@@ -447,10 +447,49 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 			bson.M{"hostname": mon},
 			bson.M{"$set": bson.M{
 				"clusterid":   *cluster_uuid,
-				"options.mon": "Y"}}); err != nil {
+				"options.mon": models.Yes}}); err != nil {
 			return err
 		}
 		logger.Get().Info(fmt.Sprintf("%s-Added mon node: %s", ctxt, mon))
+	}
+
+	// Get a random mon node
+	monnode, err := GetRandomMon(*cluster_uuid)
+	if err != nil {
+		logger.Get().Error(
+			"%s-Error getting a mon node in cluster: %v. error: %v",
+			ctxt,
+			*cluster_uuid, err)
+		return err
+	}
+
+	for _, mon := range succeededMons {
+		// check if this mon is leader and update rhat info
+		mondet, err := cephapi_backend.GetMonStatus(
+			monnode.Hostname,
+			*cluster_uuid,
+			mon,
+			ctxt)
+		if err != nil {
+			logger.Get().Warning(
+				"%s-Failed to get mon status of node: %s",
+				ctxt,
+				mon)
+			return err
+		}
+		var isLeader string
+		if mondet.State == "leader" {
+			isLeader = models.Yes
+		} else {
+			isLeader = models.No
+		}
+
+		if err := coll.Update(
+			bson.M{"hostname": mon},
+			bson.M{"$set": bson.M{
+				"options.leader": isLeader}}); err != nil {
+			return err
+		}
 	}
 
 	var osdPresent bool
