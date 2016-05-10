@@ -332,6 +332,10 @@ func osd_add_or_delete_handler(event models.AppEvent, osdname string, ctxt strin
 	event.Notify = false
 
 	if strings.HasSuffix(event.Message, bigfinmodels.OSD_ADD_MESSAGE) {
+		// Added this sleep to avoid race condition. wherein both event
+		// handler and provider try to update the osd details to DB
+		// which may result in duplicate osd records in DB.
+		time.Sleep(60 * time.Second)
 		// this is needed because while cluster is created before even
 		// the Cluster is added in DB this event might come.
 		var retrievedMonSuccessfully bool
