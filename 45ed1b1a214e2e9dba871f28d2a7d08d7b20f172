@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_b6f06e68",
+        "filename": "provider/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 659,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-05-11T07:07:32Z",
+      "side": 1,
+      "message": "We need to set the leader status of the mons appropriately during the cluster creation. I think we have an API to get the mon status. Using that set it when you create the cluster",
+      "parentUuid": "baa041b7_28208147",
+      "range": {
+        "startLine": 659,
+        "startChar": 29,
+        "endLine": 659,
+        "endChar": 65
+      },
+      "revId": "45ed1b1a214e2e9dba871f28d2a7d08d7b20f172",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_4823c556",
         "filename": "provider/events.go",
         "patchSetId": 1
