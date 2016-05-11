@@ -12,7 +12,7 @@ import (
 	skyring_monitoring "github.com/skyrings/skyring-common/monitoring"
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/uuid"
-	"github.com/skyrings/skyring-common/utils"
+	skyring_utils "github.com/skyrings/skyring-common/utils"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"strconv"
@@ -197,8 +197,8 @@ func (s *CephProvider) GetClusterSummary(req models.RpcRequest, resp *models.Rpc
 		*resp = utils.WriteResponseWithData(http.StatusInternalServerError, err_str, []byte{})
 		return fmt.Errorf("%s - Failed to marshal %v.Error %v", ctxt, result, marshalErr)
 	}
-	*resp = utils.WriteResponseWithData(httpStatusCode, err_str, bytes)
-	return err
+	*resp = utils.WriteResponseWithDataAndError(httpStatusCode, err_str, bytes, err_str)
+	return nil
 }
 
 func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcResponse) error {
@@ -247,11 +247,11 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 
 		mon, monErr := GetRandomMon(cluster.ClusterId)
 		if monErr != nil {
-			err_str = err_str + fmt.Sprintf("%s - Failed to get the mon from cluster %v", ctxt, cluster.ClusterId)
+			err_str = err_str + fmt.Sprintf("%s - Failed to get the mon from cluster %v.Error %v", ctxt, cluster.ClusterId, monErr)
 		} else {
 			pgCount, pgCountError := cephapi_backend.GetPGCount((*mon).Hostname, cluster.ClusterId, ctxt)
 			if pgCountError != nil {
-				err_str = err_str + fmt.Sprintf("%s - Failed to fetch the number of pgs from cluster %v", ctxt, cluster.ClusterId)
+				err_str = err_str + fmt.Sprintf("%s - Failed to fetch the number of pgs from cluster %v. Error %v", ctxt, cluster.ClusterId, pgCountError)
 			} else {
 				for status, statusCount := range pgCount {
 					if status == skyring_monitoring.CRITICAL {
@@ -281,8 +281,8 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 		logger.Get().Error("%s-Failed to marshal %v.Error %v", ctxt, result, marshalErr)
 		return fmt.Errorf("%s-Failed to marshal %v.Error %v", ctxt, result, marshalErr)
 	}
-	*resp = utils.WriteResponseWithData(httpStatusCode, err_str, bytes)
-	return fmt.Errorf("%v", err_str)
+	*resp = utils.WriteResponseWithDataAndError(httpStatusCode, err_str, bytes, fmt.Sprintf("%s - %s", ctxt, err_str))
+	return nil
 }
 
 func FetchOSDStats(ctxt string, cluster models.Cluster, monName string) (map[string]map[string]string, error) {
@@ -305,7 +305,7 @@ func FetchOSDStats(ctxt string, cluster models.Cluster, monName string) (map[str
 		if dbUpdateErr := updateDB(bson.M{"name": osd.Name, "clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"usage": usage}}, models.COLL_NAME_STORAGE_LOGICAL_UNITS); dbUpdateErr != nil {
 			logger.Get().Error("%s - Error updating the osd details of %v of cluster %v.Err %v", ctxt, osd.Name, cluster.Name, dbUpdateErr)
 		}
-		event, isRaiseEvent, err := util.AnalyseThresholdBreach(ctxt, skyring_monitoring.SLU_UTILIZATION, osd.Name, float64(osd.UsagePercent), cluster)
+		event, isRaiseEvent, err := skyring_utils.AnalyseThresholdBreach(ctxt, skyring_monitoring.SLU_UTILIZATION, osd.Name, float64(osd.UsagePercent), cluster)
 		if err != nil {
 			logger.Get().Error("%s - Failed to analyse threshold breach for osd utilization of %v.Error %v", ctxt, osd.Name, err)
 			continue
@@ -457,7 +457,7 @@ func FetchStorageProfileUtilizations(ctxt string, osdDetails []backend.OSDDetail
 	}
 
 	for statProfile, stat := range statsForEventAnalyse {
-		event, isRaiseEvent, err := util.AnalyseThresholdBreach(ctxt, skyring_monitoring.STORAGE_PROFILE_UTILIZATION, statProfile, stat, cluster)
+		event, isRaiseEvent, err := skyring_utils.AnalyseThresholdBreach(ctxt, skyring_monitoring.STORAGE_PROFILE_UTILIZATION, statProfile, stat, cluster)
 		if err != nil {
 			logger.Get().Error("%s - Failed to analyse threshold breach for storage profile utilization of %v.Error %v", ctxt, statProfile, err)
 			continue
@@ -535,7 +535,7 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 		logger.Get().Error("%s-Updating the cluster statistics to db for the cluster %v failed.Error %v", ctxt, cluster.Name, err.Error())
 	}
 
-	event, isRaiseEvent, err := util.AnalyseThresholdBreach(ctxt, skyring_monitoring.CLUSTER_UTILIZATION, cluster.Name, percentUsed, cluster)
+	event, isRaiseEvent, err := skyring_utils.AnalyseThresholdBreach(ctxt, skyring_monitoring.CLUSTER_UTILIZATION, cluster.Name, percentUsed, cluster)
 	if err != nil {
 		logger.Get().Error("%s - Failed to analyse threshold breach for cluster utilization of %v.Error %v", ctxt, cluster.Name, err)
 	}
@@ -552,7 +552,7 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 		percentUsed := 0.0
 		if total != 0 {
 			percentUsed = (float64(used*100) / float64(total))
-			event, isRaiseEvent, err := util.AnalyseThresholdBreach(ctxt, skyring_monitoring.STORAGE_UTILIZATION, poolStat.Name, percentUsed, cluster)
+			event, isRaiseEvent, err := skyring_utils.AnalyseThresholdBreach(ctxt, skyring_monitoring.STORAGE_UTILIZATION, poolStat.Name, percentUsed, cluster)
 			if err != nil {
 				logger.Get().Error("%s - Failed to analyse threshold breach for pool utilization of %v.Error %v", ctxt, poolStat.Name, err)
 				continue
