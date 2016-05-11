@@ -51,6 +51,12 @@ func WriteResponseWithData(code int, msg string, result []byte) models.RpcRespon
 	return response
 }
 
+func WriteResponseWithDataAndError(code int, msg string, result []byte, err error) models.RpcResponse {
+	response := WriteResponseWithData(code, msg, result)
+	response.Error = err
+	return response
+}
+
 func WriteAsyncResponse(taskId uuid.UUID, msg string, result []byte) models.RpcResponse {
 	var response models.RpcResponse
 	response.Status.StatusCode = http.StatusAccepted
