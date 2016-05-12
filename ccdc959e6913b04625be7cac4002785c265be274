@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_bfe4bee0",
+        "filename": "provider/events.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 670,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-12T10:50:14Z",
+      "side": 1,
+      "message": "nodeid \u003d\u003d fqdn ??\n\nI remember nodeid is a uuid field..",
+      "range": {
+        "startLine": 670,
+        "startChar": 30,
+        "endLine": 670,
+        "endChar": 58
+      },
+      "revId": "ccdc959e6913b04625be7cac4002785c265be274",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
