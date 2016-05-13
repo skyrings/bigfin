@@ -736,9 +736,15 @@ func (s *CephProvider) UpdateStorage(req models.RpcRequest, resp *models.RpcResp
 				if request.Replicas != 0 {
 					updatedFields["size"] = request.Replicas
 				}
-				for key, value := range request.Options {
-					reqVal, _ := strconv.ParseUint(value, 10, 32)
-					updatedFields[key] = uint(reqVal)
+				if request.QuotaEnabled {
+					updatedFields["quota_enabled"] = true
+					for key, value := range request.QuotaParams {
+						reqVal, _ := strconv.ParseUint(value, 10, 32)
+						updatedFields[key] = uint(reqVal)
+					}
+				} else {
+					updatedFields["quota_enabled"] = false
+					updatedFields["quota_params"] = nil
 				}
 				t.UpdateStatus("Updating pool details")
 				ok, err := cephapi_backend.UpdatePool(
@@ -766,9 +772,16 @@ func (s *CephProvider) UpdateStorage(req models.RpcRequest, resp *models.RpcResp
 				if request.Replicas != 0 {
 					updates["replicas"] = request.Replicas
 				}
-				for key, value := range request.Options {
-					updates[fmt.Sprintf("options.%s", key)] = value
-				}
+				if request.QuotaEnabled {
+                                        updates["quota_enabled"] = true
+                                        for key, value := range request.QuotaParams {
+                                                updates[key] = value
+                                        }
+                                } else {
+                                        updates["quota_enabled"] = false
+                                        updates["quota_params"] = nil
+                                }
+
 				if value, ok := request.Options["pg_num"]; ok {
 					updates["options.pgp_num"] = value
 				}
