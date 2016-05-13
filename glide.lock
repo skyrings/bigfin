@@ -1,0 +1,53 @@
+hash: e104cb6721bb7c53be1b0e60aee32281d313cd4ce456283e736ece33e096fa25
+updated: 2016-05-12T12:28:56.584400714+05:30
+imports:
+- name: github.com/influxdb/influxdb
+  version: 8fe2469c75edce4909c71f931332c7e74d3f08ea
+  subpackages:
+  - client
+  - models
+  - pkg/escape
+- name: github.com/marpaia/graphite-golang
+  version: bea0c295debd84f9c80050cea3c6aeb3dd448f7c
+- name: github.com/moul/http2curl
+  version: 1812aee76a1ce98d604a44200c6a23c689b17a89
+- name: github.com/natefinch/pie
+  version: 83bfd1821ee0ba96a47d98cbed424313fb60f57a
+- name: github.com/op/go-logging
+  version: e8d5414f0947014548c2334044a0fac13187dfee
+- name: github.com/parnurzeal/gorequest
+  version: 91b42fce877cc6af96c45818665a4c615cc5f4ee
+- name: github.com/sbinet/go-python
+  version: 7991d394a7e307f6e5b28a76146fe1b9303f5c56
+- name: github.com/skyrings/skyring-common
+  version: abeda26a2d4e2ec1eb034009d5aeaf0e3268f20c
+  subpackages:
+  - conf
+  - db
+  - tools/logger
+  - models
+  - tools/uuid
+  - monitoring
+  - tools/gopy
+  - dbprovider
+  - dbprovider/mongodb
+  - event
+  - monitoring/graphitemanager
+  - monitoring/influxdbmanager
+  - provisioner
+  - provisioner/cephinstaller
+  - tools/task
+  - utils
+  - dao
+  - notifier
+- name: golang.org/x/net
+  version: 96dbb961a39ddccf16860cdd355bfa639c497f23
+  subpackages:
+  - publicsuffix
+- name: gopkg.in/mgo.v2
+  version: 4d04138ffef2791c479c0c8bbffc30b34081b8d9
+  subpackages:
+  - bson
+  - internal/sasl
+  - internal/scram
+devImports: []

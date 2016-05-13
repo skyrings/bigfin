@@ -1,0 +1,9 @@
+setup.py
+bigfin/__init__.py
+bigfin/saltwrapper.py
+bigfin/utils.py
+bigfin.egg-info/PKG-INFO
+bigfin.egg-info/SOURCES.txt
+bigfin.egg-info/dependency_links.txt
+bigfin.egg-info/not-zip-safe
+bigfin.egg-info/top_level.txt

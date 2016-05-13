@@ -1,0 +1,10 @@
+Metadata-Version: 1.0
+Name: bigfin
+Version: 0.0.1
+Summary: Python wrappers for SkyRing Ceph provider
+Home-page: github.com/skyrings/bigfin
+Author: Red Hat, Inc.
+Author-email: skyring@redhat.com
+License: Apache-2.0
+Description: UNKNOWN
+Platform: UNKNOWN
