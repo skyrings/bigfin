@@ -226,24 +226,32 @@ func route_request(route CephApiRoute, mon string, body io.Reader) (*http.Respon
 	if route.Method == "POST" {
 		return handler.HttpPost(
 			mon,
-			fmt.Sprintf("http://%s:%d/%s/v%d/%s", mon, models.CEPH_API_PORT, models.CEPH_API_DEFAULT_PREFIX, route.Version, route.Pattern),
+			fmt.Sprintf("https://%s:%d/%s/v%d/%s", mon, models.CEPH_API_PORT, models.CEPH_API_DEFAULT_PREFIX, route.Version, route.Pattern),
 			"application/json",
 			body)
 	}
 	if route.Method == "GET" {
-		return handler.HttpGet(fmt.Sprintf("http://%s:%d/%s/v%d/%s", mon, models.CEPH_API_PORT, models.CEPH_API_DEFAULT_PREFIX, route.Version, route.Pattern))
+		return handler.HttpGet(
+			mon,
+			fmt.Sprintf(
+				"https://%s:%d/%s/v%d/%s",
+				mon,
+				models.CEPH_API_PORT,
+				models.CEPH_API_DEFAULT_PREFIX,
+				route.Version,
+				route.Pattern))
 	}
 	if route.Method == "PATCH" {
 		return handler.HttpPatch(
 			mon,
-			fmt.Sprintf("http://%s:%d/%s/v%d/%s", mon, models.CEPH_API_PORT, models.CEPH_API_DEFAULT_PREFIX, route.Version, route.Pattern),
+			fmt.Sprintf("https://%s:%d/%s/v%d/%s", mon, models.CEPH_API_PORT, models.CEPH_API_DEFAULT_PREFIX, route.Version, route.Pattern),
 			"application/json",
 			body)
 	}
 	if route.Method == "DELETE" {
 		return handler.HttpDelete(
 			mon,
-			fmt.Sprintf("http://%s:%d/%s/v%d/%s", mon, models.CEPH_API_PORT, models.CEPH_API_DEFAULT_PREFIX, route.Version, route.Pattern),
+			fmt.Sprintf("https://%s:%d/%s/v%d/%s", mon, models.CEPH_API_PORT, models.CEPH_API_DEFAULT_PREFIX, route.Version, route.Pattern),
 			"application/json",
 			body)
 	}
@@ -272,8 +280,7 @@ func (c CephApi) GetPools(mon string, clusterId uuid.UUID, ctxt string) ([]backe
 func (c CephApi) GetPool(mon string, clusterId uuid.UUID, pool_id int, ctxt string) (backend.CephPool, error) {
 	getPoolRoute := CEPH_API_ROUTES["GetPool"]
 	getPoolRoute.Pattern = strings.Replace(getPoolRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
-	poolId := strconv.Itoa(pool_id)
-	getPoolRoute.Pattern = strings.Replace(getPoolRoute.Pattern, "{pool-id}", poolId, 1)
+	getPoolRoute.Pattern = strings.Replace(getPoolRoute.Pattern, "{pool-id}", string(pool_id), 1)
 	resp, err := route_request(getPoolRoute, mon, bytes.NewBuffer([]byte{}))
 	if err != nil {
 		return backend.CephPool{}, err
@@ -754,6 +761,7 @@ func (c CephApi) GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string) (
 		return []backend.CephClusterNode{}, err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
+
 	if err != nil {
 		return []backend.CephClusterNode{}, err
 	}
@@ -774,7 +782,7 @@ func (c CephApi) GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt
 	getMonStatusRoute.Pattern = strings.Replace(
 		getMonStatusRoute.Pattern,
 		"{mon-name}",
-		node,
+		strings.Split(node, ".")[0],
 		1)
 	resp, err := route_request(getMonStatusRoute, mon, bytes.NewBuffer([]byte{}))
 	if err != nil {

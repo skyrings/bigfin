@@ -86,7 +86,7 @@ func main() {
 	}
 
 	// Initialize ceph http client
-	client.InitCephApiSession()
+	client.InitCephApiSession(conf.SystemConfig.Config.SSLEnabled)
 
 	provd := &provider.CephProvider{}
 	p := pie.NewProvider()
