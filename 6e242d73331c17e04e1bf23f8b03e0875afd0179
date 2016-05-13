@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_9339f1f4",
+        "filename": "backend/cephapi/api.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 785,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-13T11:51:11Z",
+      "side": 1,
+      "message": "Reverted in next patch",
+      "parentUuid": "baa041b7_53b36998",
+      "range": {
+        "startLine": 785,
+        "startChar": 2,
+        "endLine": 785,
+        "endChar": 29
+      },
+      "revId": "6e242d73331c17e04e1bf23f8b03e0875afd0179",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_b3c3d5ec",
         "filename": "backend/cephapi/client/client.go",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2016-05-13T11:44:30Z",
       "side": 1,
       "message": "Not required?",
+      "range": {
+        "startLine": 39,
+        "startChar": 24,
+        "endLine": 39,
+        "endChar": 32
+      },
+      "revId": "6e242d73331c17e04e1bf23f8b03e0875afd0179",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_733e6ddb",
+        "filename": "backend/cephapi/client/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 39,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-13T11:51:11Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_b3c3d5ec",
       "range": {
         "startLine": 39,
         "startChar": 24,
@@ -71,6 +119,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_5328099a",
+        "filename": "backend/cephapi/client/client.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 49,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-13T11:51:11Z",
+      "side": 1,
+      "message": "Haven\u0027t seen any harm using this, Anyway if you insist we can change :)",
+      "parentUuid": "baa041b7_73b9cd78",
+      "range": {
+        "startLine": 48,
+        "startChar": 1,
+        "endLine": 49,
+        "endChar": 45
+      },
+      "revId": "6e242d73331c17e04e1bf23f8b03e0875afd0179",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_936b31f1",
         "filename": "backend/cephapi/handler/handler.go",
         "patchSetId": 1
@@ -82,6 +154,30 @@
       "writtenOn": "2016-05-13T11:44:30Z",
       "side": 1,
       "message": "can we take this out as const since used at multiple places?",
+      "range": {
+        "startLine": 35,
+        "startChar": 1,
+        "endLine": 40,
+        "endChar": 34
+      },
+      "revId": "6e242d73331c17e04e1bf23f8b03e0875afd0179",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_332585c0",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 40,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-13T11:51:11Z",
+      "side": 1,
+      "message": "Thought of doing the same but mon is request specific so did inside..",
+      "parentUuid": "baa041b7_936b31f1",
       "range": {
         "startLine": 35,
         "startChar": 1,
@@ -117,6 +213,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_f32a7d8f",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-13T11:51:11Z",
+      "side": 1,
+      "message": "ahh we should login and doRequest() again.. will change",
+      "parentUuid": "baa041b7_537a49be",
+      "range": {
+        "startLine": 64,
+        "startChar": 10,
+        "endLine": 64,
+        "endChar": 64
+      },
+      "revId": "6e242d73331c17e04e1bf23f8b03e0875afd0179",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_73478d77",
         "filename": "backend/cephapi/handler/handler.go",
         "patchSetId": 1
@@ -140,6 +260,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_73154d47",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 175,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-13T11:51:11Z",
+      "side": 1,
+      "message": "Line 171 is doing a GET on login URL and csrf_token functin parses the response for XSRF token..",
+      "parentUuid": "baa041b7_73478d77",
+      "range": {
+        "startLine": 171,
+        "startChar": 1,
+        "endLine": 175,
+        "endChar": 26
+      },
+      "revId": "6e242d73331c17e04e1bf23f8b03e0875afd0179",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_d3be5964",
         "filename": "main.go",
         "patchSetId": 1
@@ -151,6 +295,30 @@
       "writtenOn": "2016-05-13T11:44:30Z",
       "side": 1,
       "message": "This has to be enabled always, regardless of USM SSL enabled or not",
+      "range": {
+        "startLine": 89,
+        "startChar": 27,
+        "endLine": 89,
+        "endChar": 62
+      },
+      "revId": "6e242d73331c17e04e1bf23f8b03e0875afd0179",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_330c6540",
+        "filename": "main.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 89,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-13T11:51:11Z",
+      "side": 1,
+      "message": "Removed",
+      "parentUuid": "baa041b7_d3be5964",
       "range": {
         "startLine": 89,
         "startChar": 27,
