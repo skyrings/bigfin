@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_f3c39d55",
+        "filename": "provider/storage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 739,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-05-13T10:00:22Z",
+      "side": 1,
+      "message": "are you sending quota parameters every time? Since this is a \u0027PATCH\u0027 request if you are not sending this values, it will take default value in the struct - default for bool is false and it may cause incorrect behaviors",
+      "range": {
+        "startLine": 739,
+        "startChar": 8,
+        "endLine": 739,
+        "endChar": 27
+      },
+      "revId": "2ff6b1a8d736339247dcecece21875760fcc50a9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
