@@ -290,6 +290,38 @@ func (s *CephProvider) ImportCluster(req models.RpcRequest, resp *models.RpcResp
 			return
 		}*/
 
+		// Update the notification details
+		t.UpdateStatus("Creating notification subscription configuartions")
+		var bigfin_notifications []models.NotificationSubscription
+		for _, notification := range bigfin_models.NOTIFICATIONS_SUPPORTED {
+			bigfin_notifications = append(bigfin_notifications, models.NotificationSubscription{
+				Name:    notification,
+				Enabled: false,
+			})
+		}
+		for _, notification := range models.NOTIFICATIONS_SUPPORTED {
+			bigfin_notifications = append(bigfin_notifications, models.NotificationSubscription{
+				Name:    notification,
+				Enabled: false,
+			})
+		}
+		sessionCopy := db.GetDatastore().Copy()
+		defer sessionCopy.Close()
+		notifSubsColl := sessionCopy.
+			DB(conf.SystemConfig.DBConfig.Database).
+			C(models.COLL_NAME_CLUSTER_NOTIFICATION_SUBSCRIPTIONS)
+		if err := notifSubsColl.Insert(
+			models.ClusterNotificationSubscription{
+				ClusterId:     *cluster_uuid,
+				Notifications: bigfin_notifications}); err != nil {
+			logger.Get().Error(
+				"%s-Error persisting the default notification subscriptions on cluster %s. error %v",
+				ctxt,
+				clusterName,
+				err)
+			t.UpdateStatus("Could not create notification subscription configuartions")
+		}
+
 		t.UpdateStatus("Success")
 		t.Done(models.TASK_STATUS_SUCCESS)
 		return
@@ -330,6 +362,10 @@ func PopulateClusterDetails(bootstrapNode string, ctxt string) (*uuid.UUID, stri
 		Type:      bigfin_conf.ProviderName,
 	}
 	cluster.MonitoringInterval = monitoring.DefaultClusterMonitoringInterval
+	cluster.Monitoring = models.MonitoringState{
+		Plugins:    utils.GetProviderSpecificDefaultThresholdValues(),
+		StaleNodes: []string{},
+	}
 	cluster.CompatVersion = fmt.Sprintf("%f", bigfin_conf.ProviderConfig.Provider.CompatVersion)
 	cluster.AutoExpand = true
 
