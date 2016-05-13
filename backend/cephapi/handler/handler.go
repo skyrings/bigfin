@@ -15,50 +15,128 @@
 package handler
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/skyrings/bigfin/backend/cephapi/client"
 	"github.com/skyrings/bigfin/backend/cephapi/models"
+	"github.com/skyrings/skyring-common/tools/logger"
 	"io"
 	"net/http"
-	"strings"
+	"net/url"
+	"regexp"
 )
 
-func HttpGet(url string) (*http.Response, error) {
-	return http.Get(url)
-}
+var loggedIn bool
 
-func invokeUpdateRestApi(method string, mon string, url string, contentType string, body io.Reader) (*http.Response, error) {
-	// Get the csrf token details
-	dummyUrl := fmt.Sprintf(
-		"http://%s:%d/%s/v%d/auth/login",
+func HttpGet(mon, url string) (*http.Response, error) {
+	session := client.GetCephApiSession()
+
+	var loginUrl = fmt.Sprintf(
+		"https://%s:%d/%s/v%d/auth/login/",
 		mon,
 		models.CEPH_API_PORT,
 		models.CEPH_API_DEFAULT_PREFIX,
 		models.CEPH_API_DEFAULT_VERSION)
-	session := client.GetCephApiSession()
-	resp, err := session.Get(dummyUrl)
-	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Error getting CSRF token: %v", err))
+
+	if !loggedIn {
+		if err := login(session, mon, loginUrl); err != nil {
+			return nil, fmt.Errorf("Failed to login: %v", err)
+		}
 	}
-	token := csrf_token(resp)
+
+	csrf_token := csrfTokenFromSession(session, loginUrl)
+
+	resp, err := doRequest(
+		session,
+		csrf_token,
+		"GET",
+		"application/json",
+		url,
+		bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return nil, fmt.Errorf("Error executing request: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
+		return nil, fmt.Errorf(resp.Status)
+	} else if resp.StatusCode == http.StatusForbidden {
+		logger.Get().Warning("Session seems invalidated. Trying to login again.")
+		if err := login(session, mon, loginUrl); err != nil {
+			return nil, fmt.Errorf("Failed to relogin")
+		}
+		return doRequest(session, csrf_token, "GET", "application/json", url, bytes.NewBuffer([]byte{}))
+	}
+
+	return resp, nil
+}
+
+func invokeUpdateRestApi(method string, mon string, url string, contentType string, body io.Reader) (*http.Response, error) {
+	var loginUrl = fmt.Sprintf(
+		"https://%s:%d/%s/v%d/auth/login/",
+		mon,
+		models.CEPH_API_PORT,
+		models.CEPH_API_DEFAULT_PREFIX,
+		models.CEPH_API_DEFAULT_VERSION)
+
+	session := client.GetCephApiSession()
+
+	if !loggedIn {
+		if err := login(session, mon, loginUrl); err != nil {
+			return nil, fmt.Errorf("Failed to login: %v", err)
+		}
+	}
+
+	csrf_token := csrfTokenFromSession(session, loginUrl)
+
+	resp, err := doRequest(
+		session,
+		csrf_token,
+		method,
+		contentType,
+		url,
+		body)
+	if err != nil {
+		return nil, fmt.Errorf("Error executing request: %v", err)
+	}
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
+		return nil, errors.New("Failed")
+	} else if resp.StatusCode == http.StatusForbidden {
+		logger.Get().Warning("Session seems invalidated. Trying to login again.")
+		if err := login(session, mon, loginUrl); err != nil {
+			return nil, fmt.Errorf("Failed to relogin")
+		}
+		return doRequest(session, csrf_token, method, contentType, url, body)
+	}
+
+	return resp, nil
+}
+
+func doRequest(
+	session *http.Client,
+	token string,
+	method string,
+	contentType string,
+	url string,
+	body io.Reader) (*http.Response, error) {
 
 	// Create the request
 	req, err := http.NewRequest(method, url, body)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Error forming the request: %v", err))
+		return nil, fmt.Errorf("Error forming the request: %v", err)
 	}
 	req.Header.Set("Content-Type", contentType)
-	req.Header.Set("X-CSRFTOKEN", token)
+	req.Header.Set("Referer", url)
+	req.Header.Set("X-XSRF-TOKEN", token)
 
 	// Invoke the request
-	resp, err = session.Do(req)
+	resp, err := session.Do(req)
 	if err != nil {
-		return nil, errors.New(fmt.Sprintf("Error executing the request: %v", err))
+		return nil, fmt.Errorf("Error executing the request: %v", err)
 	}
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
-		return nil, errors.New("Failed")
-	}
+
 	return resp, nil
 }
 
@@ -75,12 +153,56 @@ func HttpDelete(mon string, url string, contentType string, body io.Reader) (*ht
 }
 
 func csrf_token(resp *http.Response) (token string) {
-	cookies := strings.Split(resp.Header["Set-Cookie"][0], ";")
-	for _, cookie := range cookies {
-		cookieFieldDet := strings.Split(cookie, "=")
-		if cookieFieldDet[0] == "XSRF-TOKEN" {
-			token = cookieFieldDet[1]
+	regex, _ := regexp.Compile(`XSRF-TOKEN=([^;]+)?`)
+	for _, entry := range resp.Header["Set-Cookie"] {
+		matches := regex.FindStringSubmatch(entry)
+		if len(matches) > 1 {
+			token = matches[1]
+			return
 		}
 	}
 	return
+}
+
+func csrfTokenFromSession(session *http.Client, loginUrl string) string {
+	u, _ := url.Parse(loginUrl)
+	cookies := session.Jar.Cookies(u)
+	for _, entry := range cookies {
+		if entry.Name == "XSRF-TOKEN" {
+			return entry.Value
+		}
+	}
+	return ""
+}
+
+func login(session *http.Client, mon string, loginUrl string) error {
+	// Get the csrf token details
+	resp, err := session.Get(loginUrl)
+	if err != nil {
+		return fmt.Errorf("Error running dummy url to get csrf token: %v", err)
+	}
+	token := csrf_token(resp)
+
+	// Login
+	reqData := make(map[string]interface{})
+	reqData["username"] = "admin"
+	reqData["password"] = "admin"
+	buf, err := json.Marshal(reqData)
+	if err != nil {
+		return fmt.Errorf("Error forming login request: %v", err)
+	}
+	req, err := http.NewRequest("POST", loginUrl, bytes.NewBuffer(buf))
+	if err != nil {
+		return fmt.Errorf("Error forming login request: %v", err)
+	}
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Referer", loginUrl)
+	req.Header.Set("X-XSRF-TOKEN", token)
+	resp, err = session.Do(req)
+	if err != nil {
+		return fmt.Errorf("Error logging in: %v", err)
+	}
+
+	loggedIn = true
+	return nil
 }

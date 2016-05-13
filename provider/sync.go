@@ -213,8 +213,9 @@ func syncRBDs(mon string, clusterId uuid.UUID, ctxt string) error {
 				id, err := uuid.New()
 				if err != nil {
 					logger.Get().Error(
-						"%s-Error creating id for block device",
-						ctxt)
+						"%s-Error creating id for block device. error: %v",
+						ctxt,
+						err)
 					continue
 				}
 				newDevice := models.BlockDevice{
@@ -361,10 +362,6 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 			bson.M{"hostname": bson.M{
 				"$regex":   osd.Server,
 				"$options": "$i"}}).One(&node); err != nil {
-			// if err := coll_nodes.Find(
-			// 	bson.M{"hostname": bson.M{
-			// 		"$regex":   fmt.Sprintf("%s.*", "dhcp47-95.lab.eng.blr.redhat.com"),
-			// 		"$options": "$i"}}).One(&node); err != nil {
 			logger.Get().Error(
 				"%s-Error fetching node details for SLU id: %d on cluster: %v. error: %v",
 				ctxt,
@@ -377,7 +374,6 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 		deviceDetails, err := salt_backend.GetPartDeviceDetails(
 			node.Hostname,
 			osd.OsdData,
-			// fmt.Sprintf("/var/lib/ceph/osd/c1-%d", osd.Id),
 			ctxt)
 		if err != nil {
 			logger.Get().Error(
@@ -593,7 +589,7 @@ func syncStoragePools(mon string, clusterId uuid.UUID, ctxt string) error {
 	// Get the list of storage entities from DB
 	var fetchedStorages models.Storages
 	if err := coll.Find(bson.M{"clusterid": clusterId}).All(&fetchedStorages); err != nil {
-		return fmt.Errorf("Error getting storage entities from DB")
+		return fmt.Errorf("Error getting storage entities from DB. error: %v", err)
 	}
 
 	// Insert/update storages
@@ -843,9 +839,10 @@ func syncStorageNodes(mon string, clusterId uuid.UUID, ctxt string) error {
 			ctxt)
 		if err != nil {
 			logger.Get().Warning(
-				"%s-Failed to get mon status of node: %s",
+				"%s-Failed to get mon status of node: %s. error: %v",
 				ctxt,
-				node)
+				node,
+				err)
 		}
 		if mondet.State == "leader" {
 			if err := coll.Find(
@@ -863,9 +860,10 @@ func syncStorageNodes(mon string, clusterId uuid.UUID, ctxt string) error {
 				bson.M{"clusterid": clusterId, "hostname": fetchedNode.Hostname},
 				bson.M{"$set": bson.M{"options.leader": models.Yes}}); err != nil {
 				logger.Get().Warning(
-					"%s-Failed to update leader status of mon node: %s",
+					"%s-Failed to update leader status of mon node: %s. error: %v",
 					ctxt,
-					node)
+					node,
+					err)
 			}
 		}
 	}

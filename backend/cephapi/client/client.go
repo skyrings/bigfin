@@ -15,6 +15,7 @@
 package client
 
 import (
+	"crypto/tls"
 	"net/http"
 	"net/url"
 )
@@ -36,7 +37,10 @@ func (p *CephApiJar) Cookies(u *url.URL) []*http.Cookie {
 }
 
 func InitCephApiSession() {
-	httpSession = &http.Client{}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	httpSession = &http.Client{Transport: tr}
 	locjar := &CephApiJar{}
 	locjar.jar = make(map[string][]*http.Cookie)
 	httpSession.Jar = locjar
