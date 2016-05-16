@@ -1,7 +1,8 @@
 {
 	"slu_utilization":            "OSD Utilization",
 	"cluster_utilization":        "Cluster Utilization",
-	"storage_utilzation":         "Pool Utilization",
+	"storage_utilization":        "Pool Utilization",
+	"block_device_utilization":   "RBD Utilization",
 	"storage_profile_utilzation": "Storage Profile Utilization",
 	"osd_added_or_removed":       "OSD Added/Removed",
 	"pool_added_or_removed":      "Pool Added/Removed",
