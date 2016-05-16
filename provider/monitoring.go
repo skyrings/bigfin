@@ -246,7 +246,7 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 		objectCount = objectCount + cluster.ObjectCount[bigfin_models.NUMBER_OF_OBJECTS]
 		degradedObjectCount = degradedObjectCount + cluster.ObjectCount[bigfin_models.NUMBER_OF_DEGRADED_OBJECTS]
 
-		mon, monErr := GetRandomMon(cluster.ClusterId)
+		mon, monErr := GetCalamariMonNode(cluster.ClusterId, ctxt)
 		if monErr != nil {
 			err_str = err_str + fmt.Sprintf("%s - Failed to get the mon from cluster %v.Error %v", ctxt, cluster.ClusterId, monErr)
 		} else {
@@ -297,7 +297,7 @@ func FetchOSDStats(ctxt string, cluster models.Cluster, monName string) (map[str
 	currentTimeStamp := time.Now().Unix()
 
 	for _, osd := range statistics {
-		metric_name := monitoringConfig.CollectionName + "." + cluster.Name + "." + skyring_monitoring.SLU_UTILIZATION + "_" + strings.Replace(osd.Name, ".", "_", -1) + "."
+		metric_name := monitoringConfig.CollectionName + "." + strings.Replace(cluster.Name, ".", "_", -1) + "." + skyring_monitoring.SLU_UTILIZATION + "_" + strings.Replace(osd.Name, ".", "_", -1) + "."
 		timeStampStr := strconv.FormatInt(currentTimeStamp, 10)
 		metrics[metric_name+skyring_monitoring.FREE_SPACE] = map[string]string{timeStampStr: strconv.FormatUint(osd.Available, 10)}
 		metrics[metric_name+skyring_monitoring.USED_SPACE] = map[string]string{timeStampStr: strconv.FormatUint(osd.Used, 10)}
@@ -417,14 +417,14 @@ func FetchStorageProfileUtilizations(ctxt string, osdDetails []backend.OSDDetail
 		return nil, sluFetchErr, []models.Event{}
 	}
 	currentTimeStamp := strconv.FormatInt(time.Now().Unix(), 10)
-	metric_prefix := monitoringConfig.CollectionName + "." + cluster.Name + "." + skyring_monitoring.STORAGE_PROFILE_UTILIZATION + "_"
+	metric_prefix := monitoringConfig.CollectionName + "." + strings.Replace(cluster.Name, ".", "_", -1) + "." + skyring_monitoring.STORAGE_PROFILE_UTILIZATION + "_"
 	var spFree uint64
 	var spUsed uint64
 	for _, slu := range slus {
 		for _, osdDetail := range osdDetails {
 			if osdDetail.Name == slu.Name {
 
-				metric_name := metric_prefix + slu.StorageProfile + "."
+				metric_name := metric_prefix + strings.Replace(slu.StorageProfile, ".", "_", -1) + "."
 				if utilization, ok := statsToPush[metric_name+skyring_monitoring.USED_SPACE]; ok {
 					existingUtilization, err := strconv.ParseUint(utilization[currentTimeStamp], 10, 64)
 					if err != nil {
@@ -448,14 +448,15 @@ func FetchStorageProfileUtilizations(ctxt string, osdDetails []backend.OSDDetail
 					spFree = osdDetail.Available
 					statsToPush[metric_name+skyring_monitoring.FREE_SPACE] = map[string]string{currentTimeStamp: strconv.FormatUint(spFree, 10)}
 				}
-
-				percentUsed := float64(spUsed*100) / float64(spUsed+spFree)
+				var percentUsed float64
+				if spUsed+spFree > 0 {
+					percentUsed = float64(spUsed*100) / float64(spUsed+spFree)
+				}
 				cluster.StorageProfileUsage[slu.StorageProfile] = models.Utilization{Used: int64(spUsed), Total: int64(spUsed + spFree), PercentUsed: percentUsed}
 
-				percent_used := (float64(spUsed) * 100) / (float64(spUsed + spFree))
-				statsToPush[metric_name+skyring_monitoring.USAGE_PERCENT] = map[string]string{currentTimeStamp: fmt.Sprintf("%v", percent_used)}
+				statsToPush[metric_name+skyring_monitoring.USAGE_PERCENT] = map[string]string{currentTimeStamp: fmt.Sprintf("%v", percentUsed)}
 
-				statsForEventAnalyse[slu.StorageProfile] = percent_used
+				statsForEventAnalyse[slu.StorageProfile] = percentUsed
 			}
 		}
 	}
@@ -514,7 +515,7 @@ func FetchRBDStats(ctxt string, cluster models.Cluster, monName string) (map[str
 	var err_str string
 	currentTimeStamp := strconv.FormatInt(time.Now().Unix(), 10)
 	for _, pool := range pools {
-		metric_name := fmt.Sprintf("%s.%s.%s.%s.", monitoringConfig.CollectionName, cluster.Name, pool.Name, models.COLL_NAME_BLOCK_DEVICES)
+		metric_name := fmt.Sprintf("%s.%s.%s.%s.", monitoringConfig.CollectionName, strings.Replace(cluster.Name, ".", "_", -1), strings.Replace(pool.Name, ".", "_", -1), models.COLL_NAME_BLOCK_DEVICES)
 		statistics, statsFetchErr := salt_backend.GetRBDStats(monName, pool.Name, cluster.Name, ctxt)
 		if statsFetchErr != nil {
 			err_str = fmt.Sprintf("%s.Unable to fetch rbd stats from mon %v of pool %v, cluster %v.Error: %v",
@@ -523,7 +524,7 @@ func FetchRBDStats(ctxt string, cluster models.Cluster, monName string) (map[str
 		}
 		rbdColl := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_BLOCK_DEVICES)
 		for _, rbdStat := range statistics {
-			metric_name = fmt.Sprintf("%s%s.", metric_name, rbdStat.Name)
+			metric_name = fmt.Sprintf("%s%s.", metric_name, strings.Replace(rbdStat.Name, ".", "_", -1))
 			var percent_used float64
 			if rbdStat.Total > 0 {
 				percent_used = float64(rbdStat.Used*100) / float64(rbdStat.Total)
@@ -569,7 +570,7 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 	metrics := make(map[string]map[string]string)
 	currentTimeStamp := time.Now().Unix()
 
-	metric_name := fmt.Sprintf("%s.%s.%s.", monitoringConfig.CollectionName, cluster.Name, skyring_monitoring.CLUSTER_UTILIZATION)
+	metric_name := fmt.Sprintf("%s.%s.%s.", monitoringConfig.CollectionName, strings.Replace(cluster.Name, ".", "_", -1), skyring_monitoring.CLUSTER_UTILIZATION)
 
 	metrics[metric_name+skyring_monitoring.USED_SPACE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", statistics.Used)}
 	metrics[metric_name+skyring_monitoring.FREE_SPACE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", statistics.Available)}
@@ -642,7 +643,7 @@ func FetchObjectCount(ctxt string, cluster models.Cluster, monName string) (map[
 	metrics := make(map[string]map[string]string)
 	currentTimeStamp := time.Now().Unix()
 	timeStampStr := strconv.FormatInt(currentTimeStamp, 10)
-	metric_name := monitoringConfig.CollectionName + "." + cluster.Name + "." + skyring_monitoring.NO_OF_OBJECT
+	metric_name := monitoringConfig.CollectionName + "." + strings.Replace(cluster.Name, ".", "_", -1) + "." + skyring_monitoring.NO_OF_OBJECT
 	metrics[metric_name] = map[string]string{timeStampStr: fmt.Sprintf("%v", objectCnt)}
 
 	if err := updateDB(
@@ -670,7 +671,7 @@ func FetchPGSummary(ctxt string, cluster models.Cluster, monName string) (map[st
 	for k := range statistics.ByPool {
 		for k1, v1 := range statistics.ByPool[k] {
 			k1 = strings.Replace(k1, "+", "_", -1)
-			metric_name := fmt.Sprintf("%s.%s.%s.pool-%s.%s", monitoringConfig.CollectionName, cluster.Name, skyring_monitoring.PG_SUMMARY, k, k1)
+			metric_name := fmt.Sprintf("%s.%s.%s.pool-%s.%s", monitoringConfig.CollectionName, strings.Replace(cluster.Name, ".", "_", -1), skyring_monitoring.PG_SUMMARY, k, k1)
 			statMap := make(map[string]string)
 			statMap[strconv.FormatInt(currentTimeStamp, 10)] = strconv.FormatUint(v1, 10)
 			metrics[metric_name] = statMap
@@ -678,7 +679,7 @@ func FetchPGSummary(ctxt string, cluster models.Cluster, monName string) (map[st
 	}
 	for k, v := range statistics.All {
 		k = strings.Replace(k, "+", "_", -1)
-		metric_name := fmt.Sprintf("%s.%s.%s.all.%s", monitoringConfig.CollectionName, cluster.Name, skyring_monitoring.PG_SUMMARY, k)
+		metric_name := fmt.Sprintf("%s.%s.%s.all.%s", monitoringConfig.CollectionName, strings.Replace(cluster.Name, ".", "_", -1), skyring_monitoring.PG_SUMMARY, k)
 		statMap := make(map[string]string)
 		statMap[strconv.FormatInt(currentTimeStamp, 10)] = strconv.FormatUint(v, 10)
 		metrics[metric_name] = statMap
