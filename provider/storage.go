@@ -736,7 +736,7 @@ func (s *CephProvider) UpdateStorage(req models.RpcRequest, resp *models.RpcResp
 				if request.Replicas != 0 {
 					updatedFields["size"] = request.Replicas
 				}
-				if request.QuotaParams["quota_max_objects"] != 0 || request.QuotaParams["quota_max_bytes"] != 0 {
+				if request.QuotaParams["quota_max_objects"] != "0" || request.QuotaParams["quota_max_bytes"] != "0" {
 					updatedFields["quota_enabled"] = true
 					for key, value := range request.QuotaParams {
 						reqVal, _ := strconv.ParseUint(value, 10, 32)
@@ -772,7 +772,7 @@ func (s *CephProvider) UpdateStorage(req models.RpcRequest, resp *models.RpcResp
 				if request.Replicas != 0 {
 					updates["replicas"] = request.Replicas
 				}
-				if request.QuotaParams["quota_max_objects"] != 0 || request.QuotaParams["quota_max_bytes"] != 0 {
+				if request.QuotaParams["quota_max_objects"] != "0" || request.QuotaParams["quota_max_bytes"] != "0" {
 					updates["quota_enabled"] = true
 					for key, value := range request.QuotaParams {
 						updates[key] = value
