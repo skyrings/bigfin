@@ -15,6 +15,7 @@
 package salt
 
 import (
+	"fmt"
 	"github.com/skyrings/bigfin/backend"
 	"github.com/skyrings/skyring-common/models"
 	"github.com/skyrings/skyring-common/tools/gopy"
@@ -162,6 +163,11 @@ func (s Salt) GetClusterStats(mon string, clusterName string, ctxt string) (stat
 	stats = backend.ClusterUtilization{}
 	mutex.Lock()
 	defer mutex.Unlock()
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("Recovered from %v in GetClusterStats", r)
+		}
+	}()
 	if pyobj, loc_err := pyFuncs["GetClusterStats"].Call(mon, clusterName, ctxt); loc_err == nil {
 		err = gopy.Convert(pyobj, &stats)
 	} else {
@@ -174,6 +180,11 @@ func (s Salt) GetClusterStats(mon string, clusterName string, ctxt string) (stat
 func (s Salt) GetRBDStats(mon string, poolName string, clusterName string, ctxt string) (rbdStats []backend.RBDStats, err error) {
 	mutex.Lock()
 	defer mutex.Unlock()
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("Recovered from %v in GetRBDStats", r)
+		}
+	}()
 	if pyobj, loc_err := pyFuncs["GetRBDStats"].Call(mon, poolName, clusterName, ctxt); loc_err == nil {
 		err = gopy.Convert(pyobj, &rbdStats)
 	} else {
@@ -208,6 +219,11 @@ func (s Salt) GetPGCount(mon string, clusterId uuid.UUID, ctxt string) (map[stri
 func (s Salt) GetOSDDetails(mon string, clusterName string, ctxt string) (osds []backend.OSDDetails, err error) {
 	mutex.Lock()
 	defer mutex.Unlock()
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("Recovered from %v in GetOSDDetails", r)
+		}
+	}()
 	if pyobj, loc_err := pyFuncs["GetOSDDetails"].Call(mon, clusterName, ctxt); loc_err == nil {
 		err = gopy.Convert(pyobj, &osds)
 	} else {
@@ -219,6 +235,11 @@ func (s Salt) GetOSDDetails(mon string, clusterName string, ctxt string) (osds [
 func (s Salt) GetObjectCount(mon string, clusterName string, ctxt string) (obj map[string]int64, err error) {
 	mutex.Lock()
 	defer mutex.Unlock()
+	defer func() {
+		if r := recover(); r != nil {
+			err = fmt.Errorf("Recovered from %v in GetObjectCount", r)
+		}
+	}()
 	obj = make(map[string]int64)
 	if pyobj, loc_err := pyFuncs["GetObjectCount"].Call(mon, clusterName, ctxt); loc_err == nil {
 		err = gopy.Convert(pyobj, &obj)
