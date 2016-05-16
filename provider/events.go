@@ -42,6 +42,7 @@ var (
 		"calamari/ceph/mon/propertyChanged":                              ceph_mon_property_changed_handler,
 		"calamari/ceph/cluster/health/changed":                           ceph_cluster_health_changed,
 		"skyring/ceph/cluster/*/threshold/slu_utilization/*":             ceph_osd_utilization_threshold_changed,
+		"skyring/ceph/cluster/*/threshold/block_device_utilization/*":    ceph_rbd_utilization_threshold_changed,
 		"skyring/ceph/cluster/*/threshold/cluster_utilization/*":         ceph_cluster_utilization_threshold_changed,
 		"skyring/ceph/cluster/*/threshold/storage_utilization/*":         ceph_storage_utilization_threshold_changed,
 		"skyring/ceph/cluster/*/threshold/storage_profile_utilization/*": ceph_storage_profile_utilization_threshold_changed,
@@ -180,6 +181,57 @@ func ceph_osd_utilization_threshold_changed(event models.Event, ctxt string) (mo
 		ctxt); err != nil {
 		logger.Get().Error("%s-Could not update Alarm state and"+
 			" count for event:%v .Error: %v", ctxt, appEvent.EventId, err)
+		return appEvent, err
+	}
+
+	if err = common_event.UpdateClusterAlarmCount(
+		appEvent,
+		clearedSeverity,
+		ctxt); err != nil {
+		logger.Get().Error("%s-Could not update Alarm state and count for"+
+			" event:%v .Error: %v", ctxt, appEvent.EventId, err)
+		return appEvent, err
+	}
+
+	return appEvent, nil
+}
+
+func ceph_rbd_utilization_threshold_changed(event models.Event, ctxt string) (models.AppEvent, error) {
+	appEvent, err := parseThresholdEvent(event, ctxt)
+	if err != nil {
+		logger.Get().Error("%s- Could not parse the threshold cross event. Error:%v", ctxt, err)
+		return appEvent, err
+	}
+	appEvent.NotificationEntity = models.NOTIFICATION_ENTITY_BLOCK_DEVICE
+
+	var BlkDev models.BlockDevice
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_BLOCK_DEVICES)
+	if err := coll.Find(bson.M{"clusterid": appEvent.ClusterId,
+		"id": appEvent.EntityId}).One(&BlkDev); err != nil {
+		return appEvent, fmt.Errorf("%s-Error getting the RBD:%v for"+
+			" cluster: %v. error: %v", ctxt, appEvent.EntityId, appEvent.ClusterId, err)
+	}
+
+	appEvent.Message = fmt.Sprintf("RBD utilization for %s on %s cluster has moved to %s",
+		event.Tags["EntityName"],
+		appEvent.ClusterName,
+		event.Tags["ThresholdType"])
+
+	clearedSeverity, err := common_event.ClearCorrespondingAlert(appEvent, ctxt)
+	if err != nil && appEvent.Severity == models.ALARM_STATUS_CLEARED {
+		logger.Get().Warning("%s-could not clear corresponding"+
+			" alert for: %s. Error: %v", ctxt, appEvent.EventId.String(), err)
+		return appEvent, err
+	}
+
+	if err = common_event.UpdateBlockDeviceAlarmCount(
+		appEvent,
+		clearedSeverity,
+		ctxt); err != nil {
+		logger.Get().Error("%s-Could not update Alarm state and count for"+
+			" event:%v .Error: %v", ctxt, appEvent.EventId, err)
 		return appEvent, err
 	}
 
