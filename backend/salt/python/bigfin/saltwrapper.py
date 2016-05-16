@@ -579,20 +579,27 @@ def GetClusterStats(monitor, cluster_name, ctxt=""):
     if not out:
         log.error("%s-Failed to get cluster statistics from %s" % (ctxt, monitor))
         raise Exception("Failed to get cluster statistics from %s" % monitor)
-    stats = ast.literal_eval(out[monitor])
-    ret_val["Used"] = stats["stats"]["total_used_bytes"]
-    ret_val["Available"] = stats["stats"]["total_avail_bytes"]
-    ret_val["Total"] = stats["stats"]["total_bytes"]
-    pools = []
-    poolStat = {}
-    for pool in stats["pools"]:
-        poolStat["Name"] = pool["name"]
-        poolStat["Id"] = pool["id"]
-        poolStat["Used"] = pool["stats"]["bytes_used"]
-        poolStat["Available"] = pool["stats"]["max_avail"]
-        pools.append(poolStat)
-    ret_val["Pools"] = pools
-    return ret_val
+    try:
+        stats = ast.literal_eval(out[monitor])
+        ret_val["Used"] = stats["stats"]["total_used_bytes"]
+        ret_val["Available"] = stats["stats"]["total_avail_bytes"]
+        ret_val["Total"] = stats["stats"]["total_bytes"]
+        pools = []
+        poolStat = {}
+        if "pools" in res:
+            for pool in stats["pools"]:
+                poolStat["Name"] = pool["name"]
+                poolStat["Id"] = pool["id"]
+                poolStat["Used"] = pool["stats"]["bytes_used"]
+                poolStat["Available"] = pool["stats"]["max_avail"]
+                pools.append(poolStat)
+            ret_val["Pools"] = pools
+            return ret_val
+    except SyntaxError as err:
+        log.error("%s-Failed to get cluster stats from mon %s, error=%s" % (ctxt, monitor, out[monitor]))
+        raise Exception("Failed to get cluster stats from mon %s, error:%s" % (monitor, err))
+    log.error("%s-Failed to get cluster stats from mon %s, error=%s" % (ctxt, monitor, out[monitor]))
+    raise Exception("Failed to get cluster stats from mon %s, error:%s" % (monitor, err))
 
 
 def GetObjectCount(monitor, cluster_name, ctxt=""):
@@ -601,13 +608,18 @@ def GetObjectCount(monitor, cluster_name, ctxt=""):
     if res:
         num_objects = 0
         num_objects_degraded = 0
-        res = ast.literal_eval(res[monitor])
-        for pool in res["pools"]:
-            num_objects = num_objects + int(pool["num_objects"])
-            num_objects_degraded = num_objects_degraded + int(pool["num_objects_degraded"])
-        object_cnt["num_objects"] = num_objects
-        object_cnt["num_objects_degraded"] = num_objects_degraded
-        return object_cnt
+        try:
+            res = ast.literal_eval(res[monitor])
+            if "pools" in res:
+                for pool in res["pools"]:
+                    num_objects = num_objects + int(pool["num_objects"])
+                    num_objects_degraded = num_objects_degraded + int(pool["num_objects_degraded"])
+                object_cnt["num_objects"] = num_objects
+                object_cnt["num_objects_degraded"] = num_objects_degraded
+                return object_cnt
+        except SyntaxError as err:
+            log.error("%s-Failed to get object count from mon %s, error=%s" % (ctxt, monitor, out[monitor]))
+            raise Exception("Failed to get boject count from mon %s, error:%s" % (monitor, err))
     log.error("%s-Object Count failed. error=%s" % (ctxt, out))
     raise Exception("Object Count failed. error=%s" % out)
 
