@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_9b8b43c3",
+        "filename": "provider/storage.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 747,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-16T10:36:19Z",
+      "side": 1,
+      "message": "Do we need to set this explicitly?",
+      "range": {
+        "startLine": 747,
+        "startChar": 5,
+        "endLine": 747,
+        "endChar": 40
+      },
+      "revId": "102fd1b09051d478bc67a58618e2cd77c2b162e4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_7b887fc5",
+        "filename": "provider/storage.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 782,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-16T10:36:19Z",
+      "side": 1,
+      "message": "Same as above",
+      "range": {
+        "startLine": 782,
+        "startChar": 5,
+        "endLine": 782,
+        "endChar": 34
+      },
+      "revId": "102fd1b09051d478bc67a58618e2cd77c2b162e4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
