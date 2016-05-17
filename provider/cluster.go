@@ -865,6 +865,12 @@ func getJournalDisks(nodeId uuid.UUID) (map[JournalDetail]uint, error) {
  */
 func getDiskWithJournalMapped(disks map[string]models.Disk, journalSize string) map[string]JournalDetail {
 	jSize := utils.SizeFromStr(journalSize)
+	var maxMetadataOnSsd int
+	if val, ok := bigfin_conf.ProviderConfig.ProviderOptions["max_metadata_on_ssd"]; !ok {
+		maxMetadataOnSsd = MAX_JOURNALS_ON_SSD
+	} else {
+		maxMetadataOnSsd = int(val.(float64))
+	}
 
 	var mappedDisks = make(map[string]JournalDetail)
 	var ssdCount, rotationalCount, osdCount int
@@ -921,7 +927,7 @@ func getDiskWithJournalMapped(disks map[string]models.Disk, journalSize string) 
 				Size:        sortedDisks[(len(sortedDisks)-journalDiskIdx)-1].Size,
 			}
 			mappedDisks[sortedDisks[idx].DevName] = journal
-			if mappedDiskCountForJournal == MAX_JOURNALS_ON_SSD || ssdDiskSize < jSize {
+			if mappedDiskCountForJournal == maxMetadataOnSsd || ssdDiskSize < jSize {
 				mappedDiskCountForJournal = 0
 				journalDiskIdx++
 			}
@@ -951,7 +957,7 @@ func getDiskWithJournalMapped(disks map[string]models.Disk, journalSize string) 
 				Size:        ssdDisks[journalDiskIdx].Size,
 			}
 			mappedDisks[disk.DevName] = journal
-			if mappedDiskCountForJournal == MAX_JOURNALS_ON_SSD || ssdDiskSize < jSize {
+			if mappedDiskCountForJournal == maxMetadataOnSsd || ssdDiskSize < jSize {
 				mappedDiskCountForJournal = 0
 				journalDiskIdx++
 			}
@@ -981,7 +987,7 @@ func getDiskWithJournalMapped(disks map[string]models.Disk, journalSize string) 
 				Size:        sortedDisks[(len(sortedDisks)-journalDiskIdx)-1].Size,
 			}
 			mappedDisks[sortedDisks[idx1].DevName] = journal
-			if mappedDiskCountForJournal == MAX_JOURNALS_ON_SSD || ssdDiskSize < jSize {
+			if mappedDiskCountForJournal == maxMetadataOnSsd || ssdDiskSize < jSize {
 				mappedDiskCountForJournal = 0
 				journalDiskIdx++
 			}
