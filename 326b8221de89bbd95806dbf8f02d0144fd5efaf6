@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_36f0c990",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 248,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-17T05:12:43Z",
+      "side": 1,
+      "message": "This is changed now. please rebase. we should use GetCalamariMon() function..",
+      "range": {
+        "startLine": 248,
+        "startChar": 17,
+        "endLine": 248,
+        "endChar": 29
+      },
+      "revId": "326b8221de89bbd95806dbf8f02d0144fd5efaf6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
