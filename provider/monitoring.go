@@ -142,13 +142,21 @@ func (s *CephProvider) GetClusterSummary(req models.RpcRequest, resp *models.Rpc
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 
+	mon_down_count := 0
+	monCriticalAlertsCount := 0
 	mons, monErr := GetMons(bson.M{"clusterid": *clusterId})
 	var err_str string
 	if monErr != nil {
 		err_str = fmt.Sprintf("Unable to fetch monitor nodes.Error %v", monErr.Error())
 		logger.Get().Error("%s - Unable to fetch monitor nodes.Error %v", ctxt, monErr.Error())
 	} else {
-		result[models.Monitor] = len(mons)
+		for _, mon := range mons {
+			monCriticalAlertsCount = monCriticalAlertsCount + mon.AlmCritCount
+			if mon.Status == models.NODE_STATUS_ERROR {
+				mon_down_count = mon_down_count + 1
+			}
+		}
+		result[models.Monitor] = map[string]int{skyring_monitoring.TOTAL: len(mons), models.STATUS_DOWN: mon_down_count, "criticalAlerts": monCriticalAlertsCount}
 	}
 
 	cluster, clusterFetchErr := getCluster(*clusterId)
