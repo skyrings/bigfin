@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_249d2c0a",
+        "filename": "provider/cluster.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 461,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-05-18T19:59:30Z",
+      "side": 1,
+      "message": "Is this contradicting with other patch?",
+      "range": {
+        "startLine": 453,
+        "startChar": 2,
+        "endLine": 461,
+        "endChar": 3
+      },
+      "revId": "e434141eae5ff912054c8665bc9842ec0c22f22d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
