@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_e4dd04e1",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 460,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-05-18T19:49:28Z",
+      "side": 1,
+      "message": "What will happen if calamari failed to start? I think we need to try to start on other MONs. So instead of checking idx\u003d\u003d0, can have a bool flag and check set it to true when calamari started successfully on the node. Also we need to create an alert if calamari failed start because it affects the manageability of the cluster",
+      "range": {
+        "startLine": 456,
+        "startChar": 2,
+        "endLine": 460,
+        "endChar": 4
+      },
+      "revId": "ba8edab166bd4cfbab167895e6651bc1131cdbc5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_04eb4879",
+        "filename": "provider/provider.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-05-18T19:49:28Z",
+      "side": 1,
+      "message": "I don\u0027t think it is right thing to do this check every time when you send a request to calamari. is there a way to handle this better?",
+      "range": {
+        "startLine": 90,
+        "startChar": 1,
+        "endLine": 111,
+        "endChar": 3
+      },
+      "revId": "ba8edab166bd4cfbab167895e6651bc1131cdbc5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
