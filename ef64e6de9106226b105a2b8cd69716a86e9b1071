@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_a47ffca9",
+        "filename": "provider/events.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-05-18T20:19:51Z",
+      "side": 1,
+      "message": "How you are deciding it is a clear event?",
+      "range": {
+        "startLine": 217,
+        "startChar": 1,
+        "endLine": 227,
+        "endChar": 2
+      },
+      "revId": "ef64e6de9106226b105a2b8cd69716a86e9b1071",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
