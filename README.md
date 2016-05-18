@@ -12,3 +12,4 @@ Running 'make' builds BigFin.  Git clone of BigFin from [gerrithub.io](https://r
 
 # Licensing
 BigFin is licensed under the Apache License, Version 2.0.  See [LICENSE](https://github.com/skyrings/bigfin/blob/master/LICENSE) for the full license text.
+ignore me
