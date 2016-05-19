@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_b324dcc4",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1653,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-05-19T17:27:14Z",
+      "side": 1,
+      "message": "Why to redefine this again?",
+      "range": {
+        "startLine": 1652,
+        "startChar": 2,
+        "endLine": 1653,
+        "endChar": 27
+      },
+      "revId": "e14359a30d08272ea8688308decd11eb8909ad32",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_732ad491",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 221,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-05-19T17:27:14Z",
+      "side": 1,
+      "message": "Why passing the session object here. why cant it be defined in that func itself",
+      "range": {
+        "startLine": 221,
+        "startChar": 50,
+        "endLine": 221,
+        "endChar": 59
+      },
+      "revId": "e14359a30d08272ea8688308decd11eb8909ad32",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_531a307e",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 299,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-05-19T17:27:14Z",
+      "side": 1,
+      "message": "same as above",
+      "range": {
+        "startLine": 285,
+        "startChar": 1,
+        "endLine": 299,
+        "endChar": 24
+      },
+      "revId": "e14359a30d08272ea8688308decd11eb8909ad32",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_331fac6d",
+        "filename": "provider/storage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-05-19T17:27:14Z",
+      "side": 1,
+      "message": "Generally what is the adv we are getting by defining it at one place and passing over. I am worried making lot of these kind of big changes at this stage :)",
+      "revId": "e14359a30d08272ea8688308decd11eb8909ad32",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
