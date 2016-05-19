@@ -1649,6 +1649,8 @@ func (s *CephProvider) UpdateStorageLogicalUnitParams(req models.RpcRequest, res
 	osdId := strings.Split(slu.Name, ".")[1]
 
 	asyncTask := func(t *task.Task) {
+		sessionCopy := db.GetDatastore().Copy()
+		defer sessionCopy.Close()
 		for {
 			select {
 			case <-t.StopCh:
@@ -1673,8 +1675,6 @@ func (s *CephProvider) UpdateStorageLogicalUnitParams(req models.RpcRequest, res
 				slu.State = state
 				slu.Status = status
 
-				sessionCopy := db.GetDatastore().Copy()
-				defer sessionCopy.Close()
 				coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
 
 				if err := coll.Update(bson.M{"sluid": fetchedOSD.Uuid, "clusterid": cluster_id}, slu); err != nil {
