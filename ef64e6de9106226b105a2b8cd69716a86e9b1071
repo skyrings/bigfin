@@ -22,6 +22,30 @@
       "revId": "ef64e6de9106226b105a2b8cd69716a86e9b1071",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_721bf2ca",
+        "filename": "provider/events.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 227,
+      "author": {
+        "id": 1006236
+      },
+      "writtenOn": "2016-05-19T05:33:00Z",
+      "side": 1,
+      "message": "I call this for event of all severity. As we need to clear the warning on an RBD if a critical is received and vice versa.",
+      "parentUuid": "baa041b7_a47ffca9",
+      "range": {
+        "startLine": 217,
+        "startChar": 1,
+        "endLine": 227,
+        "endChar": 2
+      },
+      "revId": "ef64e6de9106226b105a2b8cd69716a86e9b1071",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
