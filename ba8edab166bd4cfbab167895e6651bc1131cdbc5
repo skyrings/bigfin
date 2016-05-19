@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_522d8efc",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 460,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-19T04:09:11Z",
+      "side": 1,
+      "message": "I can loop through the list and if successfully able to start calamari on one mon I would break the loop. If at last I find none started will raise and alert.",
+      "parentUuid": "baa041b7_e4dd04e1",
+      "range": {
+        "startLine": 456,
+        "startChar": 2,
+        "endLine": 460,
+        "endChar": 4
+      },
+      "revId": "ba8edab166bd4cfbab167895e6651bc1131cdbc5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_04eb4879",
         "filename": "provider/provider.go",
         "patchSetId": 3
@@ -36,6 +60,30 @@
       "writtenOn": "2016-05-18T19:49:28Z",
       "side": 1,
       "message": "I don\u0027t think it is right thing to do this check every time when you send a request to calamari. is there a way to handle this better?",
+      "range": {
+        "startLine": 90,
+        "startChar": 1,
+        "endLine": 111,
+        "endChar": 3
+      },
+      "revId": "ba8edab166bd4cfbab167895e6651bc1131cdbc5",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_32320a60",
+        "filename": "provider/provider.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-19T04:09:11Z",
+      "side": 1,
+      "message": "I feel I can try making a fetch with option.mon\u003dY and options.calamari\u003dY. If found check if calamari running and if so return the same node.\n\nIf not found a calamari node, below code picks one node randomly and starts calamari on the same and returns it.",
+      "parentUuid": "baa041b7_04eb4879",
       "range": {
         "startLine": 90,
         "startChar": 1,
