@@ -176,6 +176,8 @@ func (s *CephProvider) ImportCluster(req models.RpcRequest, resp *models.RpcResp
 	}
 
 	asyncTask := func(t *task.Task) {
+		sessionCopy := db.GetDatastore().Copy()
+		defer sessionCopy.Close()
 		// Get cluster details and populate
 		t.UpdateStatus("Updating cluster generic dtails (name/id)")
 		cluster_uuid, clusterName, err := PopulateClusterDetails(request.BootstrapNode, ctxt)
@@ -305,8 +307,6 @@ func (s *CephProvider) ImportCluster(req models.RpcRequest, resp *models.RpcResp
 				Enabled: false,
 			})
 		}
-		sessionCopy := db.GetDatastore().Copy()
-		defer sessionCopy.Close()
 		notifSubsColl := sessionCopy.
 			DB(conf.SystemConfig.DBConfig.Database).
 			C(models.COLL_NAME_CLUSTER_NOTIFICATION_SUBSCRIPTIONS)

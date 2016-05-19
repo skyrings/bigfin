@@ -1649,6 +1649,8 @@ func (s *CephProvider) UpdateStorageLogicalUnitParams(req models.RpcRequest, res
 	osdId := strings.Split(slu.Name, ".")[1]
 
 	asyncTask := func(t *task.Task) {
+		sessionCopy := db.GetDatastore().Copy()
+		defer sessionCopy.Close()
 		for {
 			select {
 			case <-t.StopCh:
@@ -1838,9 +1840,9 @@ func RecalculatePgnum(ctxt string, clusterId uuid.UUID, t *task.Task) bool {
 		}
 		var pgNum uint
 		if storage.Type == models.STORAGE_TYPE_ERASURE_CODED {
-			pgNum = DerivePgNum(clusterId, storage.Size, ec_pool_sizes[storage.Options["ecprofile"]])
+			pgNum = DerivePgNum(sessionCopy, clusterId, storage.Size, ec_pool_sizes[storage.Options["ecprofile"]])
 		} else {
-			pgNum = DerivePgNum(clusterId, storage.Size, storage.Replicas)
+			pgNum = DerivePgNum(sessionCopy, clusterId, storage.Size, storage.Replicas)
 		}
 		currentPgNum, err := strconv.Atoi(storage.Options["pg_num"])
 		if err != nil {

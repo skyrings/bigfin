@@ -13,6 +13,7 @@ import (
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/uuid"
 	"github.com/skyrings/skyring-common/utils"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 	"strconv"
@@ -217,7 +218,7 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 		result[models.Monitor] = len(mons)
 	}
 
-	clusters, clustersFetchErr := getClustersByType(bigfin_models.CLUSTER_TYPE)
+	clusters, clustersFetchErr := getClustersByType(sessionCopy, bigfin_models.CLUSTER_TYPE)
 	if clustersFetchErr != nil {
 		logger.Get().Error("%s - Unable to fetch clusters of type %v. Err %v", ctxt, bigfin_models.CLUSTER_TYPE, clustersFetchErr)
 		return fmt.Errorf("%s - Unable to fetch clusters of type %v. Err %v", ctxt, bigfin_models.CLUSTER_TYPE, clustersFetchErr)
@@ -281,6 +282,8 @@ func FetchOSDStats(ctxt string, cluster models.Cluster, monName string) (map[str
 	metrics := make(map[string]map[string]string)
 	currentTimeStamp := time.Now().Unix()
 
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
 	for _, osd := range statistics {
 		metric_name := monitoringConfig.CollectionName + "." + cluster.Name + "." + skyring_monitoring.SLU_UTILIZATION + "_" + strings.Replace(osd.Name, ".", "_", -1) + "."
 		timeStampStr := strconv.FormatInt(currentTimeStamp, 10)
@@ -288,7 +291,11 @@ func FetchOSDStats(ctxt string, cluster models.Cluster, monName string) (map[str
 		metrics[metric_name+skyring_monitoring.USED_SPACE] = map[string]string{timeStampStr: strconv.FormatUint(osd.Used, 10)}
 		metrics[metric_name+skyring_monitoring.PERCENT_USED] = map[string]string{timeStampStr: strconv.FormatUint(osd.UsagePercent, 10)}
 		usage := models.Utilization{Used: int64(osd.Used), Total: int64(osd.Available + osd.Used), PercentUsed: float64(osd.UsagePercent)}
-		if dbUpdateErr := updateDB(bson.M{"name": osd.Name, "clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"usage": usage}}, models.COLL_NAME_STORAGE_LOGICAL_UNITS); dbUpdateErr != nil {
+		if dbUpdateErr := updateDB(
+			sessionCopy,
+			bson.M{"name": osd.Name, "clusterid": cluster.ClusterId},
+			bson.M{"$set": bson.M{"usage": usage}},
+			models.COLL_NAME_STORAGE_LOGICAL_UNITS); dbUpdateErr != nil {
 			logger.Get().Error("%s - Error updating the osd details of %v of cluster %v.Err %v", ctxt, osd.Name, cluster.Name, dbUpdateErr)
 		}
 		event, isRaiseEvent, err := util.AnalyseThresholdBreach(ctxt, skyring_monitoring.SLU_UTILIZATION, osd.Name, float64(osd.UsagePercent), cluster)
@@ -328,7 +335,7 @@ func FetchOSDStats(ctxt string, cluster models.Cluster, monName string) (map[str
 			   For the osds captured already in the storage profile event's ImpactingEvents, the notification flag is turned off so the eventing module doesn't notify this
 			   but just maintains the detail.
 	*/
-	slus, sluFetchErr := getOsds(cluster.ClusterId)
+	slus, sluFetchErr := getOsds(sessionCopy, cluster.ClusterId)
 	if sluFetchErr != nil {
 		return nil, sluFetchErr
 	}
@@ -390,11 +397,13 @@ func FetchOSDStats(ctxt string, cluster models.Cluster, monName string) (map[str
 }
 
 func FetchStorageProfileUtilizations(ctxt string, osdDetails []backend.OSDDetails, cluster models.Cluster) (statsToPush map[string]map[string]string, err error, storageProfileEvents []models.Event) {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
 	statsToPush = make(map[string]map[string]string)
 	statsForEventAnalyse := make(map[string]float64)
 	cluster.StorageProfileUsage = make(map[string]models.Utilization)
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
-	slus, sluFetchErr := getOsds(cluster.ClusterId)
+	slus, sluFetchErr := getOsds(sessionCopy, cluster.ClusterId)
 	if sluFetchErr != nil {
 		return nil, sluFetchErr, []models.Event{}
 	}
@@ -452,16 +461,18 @@ func FetchStorageProfileUtilizations(ctxt string, osdDetails []backend.OSDDetail
 			storageProfileEvents = append(storageProfileEvents, event)
 		}
 	}
-	if err := updateDB(bson.M{"clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"storageprofileusage": cluster.StorageProfileUsage}}, models.COLL_NAME_STORAGE_CLUSTERS); err != nil {
+	if err := updateDB(
+		sessionCopy,
+		bson.M{"clusterid": cluster.ClusterId},
+		bson.M{"$set": bson.M{"storageprofileusage": cluster.StorageProfileUsage}},
+		models.COLL_NAME_STORAGE_CLUSTERS); err != nil {
 		logger.Get().Error("%s - Updating the storage profile statistics to db for the cluster %v failed.Error %v", ctxt, cluster.Name, err.Error())
 	}
 
 	return statsToPush, nil, storageProfileEvents
 }
 
-func updateDB(query interface{}, update interface{}, collectionName string) error {
-	sessionCopy := db.GetDatastore().Copy()
-	defer sessionCopy.Close()
+func updateDB(sessionCopy *mgo.Session, query interface{}, update interface{}, collectionName string) error {
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(collectionName)
 	dbUpdateError := coll.Update(query, update)
 	if dbUpdateError != nil {
@@ -470,20 +481,7 @@ func updateDB(query interface{}, update interface{}, collectionName string) erro
 	return nil
 }
 
-func updateOSD(query interface{}, update interface{}) error {
-	sessionCopy := db.GetDatastore().Copy()
-	defer sessionCopy.Close()
-	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
-	dbUpdateError := coll.Update(query, update)
-	if dbUpdateError != nil {
-		return dbUpdateError
-	}
-	return nil
-}
-
-func getOsds(clusterId uuid.UUID) (slus []models.StorageLogicalUnit, err error) {
-	sessionCopy := db.GetDatastore().Copy()
-	defer sessionCopy.Close()
+func getOsds(sessionCopy *mgo.Session, clusterId uuid.UUID) (slus []models.StorageLogicalUnit, err error) {
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
 	if err := coll.Find(bson.M{"clusterid": clusterId}).Sort("name").All(&slus); err != nil {
 		return nil, fmt.Errorf("Error getting the slus for cluster: %v. error: %v", clusterId, err)
@@ -569,7 +567,16 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 	if statistics.Total != 0 {
 		percentUsed = (float64(statistics.Used*100) / float64(statistics.Total))
 	}
-	if err := updateDB(bson.M{"clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"usage": models.Utilization{Used: statistics.Used, Total: statistics.Total, PercentUsed: percentUsed}}}, models.COLL_NAME_STORAGE_CLUSTERS); err != nil {
+	if err := updateDB(
+		sessionCopy,
+		bson.M{"clusterid": cluster.ClusterId},
+		bson.M{
+			"$set": bson.M{
+				"usage": models.Utilization{
+					Used:        statistics.Used,
+					Total:       statistics.Total,
+					PercentUsed: percentUsed}}},
+		models.COLL_NAME_STORAGE_CLUSTERS); err != nil {
 		logger.Get().Error("%s-Updating the cluster statistics to db for the cluster %v failed.Error %v", ctxt, cluster.Name, err.Error())
 	}
 
@@ -626,7 +633,17 @@ func FetchObjectCount(ctxt string, cluster models.Cluster, monName string) (map[
 	metric_name := monitoringConfig.CollectionName + "." + cluster.Name + "." + skyring_monitoring.NO_OF_OBJECT
 	metrics[metric_name] = map[string]string{timeStampStr: fmt.Sprintf("%v", objectCnt)}
 
-	if err := updateDB(bson.M{"clusterid": cluster.ClusterId}, bson.M{"$set": bson.M{"objectcount": map[string]int64{bigfin_models.NUMBER_OF_OBJECTS: objectCnt, bigfin_models.NUMBER_OF_DEGRADED_OBJECTS: objectErrCnt}}}, models.COLL_NAME_STORAGE_CLUSTERS); err != nil {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	if err := updateDB(
+		sessionCopy,
+		bson.M{"clusterid": cluster.ClusterId},
+		bson.M{
+			"$set": bson.M{
+				"objectcount": map[string]int64{
+					bigfin_models.NUMBER_OF_OBJECTS:          objectCnt,
+					bigfin_models.NUMBER_OF_DEGRADED_OBJECTS: objectErrCnt}}},
+		models.COLL_NAME_STORAGE_CLUSTERS); err != nil {
 		logger.Get().Error("%s-Updating the object count to db for the cluster %v failed.Error %v", ctxt, cluster.Name, err.Error())
 	}
 
@@ -695,21 +712,7 @@ func pushTimeSeriesData(metrics map[string]map[string]string, clusterName string
 	return nil
 }
 
-func getClusterNodesById(cluster_id *uuid.UUID) (models.Nodes, error) {
-	sessionCopy := db.GetDatastore().Copy()
-	defer sessionCopy.Close()
-
-	collection := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
-	var nodes models.Nodes
-	if err := collection.Find(bson.M{"clusterid": *cluster_id}).All(&nodes); err != nil {
-		return nil, err
-	}
-	return nodes, nil
-}
-
-func getClustersByType(clusterType string) (clusters []models.Cluster, err error) {
-	sessionCopy := db.GetDatastore().Copy()
-	defer sessionCopy.Close()
+func getClustersByType(sessionCopy *mgo.Session, clusterType string) (clusters []models.Cluster, err error) {
 	collection := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
 	if err := collection.Find(bson.M{"type": clusterType}).All(&clusters); err != nil {
 		return clusters, err

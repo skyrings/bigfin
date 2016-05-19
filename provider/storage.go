@@ -71,13 +71,13 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 	}
 
 	asyncTask := func(t *task.Task) {
+		sessionCopy := db.GetDatastore().Copy()
+		defer sessionCopy.Close()
 		for {
 			select {
 			case <-t.StopCh:
 				return
 			default:
-				sessionCopy := db.GetDatastore().Copy()
-				defer sessionCopy.Close()
 				var cluster models.Cluster
 
 				t.UpdateStatus("Started ceph provider storage creation: %v", t.ID)
@@ -97,12 +97,12 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 					return
 				}
 
-				poolId, ok := createPool(ctxt, *cluster_id, request, t)
+				poolId, ok := createPool(ctxt, sessionCopy, *cluster_id, request, t)
 				if !ok {
 					return
 				}
 				if request.Type != models.STORAGE_TYPE_ERASURE_CODED && len(request.BlockDevices) > 0 {
-					createBlockDevices(ctxt, monnode.Hostname, cluster, *poolId, request, t)
+					createBlockDevices(ctxt, sessionCopy, monnode.Hostname, cluster, *poolId, request, t)
 				}
 
 				t.UpdateStatus("Syncing SLUs")
@@ -133,7 +133,15 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 	return nil
 }
 
-func createBlockDevices(ctxt string, mon string, cluster models.Cluster, poolId uuid.UUID, request models.AddStorageRequest, t *task.Task) {
+func createBlockDevices(
+	ctxt string,
+	sessionCopy *mgo.Session,
+	mon string,
+	cluster models.Cluster,
+	poolId uuid.UUID,
+	request models.AddStorageRequest,
+	t *task.Task) {
+
 	t.UpdateStatus("Creating bolck devices")
 	var failedBlkDevices []string
 	for _, entry := range request.BlockDevices {
@@ -152,7 +160,14 @@ func createBlockDevices(ctxt string, mon string, cluster models.Cluster, poolId 
 			QuotaParams:  entry.QuotaParams,
 			Options:      entry.Options,
 		}
-		if ok := createBlockStorage(ctxt, mon, cluster.ClusterId, cluster.Name, request.Name, blockDevice, t); !ok {
+		if ok := createBlockStorage(
+			ctxt,
+			sessionCopy,
+			mon,
+			cluster.ClusterId,
+			cluster.Name,
+			request.Name,
+			blockDevice, t); !ok {
 			failedBlkDevices = append(failedBlkDevices, entry.Name)
 		}
 	}
@@ -161,10 +176,7 @@ func createBlockDevices(ctxt string, mon string, cluster models.Cluster, poolId 
 	}
 }
 
-func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageRequest, t *task.Task) (*uuid.UUID, bool) {
-	sessionCopy := db.GetDatastore().Copy()
-	defer sessionCopy.Close()
-
+func createPool(ctxt string, sessionCopy *mgo.Session, clusterId uuid.UUID, request models.AddStorageRequest, t *task.Task) (*uuid.UUID, bool) {
 	t.UpdateStatus("Getting cluster details")
 	// Get cluster details
 	var cluster models.Cluster
@@ -227,9 +239,9 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 					t)
 				return nil, false
 			}
-			pgNum = DerivePgNum(clusterId, request.Size, ec_pool_sizes[request.Options["ecprofile"]])
+			pgNum = DerivePgNum(sessionCopy, clusterId, request.Size, ec_pool_sizes[request.Options["ecprofile"]])
 		} else {
-			pgNum = DerivePgNum(clusterId, request.Size, request.Replicas)
+			pgNum = DerivePgNum(sessionCopy, clusterId, request.Size, request.Replicas)
 		}
 	}
 	/*rulesetmapval, ok := cluster.Options["rulesetmap"]
@@ -378,10 +390,8 @@ func validECProfile(ctxt string, mon string, cluster models.Cluster, ecprofile s
 //         Max Allocation Size = ((Average OSD Size * No of OSDs) / Replica Count) * Max Utilization Factor
 //         -- where Max Utilization Factor is set as 0.8
 //  Finally round this value of next 2's power
-func DerivePgNum(clusterId uuid.UUID, size string, replicaCount int) uint {
+func DerivePgNum(sessionCopy *mgo.Session, clusterId uuid.UUID, size string, replicaCount int) uint {
 	// Get the no of OSDs in the cluster
-	sessionCopy := db.GetDatastore().Copy()
-	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
 	var slus []models.StorageLogicalUnit
 	if err := coll.Find(bson.M{"clusterid": clusterId, "type": models.CEPH_OSD}).All(&slus); err != nil {
@@ -519,6 +529,8 @@ func (s *CephProvider) RemoveStorage(req models.RpcRequest, resp *models.RpcResp
 	}
 
 	asyncTask := func(t *task.Task) {
+		sessionCopy := db.GetDatastore().Copy()
+		defer sessionCopy.Close()
 		for {
 			select {
 			case <-t.StopCh:
@@ -526,8 +538,6 @@ func (s *CephProvider) RemoveStorage(req models.RpcRequest, resp *models.RpcResp
 			default:
 				t.UpdateStatus("Started ceph provider pool deletion: %v", t.ID)
 				// Get the storage details
-				sessionCopy := db.GetDatastore().Copy()
-				defer sessionCopy.Close()
 				var storage models.Storage
 				var cluster models.Cluster
 

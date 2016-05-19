@@ -22,6 +22,7 @@ import (
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/task"
 	"github.com/skyrings/skyring-common/tools/uuid"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
 
@@ -54,13 +55,13 @@ func (s *CephProvider) CreateBlockDevice(req models.RpcRequest, resp *models.Rpc
 		return err
 	}
 	asyncTask := func(t *task.Task) {
+		sessionCopy := db.GetDatastore().Copy()
+		defer sessionCopy.Close()
 		for {
 			select {
 			case <-t.StopCh:
 				return
 			default:
-				sessionCopy := db.GetDatastore().Copy()
-				defer sessionCopy.Close()
 				var cluster models.Cluster
 				var storage models.Storage
 				t.UpdateStatus("Started ceph provider block device creation: %v", t.ID)
@@ -103,7 +104,7 @@ func (s *CephProvider) CreateBlockDevice(req models.RpcRequest, resp *models.Rpc
 					QuotaParams:  request.QuotaParams,
 					Options:      request.Options,
 				}
-				if ok := createBlockStorage(ctxt, monnode.Hostname, *cluster_id, cluster.Name, storage.Name, blockDevice, t); !ok {
+				if ok := createBlockStorage(ctxt, sessionCopy, monnode.Hostname, *cluster_id, cluster.Name, storage.Name, blockDevice, t); !ok {
 					utils.FailTask("Error creating block device", fmt.Errorf("%s - %v", ctxt, err), t)
 					return
 				}
@@ -130,9 +131,16 @@ func (s *CephProvider) CreateBlockDevice(req models.RpcRequest, resp *models.Rpc
 	return nil
 }
 
-func createBlockStorage(ctxt string, mon string, clusterId uuid.UUID, clusterName string, backingStorage string, blockDevice models.BlockDevice, t *task.Task) bool {
-	sessionCopy := db.GetDatastore().Copy()
-	defer sessionCopy.Close()
+func createBlockStorage(
+	ctxt string,
+	sessionCopy *mgo.Session,
+	mon string,
+	clusterId uuid.UUID,
+	clusterName string,
+	backingStorage string,
+	blockDevice models.BlockDevice,
+	t *task.Task) bool {
+
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_BLOCK_DEVICES)
 
 	// Create the block device image
@@ -186,13 +194,13 @@ func (s *CephProvider) DeleteBlockDevice(req models.RpcRequest, resp *models.Rpc
 	}
 
 	asyncTask := func(t *task.Task) {
+		sessionCopy := db.GetDatastore().Copy()
+		defer sessionCopy.Close()
 		for {
 			select {
 			case <-t.StopCh:
 				return
 			default:
-				sessionCopy := db.GetDatastore().Copy()
-				defer sessionCopy.Close()
 				var cluster models.Cluster
 				var storage models.Storage
 				var blockDevice models.BlockDevice
@@ -293,13 +301,13 @@ func (s *CephProvider) ResizeBlockDevice(req models.RpcRequest, resp *models.Rpc
 	sizeMBs := utils.SizeFromStr(request.Size) / 1024
 
 	asyncTask := func(t *task.Task) {
+		sessionCopy := db.GetDatastore().Copy()
+		defer sessionCopy.Close()
 		for {
 			select {
 			case <-t.StopCh:
 				return
 			default:
-				sessionCopy := db.GetDatastore().Copy()
-				defer sessionCopy.Close()
 				var blockDevice models.BlockDevice
 				var cluster models.Cluster
 				var storage models.Storage
