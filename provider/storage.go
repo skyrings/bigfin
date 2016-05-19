@@ -71,13 +71,13 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 	}
 
 	asyncTask := func(t *task.Task) {
+		sessionCopy := db.GetDatastore().Copy()
+		defer sessionCopy.Close()
 		for {
 			select {
 			case <-t.StopCh:
 				return
 			default:
-				sessionCopy := db.GetDatastore().Copy()
-				defer sessionCopy.Close()
 				var cluster models.Cluster
 
 				t.UpdateStatus("Started ceph provider storage creation: %v", t.ID)
@@ -133,7 +133,16 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 	return nil
 }
 
-func createBlockDevices(ctxt string, mon string, cluster models.Cluster, poolId uuid.UUID, request models.AddStorageRequest, t *task.Task) {
+func createBlockDevices(
+	ctxt string,
+	mon string,
+	cluster models.Cluster,
+	poolId uuid.UUID,
+	request models.AddStorageRequest,
+	t *task.Task) {
+
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
 	t.UpdateStatus("Creating bolck devices")
 	var failedBlkDevices []string
 	for _, entry := range request.BlockDevices {
@@ -152,7 +161,13 @@ func createBlockDevices(ctxt string, mon string, cluster models.Cluster, poolId 
 			QuotaParams:  entry.QuotaParams,
 			Options:      entry.Options,
 		}
-		if ok := createBlockStorage(ctxt, mon, cluster.ClusterId, cluster.Name, request.Name, blockDevice, t); !ok {
+		if ok := createBlockStorage(
+			ctxt,
+			mon,
+			cluster.ClusterId,
+			cluster.Name,
+			request.Name,
+			blockDevice, t); !ok {
 			failedBlkDevices = append(failedBlkDevices, entry.Name)
 		}
 	}
@@ -519,6 +534,8 @@ func (s *CephProvider) RemoveStorage(req models.RpcRequest, resp *models.RpcResp
 	}
 
 	asyncTask := func(t *task.Task) {
+		sessionCopy := db.GetDatastore().Copy()
+		defer sessionCopy.Close()
 		for {
 			select {
 			case <-t.StopCh:
@@ -526,8 +543,6 @@ func (s *CephProvider) RemoveStorage(req models.RpcRequest, resp *models.RpcResp
 			default:
 				t.UpdateStatus("Started ceph provider pool deletion: %v", t.ID)
 				// Get the storage details
-				sessionCopy := db.GetDatastore().Copy()
-				defer sessionCopy.Close()
 				var storage models.Storage
 				var cluster models.Cluster
 

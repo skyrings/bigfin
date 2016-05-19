@@ -54,13 +54,13 @@ func (s *CephProvider) CreateBlockDevice(req models.RpcRequest, resp *models.Rpc
 		return err
 	}
 	asyncTask := func(t *task.Task) {
+		sessionCopy := db.GetDatastore().Copy()
+		defer sessionCopy.Close()
 		for {
 			select {
 			case <-t.StopCh:
 				return
 			default:
-				sessionCopy := db.GetDatastore().Copy()
-				defer sessionCopy.Close()
 				var cluster models.Cluster
 				var storage models.Storage
 				t.UpdateStatus("Started ceph provider block device creation: %v", t.ID)
@@ -130,7 +130,15 @@ func (s *CephProvider) CreateBlockDevice(req models.RpcRequest, resp *models.Rpc
 	return nil
 }
 
-func createBlockStorage(ctxt string, mon string, clusterId uuid.UUID, clusterName string, backingStorage string, blockDevice models.BlockDevice, t *task.Task) bool {
+func createBlockStorage(
+	ctxt string,
+	mon string,
+	clusterId uuid.UUID,
+	clusterName string,
+	backingStorage string,
+	blockDevice models.BlockDevice,
+	t *task.Task) bool {
+
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_BLOCK_DEVICES)
@@ -186,13 +194,13 @@ func (s *CephProvider) DeleteBlockDevice(req models.RpcRequest, resp *models.Rpc
 	}
 
 	asyncTask := func(t *task.Task) {
+		sessionCopy := db.GetDatastore().Copy()
+		defer sessionCopy.Close()
 		for {
 			select {
 			case <-t.StopCh:
 				return
 			default:
-				sessionCopy := db.GetDatastore().Copy()
-				defer sessionCopy.Close()
 				var cluster models.Cluster
 				var storage models.Storage
 				var blockDevice models.BlockDevice
@@ -293,13 +301,13 @@ func (s *CephProvider) ResizeBlockDevice(req models.RpcRequest, resp *models.Rpc
 	sizeMBs := utils.SizeFromStr(request.Size) / 1024
 
 	asyncTask := func(t *task.Task) {
+		sessionCopy := db.GetDatastore().Copy()
+		defer sessionCopy.Close()
 		for {
 			select {
 			case <-t.StopCh:
 				return
 			default:
-				sessionCopy := db.GetDatastore().Copy()
-				defer sessionCopy.Close()
 				var blockDevice models.BlockDevice
 				var cluster models.Cluster
 				var storage models.Storage
