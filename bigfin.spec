@@ -40,6 +40,7 @@ install -D backend/salt/sls/* $RPM_BUILD_ROOT/srv/salt/
 install -d $RPM_BUILD_ROOT/%{python2_sitelib}/bigfin
 install -D backend/salt/python/bigfin/* $RPM_BUILD_ROOT/%{python2_sitelib}/bigfin/
 install -Dm 0644 salt_module/ceph.py $RPM_BUILD_ROOT/srv/salt/_modules
+install -Dm 0644 salt_module/mon_remote.py $RPM_BUILD_ROOT/srv/salt/_modules
 install -Dm 0644 backend/salt/python/bigfin/utils.py $RPM_BUILD_ROOT/srv/salt/_modules
 install -Dm 0644 conf/ceph.dat.sample $RPM_BUILD_ROOT/%{_sysconfdir}/skyring/providers.d/ceph.dat
 install -Dm 0644 provider/ceph.evt $RPM_BUILD_ROOT/%{_sysconfdir}/skyring/providers.d/ceph.evt
