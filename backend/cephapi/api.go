@@ -284,7 +284,8 @@ func (c CephApi) GetPools(mon string, clusterId uuid.UUID, ctxt string) ([]backe
 func (c CephApi) GetPool(mon string, clusterId uuid.UUID, pool_id int, ctxt string) (backend.CephPool, error) {
 	getPoolRoute := CEPH_API_ROUTES["GetPool"]
 	getPoolRoute.Pattern = strings.Replace(getPoolRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
-	getPoolRoute.Pattern = strings.Replace(getPoolRoute.Pattern, "{pool-id}", string(pool_id), 1)
+	poolId := strconv.Itoa(pool_id)
+	getPoolRoute.Pattern = strings.Replace(getPoolRoute.Pattern, "{pool-id}", poolId, 1)
 	resp, err := route_request(getPoolRoute, mon, bytes.NewBuffer([]byte{}))
 	if err != nil {
 		return backend.CephPool{}, err
