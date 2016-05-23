@@ -394,7 +394,6 @@ func osd_add_or_delete_handler(event models.AppEvent, osdname string, ctxt strin
 		var monHostname string
 		for count := 0; count < 12; count++ {
 			monnode, err := GetCalamariMonNode(event.ClusterId, ctxt)
-			monHostname = monnode.Hostname
 			if err != nil {
 				if err.Error() == mgo.ErrNotFound.Error() {
 					time.Sleep(5 * time.Second)
@@ -403,6 +402,7 @@ func osd_add_or_delete_handler(event models.AppEvent, osdname string, ctxt strin
 				logger.Get().Error("%s-Error getting a mon node in cluster: %s. error: %v", ctxt, event.ClusterId, err)
 				return event, err
 			} else {
+				monHostname = monnode.Hostname
 				retrievedMonSuccessfully = true
 				break
 			}
