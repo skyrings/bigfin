@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_0eaeb7e5",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 476,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-23T12:40:13Z",
+      "side": 1,
+      "message": "Remove the commented part",
+      "range": {
+        "startLine": 476,
+        "startChar": 1,
+        "endLine": 476,
+        "endChar": 27
+      },
+      "revId": "f4957e29f70715f15963e765b125ff9d15e5d02d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_eeb8332c",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 506,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-23T12:40:13Z",
+      "side": 1,
+      "message": "I think its not required now so remove this",
+      "range": {
+        "startLine": 486,
+        "startChar": 2,
+        "endLine": 506,
+        "endChar": 5
+      },
+      "revId": "f4957e29f70715f15963e765b125ff9d15e5d02d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_ae858b5a",
+        "filename": "provider/provider.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 19,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-23T12:40:13Z",
+      "side": 1,
+      "message": "Remove the commented parts",
+      "range": {
+        "startLine": 19,
+        "startChar": 1,
+        "endLine": 19,
+        "endChar": 55
+      },
+      "revId": "f4957e29f70715f15963e765b125ff9d15e5d02d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_8e888772",
+        "filename": "provider/provider.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-05-23T12:40:13Z",
+      "side": 1,
+      "message": "Remove the commented part. Now how do we fall back to other calamari?",
+      "range": {
+        "startLine": 97,
+        "startChar": 1,
+        "endLine": 154,
+        "endChar": 4
+      },
+      "revId": "f4957e29f70715f15963e765b125ff9d15e5d02d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
