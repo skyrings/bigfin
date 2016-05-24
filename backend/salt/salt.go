@@ -39,6 +39,7 @@ var funcNames = [...]string{
 	"GetServiceCount",
 	"GetRBDStats",
 	"StartCalamari",
+	"SetOptimizationVal",
 }
 
 var pyFuncs map[string]*gopy.PyFunction
@@ -338,5 +339,15 @@ func (c Salt) StartCalamari(node string, ctxt string) error {
 		return nil
 	}
 
+	return err
+}
+
+func (c Salt) SetOptimizationVal(nodeRoleMapFromRequest []string, ctxt string) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+	pyobj, err := pyFuncs["SetOptimizationVal"].Call(nodeRoleMapFromRequest, ctxt)
+	if err == nil && pyobj != nil {
+		return nil
+	}
 	return err
 }

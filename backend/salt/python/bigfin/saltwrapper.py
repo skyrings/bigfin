@@ -711,3 +711,21 @@ def StartCalamari(node, ctxt=""):
         raise Exception("start_cep_calamari failed on %s. error=%s" %
                         (node, out))
     return True
+
+
+def SetOptimizationVal(nodes, ctxt=""):
+    for node in nodes:
+        size=local.cmd(node, 'cmd.run_all', ["cat /proc/meminfo | grep MemTotal | cut -d':' -f2 | cut -d'k' -f1"])
+        memory_size = size[node]['stdout'].strip()
+	#256GB is in KB
+	min_free_kbytes = 45056
+        if memory_size == 268435456:
+            min_free_kbytes = 3145728
+        if memory_size == 134217728:
+	    min_free_kbytes = 2097152
+	if memory_size < 67108864:
+ 	    min_free_kbytes = 1048576	  
+        out=local.cmd(node, 'cmd.run_all', ['sysctl -w kernel.pid_max=4194304'])
+	out=local.cmd(node, 'cmd.run_all', ['sysctl -w fs.file-max=4194304'])
+	out=local.cmd(node, 'cmd.run_all', ['sysctl -w vm.min_free_kbytes=%d'%min_free_kbytes])
+    return True

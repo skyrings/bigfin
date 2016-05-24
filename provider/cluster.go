@@ -248,6 +248,21 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 					t.UpdateStatus("Could not create default EC profile")
 				}
 
+				//Setting Ceph init-time optimization values
+				var mons []string
+				for _, req_node := range request.Nodes {
+					if util.StringInSlice(MON, req_node.NodeType) {
+						var mon string
+						nodeid, _ := uuid.Parse(req_node.NodeId)
+						mon = nodes[*nodeid].Hostname
+						mons = append(mons, mon)
+					}
+				}
+				if err := salt_backend.SetOptimizationVal(mons, ctxt); err != nil {
+					logger.Get().Error("%s-Error in setting ceph init-time optimization values for cluster: %s. error: %v", ctxt, request.Name, err)
+					t.UpdateStatus("Failed to setting ceph init-time optimization values")
+				}
+
 				//Update the CRUSH MAP
 				/*t.UpdateStatus("Updating the CRUSH Map")
 				if err := updateCrushMap(ctxt, monnode.Hostname, *cluster_uuid); err != nil {
