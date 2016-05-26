@@ -53,7 +53,7 @@ const (
 	MON                 = "MON"
 	OSD                 = "OSD"
 	JOURNALSIZE         = 5120
-	MAX_JOURNALS_ON_SSD = 6
+	MAX_JOURNALS_ON_SSD = 4
 )
 
 type JournalDetail struct {
