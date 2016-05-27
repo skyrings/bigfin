@@ -26,6 +26,7 @@ import (
 	"github.com/skyrings/skyring-common/tools/uuid"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -755,15 +756,28 @@ func syncStorageNodes(mon string, clusterId uuid.UUID, ctxt string) error {
 	for _, node := range nodes {
 		var updates bson.M = make(map[string]interface{})
 		for _, service := range node.Services {
+			var host models.Node
+			if err := coll.Find(bson.M{"hostname": node.FQDN}).One(&host); err != nil {
+				logger.Get().Warning("Error getting the detail of node: %v. error: %v", node.FQDN, err)
+				continue
+			}
+			nodeRoles := host.Roles
+			sort.Strings(nodeRoles)
+
 			if service.Type == bigfin_models.NODE_SERVICE_MON {
 				updates["clusterid"] = clusterId
 				updates["options.mon"] = models.Yes
 				if strings.HasPrefix(mon, node.FQDN) {
 					updates["options.calamari"] = models.Yes
 				}
+
+				if sort.SearchStrings(nodeRoles, MON) == len(nodeRoles) {
+					updates["roles"] = append(nodeRoles, MON)
+				}
+
 				if err := coll.Update(
 					bson.M{"hostname": node.FQDN},
-					bson.M{"$set": updates, "$push": bson.M{"roles": MON}}); err != nil {
+					bson.M{"$set": updates}); err != nil {
 					failedNodes = append(failedNodes, node.FQDN)
 				}
 				succeededNodes = append(succeededNodes, node.Hostname)
@@ -778,15 +792,17 @@ func syncStorageNodes(mon string, clusterId uuid.UUID, ctxt string) error {
 						err)
 					failedNodes = append(failedNodes, node.FQDN)
 				} else {
-					if err := coll.Update(
-						bson.M{"hostname": fetchedNode.Hostname},
-						bson.M{"$push": bson.M{"roles": OSD}}); err != nil {
-						logger.Get().Warning(
-							"%s-Failed to update the OSD role for the node: %s. error: %v",
-							ctxt,
-							node.FQDN,
-							err)
-						failedNodes = append(failedNodes, node.FQDN)
+					if sort.SearchStrings(nodeRoles, OSD) == len(nodeRoles) {
+						if err := coll.Update(
+							bson.M{"hostname": fetchedNode.Hostname},
+							bson.M{"$push": bson.M{"roles": OSD}}); err != nil {
+							logger.Get().Warning(
+								"%s-Failed to update the OSD role for the node: %s. error: %v",
+								ctxt,
+								node.FQDN,
+								err)
+							failedNodes = append(failedNodes, node.FQDN)
+						}
 					}
 				}
 			}
