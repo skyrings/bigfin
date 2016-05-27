@@ -112,38 +112,6 @@ func (s *CephProvider) GetClusterNodesForImport(req models.RpcRequest, resp *mod
 		clusterNodes = append(clusterNodes, clusterNode)
 	}
 
-	monNodes, err := cephapi_backend.GetMonitors(bootstrapNode, out.Id, ctxt)
-	if err != nil {
-		logger.Get().Error(
-			"%s-Error getting mon nodes participating in the cluster: %v. error: %v",
-			ctxt,
-			out.Id,
-			err)
-		*resp = utils.WriteResponse(
-			http.StatusInternalServerError,
-			"Error getting mon nodes participating in the cluster")
-		return err
-	}
-	for _, monNode := range monNodes {
-		if strings.HasPrefix(bootstrapNode, monNode) {
-			continue
-		}
-		clusterNode := models.NodeForImport{
-			Name: monNode,
-			Type: []string{bigfin_models.NODE_SERVICE_MON},
-		}
-		if err := coll.Find(
-			bson.M{"hostname": bson.M{
-				"$regex":   monNode,
-				"$options": "$i"}}).One(&fetchedNode); err != nil {
-			clusterNode.Found = false
-		} else {
-			clusterNode.Found = true
-			clusterNode.Name = fetchedNode.Hostname
-		}
-		clusterNodes = append(clusterNodes, clusterNode)
-	}
-
 	clusterForImport.Nodes = clusterNodes
 	result, err := json.Marshal(clusterForImport)
 	if err != nil {
