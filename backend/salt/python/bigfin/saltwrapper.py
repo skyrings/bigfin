@@ -55,7 +55,6 @@ def enableLogger(func):
 
 setattr(salt.client.LocalClient, 'cmd',
         enableLogger(salt.client.LocalClient.cmd))
-local = salt.client.LocalClient()
 
 
 def _get_short_hostname(hostname):
@@ -83,6 +82,7 @@ def run_state(local, tgt, state, *args, **kwargs):
 
 
 def pull_minion_file(local, minion, minion_path, path):
+    local = salt.client.LocalClient()
     out = local.cmd(minion, 'file.grep', [minion_path, '.'])
 
     result = out.get(minion, {})
@@ -96,6 +96,7 @@ def pull_minion_file(local, minion, minion_path, path):
 
 
 def _get_minion_network_info(minions):
+    local = salt.client.LocalClient()
     out = local.cmd(minions, ['grains.item', 'network.subnets'],
                     [['ipv4', 'ipv6'], []], expr_form='list')
     netinfo = {}
@@ -154,6 +155,7 @@ def _check_minion_networks(minions, public_network=None, cluster_network=None,
 
 
 def sync_ceph_conf(cluster_name, minions):
+    local = salt.client.LocalClient()
     out = local.cmd(minions,
                     'state.single',
                     ['file.managed', '/etc/ceph/%s.conf' % cluster_name,
@@ -286,6 +288,7 @@ def CreateCluster(cluster_name, fsid, minions, ctxt=""):
     pillar = {'skyring': pillar_data}
 
     bootstrapped_minion = None
+    local = salt.client.LocalClient()
     for id, minion in mon_id_map.iteritems():
         out = run_state(local, minion, 'add_ceph_mon',
                         kwarg={'pillar':
@@ -363,6 +366,7 @@ def AddMon(cluster_name, minions, ctxt=""):
     pillar_data = _add_ceph_mon_pillar_data(mon_id_map, cluster_name, monitors)
     pillar = {'skyring': pillar_data}
 
+    local = salt.client.LocalClient()
     out = run_state(local, minions, 'add_ceph_mon', expr_form='list',
                     kwarg={'pillar': pillar})
     if out:
@@ -382,6 +386,7 @@ def AddMon(cluster_name, minions, ctxt=""):
 
 
 def StartMon(monitors, ctxt=""):
+    local = salt.client.LocalClient()
     out = run_state(local, monitors, 'start_ceph_mon', expr_form='list')
     if out:
         log.error("%s-start_mon failed to %s. error=%s" %
@@ -423,6 +428,7 @@ def AddOSD(cluster_name, minions, ctxt=""):
                                'devices': v['devices']}
     pillar = {'skyring': pillar_data}
 
+    local = salt.client.LocalClient()
     out = run_state(local, minions, 'prepare_ceph_osd', expr_form='list',
                     kwarg={'pillar': pillar})
     if out:
@@ -503,6 +509,7 @@ def AddOSD(cluster_name, minions, ctxt=""):
 
 
 def CreatePool(pool_name, monitor, cluster_name, pg_num=0, ctxt=""):
+    local = salt.client.LocalClient()
     out = local.cmd(monitor, 'ceph.createPool',
                     [cluster_name, pool_name, pg_num])
 
@@ -514,6 +521,7 @@ def CreatePool(pool_name, monitor, cluster_name, pg_num=0, ctxt=""):
 
 
 def ListPool(monitor, cluster_name, ctxt=""):
+    local = salt.client.LocalClient()
     out = local.cmd(monitor, 'ceph.getPoolList', [cluster_name])
 
     if out.get(monitor, {}).get('retcode') == 0:
@@ -525,6 +533,7 @@ def ListPool(monitor, cluster_name, ctxt=""):
 
 
 def RemovePool(monitor, cluster, pool, ctxt=""):
+    local = salt.client.LocalClient()
     out = local.cmd(monitor, 'ceph.removePool', [cluster, pool])
     if out.get(monitor, {}).get('retcode') == 0:
         return True
@@ -534,6 +543,7 @@ def RemovePool(monitor, cluster, pool, ctxt=""):
 
 
 def GetClusterStatus(monitor, cluster_name, ctxt=""):
+    local = salt.client.LocalClient()
     out = local.cmd(monitor, 'ceph.getClusterStatus', [cluster_name])
     if out[monitor] != '':
         return out[monitor]
@@ -543,6 +553,7 @@ def GetClusterStatus(monitor, cluster_name, ctxt=""):
 
 
 def ParticipatesInCluster(node, ctxt=""):
+    local = salt.client.LocalClient()
     out = local.cmd(node, 'cmd.run_all', ['ls -l /var/lib/ceph/mon/*'])
     if out[node]['retcode'] == 0:
         return True
@@ -554,6 +565,7 @@ def ParticipatesInCluster(node, ctxt=""):
 
 def GetRBDStats(monitor, pool_name, cluster_name, ctxt=""):
     ret_val = []
+    local = salt.client.LocalClient()
     out = local.cmd(monitor, 'ceph.getRBDStats', [pool_name, cluster_name])
     if not out[monitor]:
         log.error("%s- failed to get rbd stats from pool %s of cluster %s. error=%s" % (ctxt, pool_name, cluster_name, out))
@@ -575,6 +587,7 @@ def GetRBDStats(monitor, pool_name, cluster_name, ctxt=""):
 
 def GetClusterStats(monitor, cluster_name, ctxt=""):
     ret_val = {}
+    local = salt.client.LocalClient()
     out = local.cmd(monitor, "ceph.getClusterStats", [cluster_name])
     if not out:
         log.error("%s-Failed to get cluster statistics from %s" % (ctxt, monitor))
@@ -603,6 +616,7 @@ def GetClusterStats(monitor, cluster_name, ctxt=""):
 
 
 def GetObjectCount(monitor, cluster_name, ctxt=""):
+    local = salt.client.LocalClient()
     res = local.cmd(monitor, "ceph.getObjectCount", [cluster_name])
     object_cnt = {}
     if res:
@@ -635,6 +649,7 @@ def GetOSDDetails(monitor, cluster_name, ctxt=""):
     '''
 
     rv = []
+    local = salt.client.LocalClient()
     out = local.cmd('%s' % monitor, 'ceph.getOSDDetails', [cluster_name])
     if not out:
         log.error("%s-Failed to get cluster statistics from %s" % (ctxt, monitor))
@@ -678,6 +693,7 @@ def GetPartDeviceDetails(node, partPath, ctxt=""):
     keys = columes.split(',')
     lsblk = ("lsblk --all --bytes --noheadings --output='%s' --path --raw" %
              columes)
+    local = salt.client.LocalClient()
     out = local.cmd([node], 'cmd.run', [lsblk], expr_form='list')
 
     if not out[node]:
@@ -705,6 +721,7 @@ def GetPartDeviceDetails(node, partPath, ctxt=""):
 
 def GetServiceCount(node, ctxt=""):
     service_count = {'SluServiceCount':0,'MonServiceCount':0}
+    local = salt.client.LocalClient()
     out = local.cmd(node, 'status.procs')
     for key, value in out[node].iteritems():
         for key, val in value.iteritems():
@@ -716,6 +733,7 @@ def GetServiceCount(node, ctxt=""):
 
 
 def StartCalamari(node, ctxt=""):
+    local = salt.client.LocalClient()
     out = run_state(local, [node], 'start_ceph_calamari', expr_form='list')
     if out:
         log.error("%s-start_ceph_calamari failed on %s. error=%s" %
