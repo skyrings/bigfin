@@ -24,9 +24,9 @@ import (
 	"github.com/skyrings/skyring-common/models"
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/uuid"
+	skyring_util "github.com/skyrings/skyring-common/utils"
 	"gopkg.in/mgo.v2/bson"
 	"net/http"
-	"sort"
 	"strconv"
 	"strings"
 
@@ -756,13 +756,17 @@ func syncStorageNodes(mon string, clusterId uuid.UUID, ctxt string) error {
 	for _, node := range nodes {
 		var updates bson.M = make(map[string]interface{})
 		for _, service := range node.Services {
-			var host models.Node
-			if err := coll.Find(bson.M{"hostname": node.FQDN}).One(&host); err != nil {
-				logger.Get().Warning("Error getting the detail of node: %v. error: %v", node.FQDN, err)
+			if err := coll.Find(bson.M{"hostname": bson.M{
+				"$regex": fmt.Sprintf("%s.*", node.FQDN)}}).One(&fetchedNode); err != nil {
+				logger.Get().Warning(
+					"%s-Failed to update OSD role for node: %s. error: %v",
+					ctxt,
+					node.FQDN,
+					err)
+				failedNodes = append(failedNodes, node.FQDN)
 				continue
 			}
-			nodeRoles := host.Roles
-			sort.Strings(nodeRoles)
+			nodeRoles := fetchedNode.Roles
 
 			if service.Type == bigfin_models.NODE_SERVICE_MON {
 				updates["clusterid"] = clusterId
@@ -771,74 +775,32 @@ func syncStorageNodes(mon string, clusterId uuid.UUID, ctxt string) error {
 					updates["options.calamari"] = models.Yes
 				}
 
-				if sort.SearchStrings(nodeRoles, MON) == len(nodeRoles) {
+				if ok := skyring_util.StringInSlice(MON, nodeRoles); !ok {
 					updates["roles"] = append(nodeRoles, MON)
 				}
 
 				if err := coll.Update(
-					bson.M{"hostname": node.FQDN},
+					bson.M{"hostname": fetchedNode.Hostname},
 					bson.M{"$set": updates}); err != nil {
 					failedNodes = append(failedNodes, node.FQDN)
 				}
 				succeededNodes = append(succeededNodes, node.Hostname)
 			}
 			if service.Type == bigfin_models.NODE_SERVICE_OSD {
-				if err := coll.Find(bson.M{"hostname": bson.M{
-					"$regex": fmt.Sprintf("%s.*", node.FQDN)}}).One(&fetchedNode); err != nil {
-					logger.Get().Warning(
-						"%s-Failed to update OSD role for node: %s. error: %v",
-						ctxt,
-						node.FQDN,
-						err)
-					failedNodes = append(failedNodes, node.FQDN)
-				} else {
-					if sort.SearchStrings(nodeRoles, OSD) == len(nodeRoles) {
-						if err := coll.Update(
-							bson.M{"hostname": fetchedNode.Hostname},
-							bson.M{"$push": bson.M{"roles": OSD}}); err != nil {
-							logger.Get().Warning(
-								"%s-Failed to update the OSD role for the node: %s. error: %v",
-								ctxt,
-								node.FQDN,
-								err)
-							failedNodes = append(failedNodes, node.FQDN)
-						}
+				if ok := skyring_util.StringInSlice(OSD, nodeRoles); !ok {
+					if err := coll.Update(
+						bson.M{"hostname": fetchedNode.Hostname},
+						bson.M{"$push": bson.M{"roles": OSD}}); err != nil {
+						logger.Get().Warning(
+							"%s-Failed to update the OSD role for the node: %s. error: %v",
+							ctxt,
+							node.FQDN,
+							err)
+						failedNodes = append(failedNodes, node.FQDN)
 					}
 				}
 			}
 		}
-	}
-
-	monNodes, err := cephapi_backend.GetMonitors(mon, clusterId, ctxt)
-	if err != nil {
-		return fmt.Errorf(
-			"%s-Error getting mon nodes of the cluster: %v. error: %v",
-			ctxt,
-			clusterId,
-			err)
-	}
-	for _, monNode := range monNodes {
-		if strings.HasPrefix(mon, monNode) {
-			succeededNodes = append(succeededNodes, monNode)
-			continue
-		}
-		if err := coll.Find(
-			bson.M{"hostname": bson.M{
-				"$regex":   monNode,
-				"$options": "$i"}}).One(&fetchedNode); err != nil {
-			failedNodes = append(failedNodes, monNode)
-		} else {
-			if err := coll.Update(
-				bson.M{"hostname": fetchedNode.Hostname},
-				bson.M{
-					"$set": bson.M{
-						"clusterid":   clusterId,
-						"options.mon": models.Yes},
-					"$push": bson.M{"roles": MON}}); err != nil {
-				failedNodes = append(failedNodes, monNode)
-			}
-		}
-		succeededNodes = append(succeededNodes, monNode)
 	}
 
 	if len(failedNodes) > 0 {
