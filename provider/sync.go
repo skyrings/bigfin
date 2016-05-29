@@ -771,7 +771,7 @@ func syncStorageNodes(mon string, clusterId uuid.UUID, ctxt string) error {
 					updates["options.calamari"] = models.Yes
 				}
 
-				if sort.SearchStrings(nodeRoles, MON) == len(nodeRoles) {
+				if sort.SearchStrings(nodeRoles, MON) == len(nodeRoles) || len(nodeRoles) == 0 {
 					updates["roles"] = append(nodeRoles, MON)
 				}
 
@@ -792,7 +792,7 @@ func syncStorageNodes(mon string, clusterId uuid.UUID, ctxt string) error {
 						err)
 					failedNodes = append(failedNodes, node.FQDN)
 				} else {
-					if sort.SearchStrings(nodeRoles, OSD) == len(nodeRoles) {
+					if sort.SearchStrings(nodeRoles, OSD) == len(nodeRoles) || len(nodeRoles) == 0 {
 						if err := coll.Update(
 							bson.M{"hostname": fetchedNode.Hostname},
 							bson.M{"$push": bson.M{"roles": OSD}}); err != nil {
@@ -818,6 +818,16 @@ func syncStorageNodes(mon string, clusterId uuid.UUID, ctxt string) error {
 			err)
 	}
 	for _, monNode := range monNodes {
+		var host models.Node
+		if err := coll.Find(bson.M{"hostname": bson.M{"$regex": monNode}}).One(&host); err != nil {
+			logger.Get().Warning("Error getting the detail of node: %v. error: %v", monNode, err)
+			continue
+		}
+		nodeRoles := host.Roles
+		sort.Strings(nodeRoles)
+		if sort.SearchStrings(nodeRoles, OSD) == len(nodeRoles) || len(nodeRoles) == 0 {
+			nodeRoles = append(nodeRoles, MON)
+		}
 		if strings.HasPrefix(mon, monNode) {
 			succeededNodes = append(succeededNodes, monNode)
 			continue
@@ -834,7 +844,7 @@ func syncStorageNodes(mon string, clusterId uuid.UUID, ctxt string) error {
 					"$set": bson.M{
 						"clusterid":   clusterId,
 						"options.mon": models.Yes},
-					"$push": bson.M{"roles": MON}}); err != nil {
+					"roles": nodeRoles}); err != nil {
 				failedNodes = append(failedNodes, monNode)
 			}
 		}
