@@ -1,5 +1,5 @@
 %define pkg_name bigfin
-%define pkg_version 0.0.19
+%define pkg_version 0.0.20
 %define pkg_release 1
 
 Summary: SKYRING ceph provider
