@@ -391,11 +391,8 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 		clusterMons               []map[string]interface{}
 		failedMons, succeededMons []string
 	)
-	sessionCopy := db.GetDatastore().Copy()
-	defer sessionCopy.Close()
-	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 	t.UpdateStatus("Configuring the mons")
-	var calamariInitialized bool
+
 	for _, req_node := range request.Nodes {
 		if util.StringInSlice(MON, req_node.NodeType) {
 			mon := make(map[string]interface{})
@@ -407,11 +404,7 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 			}
 			// By default dont start calamari on any mon.
 			// Later on only one it sould be started
-			if !calamariInitialized {
-				mon["calamari"] = true
-			} else {
-				mon["calamari"] = false
-			}
+			mon["calamari"] = false
 			mon["host"] = nodes[*nodeid].Hostname
 			mon["address"] = node_ips[*nodeid]["cluster"]
 			mon["fsid"] = cluster_uuid.String()
@@ -431,31 +424,6 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 				t.UpdateStatus(fmt.Sprintf("Added mon node: %s", mon["host"].(string)))
 				succeededMons = append(succeededMons, mon["host"].(string))
 
-				if !calamariInitialized {
-					t.UpdateStatus("Starting calamari on: %s", nodes[*nodeid].Hostname)
-					if err := salt_backend.StartCalamari(nodes[*nodeid].Hostname, ctxt); err != nil {
-						t.UpdateStatus("Failed to start calamari on node: %s", mon)
-						logger.Get().Warning(
-							"%s-Could not start calamari on mon: %s. error: %v",
-							ctxt,
-							mon,
-							err)
-					} else {
-						t.UpdateStatus("Started calamari on node: %s", nodes[*nodeid].Hostname)
-						if err := coll.Update(
-							bson.M{"hostname": nodes[*nodeid].Hostname},
-							bson.M{"$set": bson.M{
-								"options.calamari": "Y"}}); err != nil {
-						}
-						calamariInitialized = true
-					}
-				} else {
-					if err := coll.Update(
-						bson.M{"hostname": nodes[*nodeid].Hostname},
-						bson.M{"$set": bson.M{
-							"options.calamari": "N"}}); err != nil {
-					}
-				}
 				clusterMon := make(map[string]interface{})
 				clusterMon["host"] = nodes[*nodeid].Hostname
 				clusterMon["address"] = node_ips[*nodeid]["cluster"]
@@ -472,18 +440,22 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 		}
 	}
 
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 	t.UpdateStatus("Persisting mons")
-	//var calamariStarted bool
+	var calamariStarted bool
 	for _, mon := range succeededMons {
 		if err := coll.Update(
 			bson.M{"hostname": mon},
 			bson.M{"$set": bson.M{
-				"clusterid":   *cluster_uuid,
-				"options.mon": "Y"}}); err != nil {
+				"clusterid":        *cluster_uuid,
+				"options.mon":      "Y",
+				"options.calamari": "N"}}); err != nil {
 			return err
 		}
 		logger.Get().Info(fmt.Sprintf("%s-Added mon node: %s", ctxt, mon))
-		/*if !calamariStarted {
+		if !calamariStarted {
 			t.UpdateStatus("Starting calamari on: %s", mon)
 			if err := salt_backend.StartCalamari(mon, ctxt); err != nil {
 				t.UpdateStatus("Failed to start calamari on node: %s", mon)
@@ -503,9 +475,9 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 					return err
 				}
 			}
-		}*/
+		}
 	}
-	if !calamariInitialized {
+	if !calamariStarted {
 		t.UpdateStatus("Could not start calamari on any mons")
 		return fmt.Errorf("Could not start calamari on any mons")
 	}
@@ -1513,7 +1485,7 @@ func ExpandClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 					t.UpdateStatus(fmt.Sprintf("Failed to add MON node: %v", req_node.NodeId))
 					continue
 				}
-				mon["calamari"] = false
+				mon["calamari"] = true
 				mon["host"] = nodes[*nodeid].Hostname
 				mon["address"] = node_ips[*nodeid]["cluster"]
 				mon["fsid"] = cluster_uuid.String()
@@ -1551,9 +1523,8 @@ func ExpandClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 			if err := coll_nodes.Update(
 				bson.M{"hostname": mon},
 				bson.M{"$set": bson.M{
-					"clusterid":        *cluster_uuid,
-					"options.mon":      "Y",
-					"options.calamari": "N"}}); err != nil {
+					"clusterid":   *cluster_uuid,
+					"options.mon": "Y"}}); err != nil {
 				return err
 			}
 			logger.Get().Info(fmt.Sprintf("%s-Added mon node: %s", ctxt, mon))
