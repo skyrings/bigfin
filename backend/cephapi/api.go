@@ -817,3 +817,7 @@ func (c CephApi) GetServiceCount(hostname string, ctxt string) (service_details 
 func (c CephApi) StartCalamari(node string, ctxt string) error {
 	return nil
 }
+
+func (c CephApi) StopCalamari(node string, ctxt string) error {
+	return nil
+}

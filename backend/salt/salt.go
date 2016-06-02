@@ -40,6 +40,7 @@ var funcNames = [...]string{
 	"GetServiceCount",
 	"GetRBDStats",
 	"StartCalamari",
+	"StopCalamari",
 }
 
 var pyFuncs map[string]*gopy.PyFunction
@@ -355,6 +356,17 @@ func (c Salt) StartCalamari(node string, ctxt string) error {
 	mutex.Lock()
 	defer mutex.Unlock()
 	pyobj, err := pyFuncs["StartCalamari"].Call(node, ctxt)
+	if err == nil && pyobj != nil {
+		return nil
+	}
+
+	return err
+}
+
+func (c Salt) StopCalamari(node string, ctxt string) error {
+	mutex.Lock()
+	defer mutex.Unlock()
+	pyobj, err := pyFuncs["StopCalamari"].Call(node, ctxt)
 	if err == nil && pyobj != nil {
 		return nil
 	}
