@@ -57,9 +57,14 @@ const (
 )
 
 type JournalDetail struct {
-	JournalDisk string `json:"journaldisk"`
-	SSD         bool   `json:"type"`
-	Size        uint64 `json:"size"`
+	JournalDisk string  `json:"journaldisk"`
+	SSD         bool    `json:"type"`
+	Size        uint64  `json:"size"`
+	JournalDisk string  `json:"journaldisk"`
+	SSD         bool    `json:"type"`
+	Size        uint64  `json:"size"`
+	Reweight    float64 `json:"reweight"`
+	OsdJournal  string  `json:"osd_journal"`
 }
 
 func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResponse) error {
@@ -2002,6 +2007,9 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 			slu.Status = status
 			slu.SluId = osd.Uuid
 			slu.Name = fmt.Sprintf("osd.%d", osd.Id)
+			slu.Options["journal.osdjournal"] = fetchedOSD.OsdJournal
+			slu.Options["journal.reweight"] = fetchedOSD.Reweight
+
 			if err := coll_slu.Update(
 				bson.M{
 					"nodeid":         node.NodeId,
@@ -2055,6 +2063,8 @@ func SyncOsdStatus(clusterId uuid.UUID, ctxt string) error {
 		slu.Options["in"] = strconv.FormatBool(fetchedOSD.In)
 		slu.Options["up"] = strconv.FormatBool(fetchedOSD.Up)
 		slu.Options["pgsummary"] = pgSummary.ByOSD[strconv.Itoa(fetchedOSD.Id)]
+		slu.Options["journal.osdjournal"] = fetchedOSD.OsdJournal
+		slu.Options["journal.reweight"] = fetchedOSD.Reweight
 		slu.State = state
 		slu.Status = status
 		if err := coll.Update(
