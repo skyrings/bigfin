@@ -733,10 +733,10 @@ def GetServiceCount(node, ctxt=""):
 
 def StartCalamari(node, ctxt=""):
     local = salt.client.LocalClient()
-    out = run_state(local, [node], 'start_ceph_calamari', expr_form='list')
-    if out:
-        log.error("%s-start_ceph_calamari failed on %s. error=%s" %
-                  (ctxt, node, out))
-        raise Exception("start_cep_calamari failed on %s. error=%s" %
-                        (node, out))
+    out = local.cmd(
+        [node],
+        'cmd.run',
+        ['calamari-ctl initialize --admin-username admin --admin-password admin --admin-email skyring@redhat.com'],
+        expr_form='list')
+
     return True
