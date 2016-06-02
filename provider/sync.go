@@ -404,6 +404,17 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 			}
 			logger.Get().Info("%s-Updated the slu: osd.%d on cluster: %v", ctxt, osd.Id, clusterId)
 		} else {
+			var journalSize uint64
+			journalSize = JOURNALSIZE
+
+			cluster, err := getCluster(clusterId)
+			if err == nil && cluster.JournalSize != "" {
+				js, jsErr := strconv.ParseUint(cluster.JournalSize, 10, 64)
+				if jsErr == nil {
+					journalSize = js
+				}
+			}
+
 			newSlu := models.StorageLogicalUnit{
 				SluId:     osd.Uuid,
 				Name:      fmt.Sprintf("osd.%d", osd.Id),
@@ -413,6 +424,13 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 				Status:    mapOsdStatus(osd.Up, osd.In),
 				State:     mapOsdState(osd.In),
 			}
+
+			journalDetail := JournalDetail{
+				Size:       journalSize,
+				OsdJournal: osd.OsdJournal,
+				Reweight:   float64(osd.Reweight),
+			}
+
 			newSlu.StorageDeviceId = deviceDetails.Uuid
 			newSlu.StorageDeviceSize = deviceDetails.Size
 			newSlu.StorageProfile = get_disk_profile(node.StorageDisks, deviceDetails.PartName)
@@ -424,6 +442,7 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 			options["clusterip4"] = node.ClusterIP4
 			options["device"] = deviceDetails.DevName
 			options["fstype"] = deviceDetails.FSType
+			options["journal"] = journalDetail
 			newSlu.Options = options
 			if err := coll_slu.Insert(newSlu); err != nil {
 				logger.Get().Error(

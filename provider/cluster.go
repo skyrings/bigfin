@@ -57,9 +57,11 @@ const (
 )
 
 type JournalDetail struct {
-	JournalDisk string `json:"journaldisk"`
-	SSD         bool   `json:"type"`
-	Size        uint64 `json:"size"`
+	JournalDisk string  `json:"journaldisk"`
+	SSD         bool    `json:"type"`
+	Size        uint64  `json:"size"`
+	Reweight    float64 `json:"reweight"`
+	OsdJournal  string  `json:"osd_journal"`
 }
 
 func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResponse) error {
@@ -1962,6 +1964,8 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 	coll_slu := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
 	coll_nodes := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 
+	var slu models.StorageLogicalUnit
+
 	for _, osd := range osds {
 		// Get the node details for SLU
 		var node models.Node
@@ -1992,6 +1996,23 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 			continue
 		}
 
+		if err := coll_slu.Find(bson.M{"nodeid": node.NodeId,
+			"clusterid":      clusterId,
+			"options.device": deviceDetails.DevName}).One(&slu); err != nil {
+			logger.Get().Error("Failed to sync osd details of %v node of cluster %v on device %v", node.Hostname, clusterId, deviceDetails.DevName)
+			continue
+		}
+
+		var journalDetail JournalDetail
+		if val, ok := slu.Options["journal"]; ok {
+			if jDet, jDetOk := val.(JournalDetail); jDetOk {
+				journalDetail = jDet
+			}
+		}
+
+		journalDetail.OsdJournal = osd.OsdJournal
+		journalDetail.Reweight = float64(osd.Reweight)
+
 		if slu, ok := slus[fmt.Sprintf("%s:%s", node.NodeId.String(), deviceDetails.DevName)]; ok {
 			status := mapOsdStatus(osd.Up, osd.In)
 			state := mapOsdState(osd.In)
@@ -2002,6 +2023,8 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 			slu.Status = status
 			slu.SluId = osd.Uuid
 			slu.Name = fmt.Sprintf("osd.%d", osd.Id)
+			slu.Options["journal"] = journalDetail
+
 			if err := coll_slu.Update(
 				bson.M{
 					"nodeid":         node.NodeId,
@@ -2050,11 +2073,21 @@ func SyncOsdStatus(clusterId uuid.UUID, ctxt string) error {
 			continue
 		}
 
+		var journalDetail JournalDetail
+		if val, ok := slu.Options["journal"]; ok {
+			if jDet, jDetOk := val.(JournalDetail); jDetOk {
+				journalDetail = jDet
+			}
+		}
+
+		journalDetail.OsdJournal = fetchedOSD.OsdJournal
+		journalDetail.Reweight = float64(fetchedOSD.Reweight)
 		status := mapOsdStatus(fetchedOSD.Up, fetchedOSD.In)
 		state := mapOsdState(fetchedOSD.In)
 		slu.Options["in"] = strconv.FormatBool(fetchedOSD.In)
 		slu.Options["up"] = strconv.FormatBool(fetchedOSD.Up)
 		slu.Options["pgsummary"] = pgSummary.ByOSD[strconv.Itoa(fetchedOSD.Id)]
+		slu.Options["journal"] = journalDetail
 		slu.State = state
 		slu.Status = status
 		if err := coll.Update(
