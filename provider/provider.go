@@ -16,8 +16,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/skyrings/bigfin/backend/cephapi"
-	//"github.com/skyrings/bigfin/backend/cephapi/handler"
-	//cephapi_models "github.com/skyrings/bigfin/backend/cephapi/models"
+	"github.com/skyrings/bigfin/backend/cephapi/handler"
+	cephapi_models "github.com/skyrings/bigfin/backend/cephapi/models"
 	"github.com/skyrings/bigfin/backend/salt"
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/conf"
@@ -27,9 +27,9 @@ import (
 	"github.com/skyrings/skyring-common/provisioner"
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/uuid"
-	//"gopkg.in/mgo.v2"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	//"time"
+	"time"
 
 	bigfin_conf "github.com/skyrings/bigfin/conf"
 )
@@ -92,9 +92,6 @@ func GetCalamariMonNode(clusterId uuid.UUID, ctxt string) (*models.Node, error) 
 		"options.calamari": models.Yes}).
 		One(&calamariMonNode)
 	if err == nil {
-		return &calamariMonNode, nil
-	}
-	/*if err == nil {
 		// Check availability of calamari
 		dummyUrl := fmt.Sprintf(
 			"https://%s:%d/%s/v%d/auth/login",
@@ -151,7 +148,7 @@ func GetCalamariMonNode(clusterId uuid.UUID, ctxt string) (*models.Node, error) 
 		} else {
 			return nil, err
 		}
-	}*/
+	}
 
 	return nil, fmt.Errorf("No valid active calamari mon node found")
 }
