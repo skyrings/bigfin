@@ -110,44 +110,51 @@ func GetCalamariMonNode(clusterId uuid.UUID, ctxt string) (*models.Node, error) 
 		} else {
 			return &calamariMonNode, nil
 		}
-	} else {
-		if err == mgo.ErrNotFound {
-			var monNodes models.Nodes
-			if err := coll.
-				Find(bson.M{
-				"clusterid":        clusterId,
-				"options.mon":      models.Yes,
-				"options.calamari": "N"}).
-				All(&monNodes); err != nil {
-				return nil, err
-			}
+	} else if err != mgo.ErrNotFound {
+		return nil, err
+	}
 
-			for _, monNode := range monNodes {
-				if err := salt_backend.StartCalamari(monNode.Hostname, ctxt); err != nil {
-					logger.Get().Warning(
-						"%s-Could not start calamari on mon: %s. error: %v",
-						ctxt,
-						monNode.Hostname,
-						err)
-					continue
-				}
-				// Wait for calamari to start serving
-				time.Sleep(60 * time.Second)
-				if err := coll.Update(
-					bson.M{"hostname": monNode.Hostname},
-					bson.M{"$set": bson.M{
-						"options.calamari": "Y"}}); err != nil {
-					logger.Get().Warning(
-						"%s-Failed to start calamari on new mon: %s",
-						ctxt,
-						monNode.Hostname)
-					continue
-				}
-				return &monNode, nil
-			}
-		} else {
-			return nil, err
+	var monNodes models.Nodes
+	if err := coll.
+		Find(bson.M{
+		"clusterid":        clusterId,
+		"options.mon":      models.Yes,
+		"options.calamari": "N"}).
+		All(&monNodes); err != nil {
+		return nil, err
+	}
+	logger.Get().Error("Mon length: %d", len(monNodes))
+
+	for _, monNode := range monNodes {
+		if err := salt_backend.StartCalamari(monNode.Hostname, ctxt); err != nil {
+			logger.Get().Warning(
+				"%s-Could not start calamari on mon: %s. error: %v",
+				ctxt,
+				monNode.Hostname,
+				err)
+			continue
 		}
+		// Wait for calamari to start serving
+		time.Sleep(60 * time.Second)
+		if err := coll.Update(
+			bson.M{"clusterid": clusterId, "hostname": monNode.Hostname},
+			bson.M{"$set": bson.M{
+				"options.calamari": "Y"}}); err != nil {
+			logger.Get().Warning(
+				"%s-Failed to update mon node: %s status as calamari",
+				ctxt,
+				monNode.Hostname)
+			// Stop calamari on the node and try on other one
+			if err := salt_backend.StopCalamari(monNode.Hostname, ctxt); err != nil {
+				logger.Get().Warning(
+					"%s-Could not stop calamari on mon node: %s. error: %v",
+					ctxt,
+					monNode.Hostname,
+					err)
+			}
+			continue
+		}
+		return &monNode, nil
 	}
 
 	return nil, fmt.Errorf("No valid active calamari mon node found")
