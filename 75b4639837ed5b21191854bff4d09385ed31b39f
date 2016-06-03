@@ -1,0 +1,96 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_ab0f9635",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 928,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-03T03:56:49Z",
+      "side": 1,
+      "message": "if the condtion matches, you have assign the ssdDiskSize to size of new SSD disk right?",
+      "range": {
+        "startLine": 927,
+        "startChar": 4,
+        "endLine": 928,
+        "endChar": 20
+      },
+      "revId": "75b4639837ed5b21191854bff4d09385ed31b39f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_8b0a9224",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 962,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-03T03:56:49Z",
+      "side": 1,
+      "message": "In this case should we have the same logic as above to calculate the ssdDisksize outside the loop?",
+      "range": {
+        "startLine": 947,
+        "startChar": 3,
+        "endLine": 962,
+        "endChar": 3
+      },
+      "revId": "75b4639837ed5b21191854bff4d09385ed31b39f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_6b050e12",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 989,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-03T03:56:49Z",
+      "side": 1,
+      "message": "Same comment as above",
+      "range": {
+        "startLine": 988,
+        "startChar": 4,
+        "endLine": 989,
+        "endChar": 20
+      },
+      "revId": "75b4639837ed5b21191854bff4d09385ed31b39f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_4b000a02",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1004,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-03T03:56:49Z",
+      "side": 1,
+      "message": "why this change required?",
+      "range": {
+        "startLine": 1004,
+        "startChar": 3,
+        "endLine": 1004,
+        "endChar": 21
+      },
+      "revId": "75b4639837ed5b21191854bff4d09385ed31b39f",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
