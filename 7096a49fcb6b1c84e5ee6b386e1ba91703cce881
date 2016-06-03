@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_ce0ae81f",
+        "filename": "provider/provider.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 147,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-03T04:27:49Z",
+      "side": 1,
+      "message": "Why to continue in this case? Actually the mon is started and only db update failed right? If you are retrying on a different node, stop calamari and retry",
+      "range": {
+        "startLine": 147,
+        "startChar": 3,
+        "endLine": 147,
+        "endChar": 11
+      },
+      "revId": "7096a49fcb6b1c84e5ee6b386e1ba91703cce881",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
