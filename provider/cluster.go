@@ -59,12 +59,13 @@ const (
 )
 
 type JournalDetail struct {
-	JournalDisk string  `json:"journaldisk"`
-	SSD         bool    `json:"type"`
-	Size        uint64  `json:"size"`
-	Reweight    float64 `json:"reweight"`
-	OsdJournal  string  `json:"osd_journal"`
-	Available   uint64  `json:"available"`
+	JournalDisk     string  `json:"journaldisk"`
+	JournalDiskUuid string  `json:"journaldiskuuid"`
+	SSD             bool    `json:"type"`
+	Size            uint64  `json:"size"`
+	Reweight        float64 `json:"reweight"`
+	OsdJournal      string  `json:"osd_journal"`
+	Available       uint64  `json:"available"`
 }
 
 type ExistingJournal struct {
@@ -2020,6 +2021,18 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 				err)
 			continue
 		}
+		journalDeviceDetails, err := salt_backend.GetJournalPartDeviceDetails(
+			node.Hostname,
+			osd.OsdJournal,
+			ctxt)
+		if err != nil {
+			logger.Get().Error(
+				"%s-Error getting journal details of osd.%d. error: %v",
+				ctxt,
+				osd.Id,
+				err)
+			continue
+		}
 
 		if slu, ok := slus[fmt.Sprintf("%s:%s", node.NodeId.String(), deviceDetails.DevName)]; ok {
 			status := mapOsdStatus(osd.Up, osd.In)
@@ -2027,6 +2040,7 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 			slu.Options["in"] = strconv.FormatBool(osd.In)
 			slu.Options["up"] = strconv.FormatBool(osd.Up)
 			slu.Options["pgsummary"] = pgSummary.ByOSD[strconv.Itoa(osd.Id)]
+			slu.Options["device_partuuid"] = deviceDetails.PartUuid.String()
 			slu.State = state
 			slu.Status = status
 			slu.SluId = osd.Uuid
@@ -2036,6 +2050,7 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 			if val, ok := slu.Options["journal"]; ok {
 				journalDetail = val.(JournalDetail)
 			}
+			journalDetail.JournalDiskUuid = journalDeviceDetails.PartUuid.String()
 			journalDetail.OsdJournal = osd.OsdJournal
 			journalDetail.Reweight = float64(osd.Reweight)
 			slu.Options["journal"] = journalDetail

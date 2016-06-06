@@ -139,6 +139,7 @@ type Backend interface {
 	GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt string) (MonNodeStatus, error)
 	ParticipatesInCluster(node string, ctxt string) bool
 	GetPartDeviceDetails(node string, partPath string, ctxt string) (DeviceDetail, error)
+	GetJournalPartDeviceDetails(node string, partPath string, ctxt string) (DeviceDetail, error)
 	GetServiceCount(hostname string, ctxt string) (map[string]int, error)
 	GetRBDStats(mon string, poolName string, clusterName string, ctxt string) ([]RBDStats, error)
 	StartCalamari(node string, ctxt string) error
@@ -266,6 +267,7 @@ type MonNodeStatus struct {
 type DeviceDetail struct {
 	DevName  string    `json:"devname"`
 	Uuid     uuid.UUID `json:"uuid"`
+	PartUuid uuid.UUID `json:"partuuid"`
 	PartName string    `json:"partname"`
 	FSType   string    `json:"fstype"`
 	Size     uint64    `json:"size"`
