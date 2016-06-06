@@ -87,9 +87,9 @@ func GetCalamariMonNode(clusterId uuid.UUID, ctxt string) (*models.Node, error) 
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 	err := coll.
 		Find(bson.M{
-		"clusterid":        clusterId,
-		"options.mon":      models.Yes,
-		"options.calamari": models.Yes}).
+			"clusterid":        clusterId,
+			"options.mon":      models.Yes,
+			"options.calamari": models.Yes}).
 		One(&calamariMonNode)
 	if err == nil {
 		// Check availability of calamari
@@ -117,9 +117,9 @@ func GetCalamariMonNode(clusterId uuid.UUID, ctxt string) (*models.Node, error) 
 	var monNodes models.Nodes
 	if err := coll.
 		Find(bson.M{
-		"clusterid":        clusterId,
-		"options.mon":      models.Yes,
-		"options.calamari": "N"}).
+			"clusterid":        clusterId,
+			"options.mon":      models.Yes,
+			"options.calamari": "N"}).
 		All(&monNodes); err != nil {
 		return nil, err
 	}

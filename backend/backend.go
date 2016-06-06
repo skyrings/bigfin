@@ -142,6 +142,7 @@ type Backend interface {
 	GetRBDStats(mon string, poolName string, clusterName string, ctxt string) ([]RBDStats, error)
 	StartCalamari(node string, ctxt string) error
 	StopCalamari(node string, ctxt string) error
+	EmitRbdEvents(node string, cluster string, ctxt string) error
 }
 
 type OSDDetails struct {

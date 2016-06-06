@@ -751,3 +751,9 @@ def StopCalamari(node, ctxt=""):
         expr_form='list')
 
     return True
+
+
+def EmitRbdEvents(node, cluster, ctxt=""):
+    local = salt.client.LocalClient()
+    out = local.cmd(node, 'mon_remote.rbd_eventer', [cluster])
+    return True
