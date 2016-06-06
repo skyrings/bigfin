@@ -37,6 +37,7 @@ var funcNames = [...]string{
 	"RemovePool",
 	"ParticipatesInCluster",
 	"GetPartDeviceDetails",
+	"GetJournalPartDeviceDetails",
 	"GetServiceCount",
 	"GetRBDStats",
 	"StartCalamari",
@@ -332,6 +333,17 @@ func (c Salt) GetPartDeviceDetails(node string, partPath string, ctxt string) (d
 	mutex.Lock()
 	defer mutex.Unlock()
 	if pyobj, loc_err := pyFuncs["GetPartDeviceDetails"].Call(node, partPath, ctxt); loc_err == nil {
+		err = gopy.Convert(pyobj, &devDet)
+	} else {
+		err = loc_err
+	}
+	return
+}
+
+func (C Salt) GetJournalPartDeviceDetails(node string, partPath string, ctxt string) (devDet backend.DeviceDetail, err error) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	if pyobj, loc_err := pyFuncs["GetJournalPartDeviceDetails"].Call(node, partPath, ctxt); loc_err == nil {
 		err = gopy.Convert(pyobj, &devDet)
 	} else {
 		err = loc_err

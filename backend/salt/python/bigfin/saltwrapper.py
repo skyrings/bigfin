@@ -680,7 +680,8 @@ def GetPartDeviceDetails(node, partPath, ctxt=""):
     '''
     returns structure
     {"devname":  "devname",
-     "uuid": "uuid"
+     "uuid": "uuid",
+     "partuuid": "partuuid",
      "partname": "partname",
      "fstype":   "fstype",
      "size":     uint64,
@@ -711,6 +712,59 @@ def GetPartDeviceDetails(node, partPath, ctxt=""):
                 u = [0] * 16
             dev_info["DevName"] = dev["PKNAME"]
             dev_info["Uuid"] = u
+            dev_info["PartUuid"] = dev["PARTUUID"]
+            dev_info["PartName"] = dev["KNAME"]
+            dev_info["FSType"] = dev["FSTYPE"]
+            dev_info["Size"] = long(dev["SIZE"])
+
+    return dev_info
+
+
+def GetJournalPartDeviceDetails(node, partPath, ctxt=""):
+    '''
+    returns structure
+    {"devname":  "devname",
+     "uuid": "uuid",
+     "partuuid": "partuuid",
+     "partname": "partname",
+     "fstype":   "fstype",
+     "size":     uint64,
+    }
+    '''
+
+    local = salt.client.LocalClient()
+
+    command = ("readlink %s" % partPath)
+    out = local.cmd([node], 'cmd.run', [command], expr_form='list')
+    if not out[node]:
+        return {}
+
+    partuuid = out[node][out[node].rfind('/')+1:]
+
+    columes = 'NAME,KNAME,FSTYPE,MOUNTPOINT,UUID,PARTUUID,MODEL,SIZE,TYPE,' \
+              'PKNAME,VENDOR'
+    keys = columes.split(',')
+    lsblk = ("lsblk --all --bytes --noheadings --output='%s' --path --raw" %
+             columes)
+    out = local.cmd([node], 'cmd.run', [lsblk], expr_form='list')
+
+    if not out[node]:
+        return {}
+
+    devlist = map(lambda line: dict(zip(keys, line.split(' '))),
+                  out[node].splitlines())
+
+    dev_info = {}
+    for dev in devlist:
+        if dev['TYPE'] == 'part' and dev['PARTUUID'] == partuuid:
+            try:
+                u = list(bytearray(uuid.UUID(dev["UUID"]).get_bytes()))
+            except ValueError:
+                log.warn("%s-Unable to parse device uuid for %s" % (ctxt, dev["PKNAME"]))
+                u = [0] * 16
+            dev_info["DevName"] = dev["PKNAME"]
+            dev_info["Uuid"] = u
+            dev_info["PartUuid"] = dev["PARTUUID"]
             dev_info["PartName"] = dev["KNAME"]
             dev_info["FSType"] = dev["FSTYPE"]
             dev_info["Size"] = long(dev["SIZE"])

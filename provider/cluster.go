@@ -674,9 +674,6 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 			options["clusterip4"] = storageNode.ClusterIP4
 			options["device"] = disk
 			options["journal"] = journal
-			//
-			//	TODO: OSD Names needs to be taken care by sync calls
-			//
 			slu := models.StorageLogicalUnit{
 				Type:              models.CEPH_OSD,
 				ClusterId:         clusterId,
@@ -1991,6 +1988,18 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 				err)
 			continue
 		}
+		journalDeviceDetails, err := salt_backend.GetJournalPartDeviceDetails(
+			node.Hostname,
+			osd.OsdJournal,
+			ctxt)
+		if err != nil {
+			logger.Get().Error(
+				"%s-Error getting journal details of osd.%d. error: %v",
+				ctxt,
+				osd.Id,
+				err)
+			continue
+		}
 
 		if slu, ok := slus[fmt.Sprintf("%s:%s", node.NodeId.String(), deviceDetails.DevName)]; ok {
 			status := mapOsdStatus(osd.Up, osd.In)
@@ -1998,6 +2007,8 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 			slu.Options["in"] = strconv.FormatBool(osd.In)
 			slu.Options["up"] = strconv.FormatBool(osd.Up)
 			slu.Options["pgsummary"] = pgSummary.ByOSD[strconv.Itoa(osd.Id)]
+			slu.Options["device_partuuid"] = deviceDetails.PartUuid
+			slu.Options["journal.partuuid"] = journalDeviceDetails.PartUuid
 			slu.State = state
 			slu.Status = status
 			slu.SluId = osd.Uuid
