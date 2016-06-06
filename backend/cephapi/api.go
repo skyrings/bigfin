@@ -831,6 +831,10 @@ func (c CephApi) GetPartDeviceDetails(node string, partPath string, ctxt string)
 	return backend.DeviceDetail{}, nil
 }
 
+func (c CephApi) GetJournalPartDeviceDetails(node string, partPath string, ctxt string) (backend.DeviceDetail, error) {
+	return backend.DeviceDetail{}, nil
+}
+
 func (c CephApi) GetServiceCount(hostname string, ctxt string) (service_details map[string]int, err error) {
 	return service_details, nil
 }
