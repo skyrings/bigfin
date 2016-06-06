@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_5f48b9cb",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 2087,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-06T19:35:26Z",
+      "side": 1,
+      "message": "Filter can match items in the array too",
+      "parentUuid": "baa041b7_bc835302",
+      "range": {
+        "startLine": 2087,
+        "startChar": 57,
+        "endLine": 2087,
+        "endChar": 62
+      },
+      "revId": "7dc6f2cc7695a5683320876deddf623eeeb97d01",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_1c923f4c",
         "filename": "provider/cluster.go",
         "patchSetId": 3
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_bf0d8590",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 2091,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-06T19:35:26Z",
+      "side": 1,
+      "message": "I will remove this",
+      "parentUuid": "baa041b7_1c923f4c",
+      "range": {
+        "startLine": 2091,
+        "startChar": 14,
+        "endLine": 2091,
+        "endChar": 19
+      },
+      "revId": "7dc6f2cc7695a5683320876deddf623eeeb97d01",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_5cac478b",
         "filename": "provider/cluster.go",
         "patchSetId": 3
@@ -59,6 +107,30 @@
       "writtenOn": "2016-06-06T17:21:58Z",
       "side": 1,
       "message": "Is it always replicated ?",
+      "range": {
+        "startLine": 2157,
+        "startChar": 81,
+        "endLine": 2157,
+        "endChar": 91
+      },
+      "revId": "7dc6f2cc7695a5683320876deddf623eeeb97d01",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_9f29a1e8",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 2157,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-06T19:35:26Z",
+      "side": 1,
+      "message": "Yes for the the use case we are supporting at the moment",
+      "parentUuid": "baa041b7_5cac478b",
       "range": {
         "startLine": 2157,
         "startChar": 81,
