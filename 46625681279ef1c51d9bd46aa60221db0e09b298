@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_fccc3b36",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 16,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-06T17:48:25Z",
+      "side": 1,
+      "message": "Why not add this also in this patch ?",
+      "range": {
+        "startLine": 15,
+        "startChar": 0,
+        "endLine": 16,
+        "endChar": 33
+      },
+      "revId": "46625681279ef1c51d9bd46aa60221db0e09b298",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_7cd94bf2",
+        "filename": "provider/cluster.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-06T17:48:25Z",
+      "side": 1,
+      "message": "I feel instead we should maintain journal disk name. I am working on patch to get partuuid of the data disk and journal disk of the OSD and maintain as part of SLU table records. May be this could complement to the same.",
+      "range": {
+        "startLine": 64,
+        "startChar": 1,
+        "endLine": 64,
+        "endChar": 11
+      },
+      "revId": "46625681279ef1c51d9bd46aa60221db0e09b298",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_9c052f47",
+        "filename": "provider/sync.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 412,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-06T17:48:25Z",
+      "side": 1,
+      "message": "These two conditions can be merged in one using \u0026\u0026 ??",
+      "range": {
+        "startLine": 411,
+        "startChar": 3,
+        "endLine": 412,
+        "endChar": 32
+      },
+      "revId": "46625681279ef1c51d9bd46aa60221db0e09b298",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
