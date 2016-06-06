@@ -348,7 +348,10 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 	}
 	var fetchedSlusMap = make(map[string]models.StorageLogicalUnit)
 	for _, fetchedSlu := range fetchedSlus {
-		fetchedSlusMap[fmt.Sprintf("%s:%s", fetchedSlu.NodeId.String(), fetchedSlu.Options["device"])] = fetchedSlu
+		fetchedSlusMap[fmt.Sprintf(
+			"%s:%s",
+			fetchedSlu.NodeId.String(),
+			fetchedSlu.Options["device_partuuid"])] = fetchedSlu
 	}
 
 	osds, err := cephapi_backend.GetOSDs(mon, clusterId, ctxt)
@@ -383,7 +386,20 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 			continue
 		}
 
-		if _, ok := fetchedSlusMap[fmt.Sprintf("%s:%s", node.NodeId.String(), deviceDetails.DevName)]; ok {
+		journalDeviceDetails, err := salt_backend.GetJournalPartDeviceDetails(
+			node.Hostname,
+			osd.OsdJournal,
+			ctxt)
+		if err != nil {
+			logger.Get().Error(
+				"%s-Error getting journal details of osd.%d. error: %v",
+				ctxt,
+				osd.Id,
+				err)
+			continue
+		}
+
+		if _, ok := fetchedSlusMap[fmt.Sprintf("%s:%s", node.NodeId.String(), deviceDetails.PartUuid.String())]; ok {
 			status := mapOsdStatus(osd.Up, osd.In)
 			state := mapOsdState(osd.In)
 			skyring_util.AppendServiceToNode(bson.M{"nodeid": node.NodeId}, fmt.Sprintf("%s-%s", bigfinmodels.NODE_SERVICE_OSD, fmt.Sprintf("osd.%d", osd.Id)), mapOSDStatusToServiceStatus(state), ctxt)
@@ -403,17 +419,6 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 			}
 			logger.Get().Info("%s-Updated the slu: osd.%d on cluster: %v", ctxt, osd.Id, clusterId)
 		} else {
-			var journalSize uint64
-			journalSize = JOURNALSIZE
-
-			cluster, err := getCluster(clusterId)
-			if err == nil && cluster.JournalSize != "" {
-				js, jsErr := strconv.ParseUint(cluster.JournalSize, 10, 64)
-				if jsErr == nil {
-					journalSize = js
-				}
-			}
-
 			newSlu := models.StorageLogicalUnit{
 				SluId:     osd.Uuid,
 				Name:      fmt.Sprintf("osd.%d", osd.Id),
@@ -424,10 +429,20 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 				State:     mapOsdState(osd.In),
 			}
 
+			var journalDiskSSD bool
+			for _, storageDisk := range node.StorageDisks {
+				if storageDisk.Name == journalDeviceDetails.DevName {
+					journalDiskSSD = storageDisk.SSD
+				}
+			}
+
 			journalDetail := JournalDetail{
-				Size:       journalSize,
-				OsdJournal: osd.OsdJournal,
-				Reweight:   float64(osd.Reweight),
+				JournalDisk:     journalDeviceDetails.DevName,
+				JournalDiskUuid: journalDeviceDetails.PartUuid.String(),
+				Size:            journalDeviceDetails.Size,
+				SSD:             journalDiskSSD,
+				OsdJournal:      osd.OsdJournal,
+				Reweight:        float64(osd.Reweight),
 			}
 
 			newSlu.StorageDeviceId = deviceDetails.Uuid
@@ -440,6 +455,7 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 			options["publicip4"] = node.PublicIP4
 			options["clusterip4"] = node.ClusterIP4
 			options["device"] = deviceDetails.DevName
+			options["device_partuuid"] = deviceDetails.PartUuid.String()
 			options["fstype"] = deviceDetails.FSType
 			options["journal"] = journalDetail
 			newSlu.Options = options
