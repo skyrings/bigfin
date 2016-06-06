@@ -740,3 +740,8 @@ def StartCalamari(node, ctxt=""):
         raise Exception("start_cep_calamari failed on %s. error=%s" %
                         (node, out))
     return True
+
+def EmitRbdEvents(node, cluster, ctxt=""):
+    local = salt.client.LocalClient()
+    out = local.cmd(node, 'mon_remote.rbd_eventer', [cluster])
+    return True

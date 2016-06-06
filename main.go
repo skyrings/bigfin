@@ -24,6 +24,7 @@ import (
 	"github.com/skyrings/skyring-common/conf"
 	"github.com/skyrings/skyring-common/db"
 	"github.com/skyrings/skyring-common/tools/logger"
+	"github.com/skyrings/skyring-common/tools/schedule"
 	"net/rpc/jsonrpc"
 	"os"
 	"path/filepath"
@@ -83,6 +84,11 @@ func main() {
 
 	if err := provider.InitInstaller(); err != nil {
 		logger.Get().Fatalf("Error initializing the Installer: %v", err)
+	}
+
+	schedule.InitShechuleManager()
+	if err := provider.Schedule_rbd_event_emitter(); err != nil {
+		logger.Get().Error("Error while initializing RbdEventer scheduler: %v", err)
 	}
 
 	// Initialize ceph http client
