@@ -23,6 +23,7 @@ import (
 	common_event "github.com/skyrings/skyring-common/event"
 	"github.com/skyrings/skyring-common/models"
 	"github.com/skyrings/skyring-common/tools/logger"
+	"github.com/skyrings/skyring-common/tools/schedule"
 	"github.com/skyrings/skyring-common/tools/uuid"
 	"github.com/skyrings/skyring-common/utils"
 	"gopkg.in/mgo.v2"
@@ -987,4 +988,55 @@ func (s *CephProvider) ProcessEvent(req models.RpcRequest, resp *models.RpcRespo
 
 	*resp = utils.WriteResponse(statusCode, err_str)
 	return err
+}
+
+func EmitRbdEvents(params map[string]interface{}) {
+	reqId, err := uuid.New()
+	if err != nil {
+		logger.Get().Error("Error creating the RequestId. error: %v", err)
+		return
+	}
+	ctxt := fmt.Sprintf("%v:%v", models.ENGINE_NAME, reqId.String())
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	var clusters []models.Cluster
+	if err := coll.Find(nil).All(&clusters); err != nil {
+		logger.Get().Error(
+			"%s-Error getting details of cluster from DB. error: %v",
+			ctxt,
+			err)
+	}
+	for _, cluster := range clusters {
+		monnode, err := GetCalamariMonNode(cluster.ClusterId, ctxt)
+		if err != nil {
+			logger.Get().Error("%s-Error getting a mon node in cluster: %s. error: %v",
+				ctxt,
+				cluster.Name,
+				err)
+			continue
+		}
+		err = salt_backend.EmitRbdEvents(monnode.Hostname, cluster.Name, ctxt)
+		if err != nil {
+			logger.Get().Error("%s-Error while triggering rbd events for cluster: %s. Error: %v",
+				ctxt,
+				cluster.Name,
+				err)
+			continue
+		}
+	}
+}
+
+func ScheduleRbdEventEmitter() error {
+	scheduler, err := schedule.NewScheduler()
+	if err != nil {
+		logger.Get().Error("Error: %v", err.Error())
+		return err
+	} else {
+		f := EmitRbdEvents
+		m := make(map[string]interface{})
+		go scheduler.Schedule(time.Duration(5*time.Minute), f, m)
+	}
+	return nil
 }

@@ -1027,3 +1027,7 @@ func (c CephApi) StartCalamari(node string, ctxt string) error {
 func (c CephApi) StopCalamari(node string, ctxt string) error {
 	return nil
 }
+
+func (c CephApi) EmitRbdEvents(node string, cluster string, ctxt string) error {
+	return nil
+}
