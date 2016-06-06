@@ -558,26 +558,25 @@ func (c CephApi) CreateCrushRule(mon string, clusterId uuid.UUID, rule backend.C
 	resp, err := route_request(route, mon, body)
 	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted) {
 		return cRuleId, errors.New(fmt.Sprintf("Failed to create crush rule for cluster: %s. error: %v", clusterId.String(), err))
-	} else {
-		ok, err := syncRequestStatus(mon, resp)
-		if !ok {
-			return cRuleId, err
-		}
-		cRules, err := c.GetCrushRules(mon, clusterId, ctxt)
-		if err != nil {
-			return cRuleId, err
-		}
-		for _, cRule := range cRules {
-			//ruleMap := cRule.(map[string]interface{})
-			if val, ok := cRule["name"]; ok {
-				if rule.Name == val.(string) {
-					if val, ok := cRule["ruleset"]; ok {
-						cRuleId = int(val.(float64))
-						return cRuleId, nil
-					}
-				}
+	}
 
+	ok, err := syncRequestStatus(mon, resp)
+	if !ok {
+		return cRuleId, err
+	}
+	cRules, err := c.GetCrushRules(mon, clusterId, ctxt)
+	if err != nil {
+		return cRuleId, err
+	}
+	for _, cRule := range cRules {
+		if val, ok := cRule["name"]; ok {
+			if rule.Name == val.(string) {
+				if val, ok := cRule["ruleset"]; ok {
+					cRuleId = int(val.(float64))
+					return cRuleId, nil
+				}
 			}
+
 		}
 	}
 
@@ -598,19 +597,18 @@ func (c CephApi) CreateCrushNode(mon string, clusterId uuid.UUID, node backend.C
 	resp, err := route_request(route, mon, body)
 	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted) {
 		return cNodeId, errors.New(fmt.Sprintf("Failed to create crush rule for cluster: %s. error: %v", clusterId.String(), err))
-	} else {
-		ok, err := syncRequestStatus(mon, resp)
-		if !ok {
-			return cNodeId, err
-		}
-		cNodes, err := c.GetCrushNodes(mon, clusterId, ctxt)
-		if err != nil {
-			return cNodeId, err
-		}
-		for _, cNode := range cNodes {
-			if cNode.Name == node.Name {
-				return cNode.Id, nil
-			}
+	}
+	ok, err := syncRequestStatus(mon, resp)
+	if !ok {
+		return cNodeId, err
+	}
+	cNodes, err := c.GetCrushNodes(mon, clusterId, ctxt)
+	if err != nil {
+		return cNodeId, err
+	}
+	for _, cNode := range cNodes {
+		if cNode.Name == node.Name {
+			return cNode.Id, nil
 		}
 	}
 
