@@ -1,0 +1,73 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_bc835302",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 2087,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-06T17:21:58Z",
+      "side": 1,
+      "message": "roles is an array of strings in table. How does it match with \"OSD\" here?",
+      "range": {
+        "startLine": 2087,
+        "startChar": 57,
+        "endLine": 2087,
+        "endChar": 62
+      },
+      "revId": "7dc6f2cc7695a5683320876deddf623eeeb97d01",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_1c923f4c",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 2091,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-06T17:21:58Z",
+      "side": 1,
+      "message": "Do we need these debug logs or just for testing?",
+      "range": {
+        "startLine": 2091,
+        "startChar": 14,
+        "endLine": 2091,
+        "endChar": 19
+      },
+      "revId": "7dc6f2cc7695a5683320876deddf623eeeb97d01",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_5cac478b",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 2157,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-06T17:21:58Z",
+      "side": 1,
+      "message": "Is it always replicated ?",
+      "range": {
+        "startLine": 2157,
+        "startChar": 81,
+        "endLine": 2157,
+        "endChar": 91
+      },
+      "revId": "7dc6f2cc7695a5683320876deddf623eeeb97d01",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
