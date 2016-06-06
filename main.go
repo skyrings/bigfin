@@ -85,6 +85,10 @@ func main() {
 		logger.Get().Fatalf("Error initializing the Installer: %v", err)
 	}
 
+	if err := provider.Schedule_rbd_event_emitter(); err != nil {
+		logger.Get().Error("Error while initializing RbdEventer scheduler: %v", err)
+	}
+
 	// Initialize ceph http client
 	client.InitCephApiSession()
 
