@@ -48,6 +48,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_45c34a38",
+        "filename": "provider/cluster.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 64,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-06-07T07:30:39Z",
+      "side": 1,
+      "message": "Ui needs even this shubhendu as in: https://docs.google.com/presentation/d/13TGXJ-wUPTcO6Sn_2f5C8X-Xi6ZgYz4cjR-0QPgiKjE/edit#slide\u003did.g10122d4c0a_1_47",
+      "parentUuid": "baa041b7_7cd94bf2",
+      "range": {
+        "startLine": 64,
+        "startChar": 1,
+        "endLine": 64,
+        "endChar": 11
+      },
+      "revId": "46625681279ef1c51d9bd46aa60221db0e09b298",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_9c052f47",
         "filename": "provider/sync.go",
         "patchSetId": 4
@@ -59,6 +83,30 @@
       "writtenOn": "2016-06-06T17:48:25Z",
       "side": 1,
       "message": "These two conditions can be merged in one using \u0026\u0026 ??",
+      "range": {
+        "startLine": 411,
+        "startChar": 3,
+        "endLine": 412,
+        "endChar": 32
+      },
+      "revId": "46625681279ef1c51d9bd46aa60221db0e09b298",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_25be06ae",
+        "filename": "provider/sync.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 412,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-06-07T07:30:39Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_9c052f47",
       "range": {
         "startLine": 411,
         "startChar": 3,
