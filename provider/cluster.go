@@ -492,13 +492,13 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 		}
 	}
 	if osdPresent {
-		failedOSDs, succeededOSDs, err := configureOSDs(*cluster_uuid, request, clusterMons, t, false, ctxt)
+		failedOSDs, slus, err := configureOSDs(*cluster_uuid, request, clusterMons, t, false, ctxt)
 		if err != nil {
 			return err
 		}
 		if len(failedOSDs) != 0 {
 			t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", failedOSDs))
-			if len(succeededOSDs) == 0 {
+			if len(slus) == 0 {
 				t.UpdateStatus("Failed adding all OSDs")
 				logger.Get().Error(
 					"%s-Failed adding all OSDs while create cluster %s. error: %v",
@@ -513,14 +513,13 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 
 func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 	clusterMons []map[string]interface{}, t *task.Task,
-	expand bool, ctxt string) ([]string, []string, error) {
+	expand bool, ctxt string) ([]string, map[string]models.StorageLogicalUnit, error) {
 
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	var (
-		failedOSDs    []string
-		succeededOSDs []string
-		slus          = make(map[string]models.StorageLogicalUnit)
+		failedOSDs []string
+		slus       = make(map[string]models.StorageLogicalUnit)
 	)
 	// In case of expand cluster journal size to be taken from DB
 	if request.JournalSize == "" {
@@ -532,7 +531,7 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 				ctxt,
 				clusterId,
 				err)
-			return failedOSDs, succeededOSDs, err
+			return failedOSDs, slus, err
 		}
 		request.JournalSize = cluster.JournalSize
 	}
@@ -545,7 +544,7 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 			ctxt,
 			request.Name,
 			err)
-		return failedOSDs, succeededOSDs, err
+		return failedOSDs, slus, err
 	}
 	t.UpdateStatus("Configuring the OSDs")
 	var successNodeIds []uuid.UUID
@@ -568,9 +567,11 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 		devices := make(map[string]models.Disk)
 		storageNode := nodes[*uuid]
 		// Form a map of storage node disks
-		var nodeDisksMap map[string]models.Disk = make(map[string]models.Disk)
+		nodeDisksMap := make(map[string]models.Disk)
+		devicesMap := make(map[string]models.Disk) //Keep the original values intact as nodeDisksMap is modified
 		for _, storageDisk := range storageNode.StorageDisks {
 			nodeDisksMap[storageDisk.Name] = storageDisk
+			devicesMap[storageDisk.Name] = storageDisk
 		}
 		var consumedCount int
 		var disksMap map[string]JournalDetail = make(map[string]JournalDetail)
@@ -655,9 +656,9 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 				Type:              models.CEPH_OSD,
 				ClusterId:         clusterId,
 				NodeId:            storageNode.NodeId,
-				StorageDeviceId:   devices[disk].DiskId,
-				StorageProfile:    devices[disk].StorageProfile,
-				StorageDeviceSize: devices[disk].Size,
+				StorageDeviceId:   devicesMap[disk].DiskId,
+				StorageProfile:    devicesMap[disk].StorageProfile,
+				StorageDeviceSize: devicesMap[disk].Size,
 				Options:           options,
 				Status:            models.SLU_STATUS_UNKNOWN,
 				State:             bigfinmodels.OSD_STATE_IN,
@@ -669,7 +670,6 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 				continue
 			}
 			slus[fmt.Sprintf("%s:%s", slu.NodeId.String(), slu.Options["device"])] = slu
-			succeededOSDs = append(succeededOSDs, fmt.Sprintf("%v:%v", osd["host"].(string), osd["devices"]))
 			successNodeIds = append(successNodeIds, *uuid)
 		}
 	}
@@ -710,7 +710,7 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 			}
 		}
 	}
-	return failedOSDs, succeededOSDs, nil
+	return failedOSDs, slus, nil
 }
 
 func mapPendingSSDJournalDisks(
@@ -1442,10 +1442,10 @@ func ExpandClusterUsingSalt(cluster_uuid *uuid.UUID, request models.AddClusterRe
 					*cluster_uuid)
 			}
 			//Update the CRUSH MAP
-			t.UpdateStatus("Updating the CRUSH Map")
+			/*t.UpdateStatus("Updating the CRUSH Map")
 			if err := UpdateCrushNodeItems(ctxt, *cluster_uuid); err != nil {
 				logger.Get().Error("%s-Error updating the Crush map for cluster: %v. error: %v", ctxt, *cluster_uuid, err)
-			}
+			}*/
 		}
 	}
 	return nil
@@ -1563,14 +1563,14 @@ func ExpandClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 	}
 
 	if len(osdReqNodes) > 0 {
-		failedOSDs, succeededOSDs, err := configureOSDs(*cluster_uuid, request, clusterMons, t, true, ctxt)
+		failedOSDs, slus, err := configureOSDs(*cluster_uuid, request, clusterMons, t, true, ctxt)
 		if err != nil {
 			return err
 		}
 		if len(failedOSDs) != 0 {
 			t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", failedOSDs))
 		}
-		if len(succeededOSDs) > 0 {
+		if len(slus) > 0 {
 			t.UpdateStatus("Recalculating pgnum/pgpnum")
 			if ok := RecalculatePgnum(ctxt, *cluster_uuid, t); !ok {
 				logger.Get().Warning(
@@ -1580,11 +1580,11 @@ func ExpandClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 				t.UpdateStatus("Recalculating pgnum/pgpnum failed")
 			}
 			//Update the CRUSH MAP
-			/*t.UpdateStatus("Updating the CRUSH Map")
-			if err := UpdateCrushNodeItems(ctxt, *cluster_uuid); err != nil {
+			t.UpdateStatus("Updating the CRUSH Map")
+			if err := UpdateCrushNodeItems(ctxt, *cluster_uuid, slus); err != nil {
 				logger.Get().Error("%s-Error updating the Crush map for cluster: %v. error: %v", ctxt, *cluster_uuid, err)
 				t.UpdateStatus("Updating the CRUSH Map failed")
-			}*/
+			}
 		}
 	}
 	return nil
@@ -1701,7 +1701,7 @@ func (s *CephProvider) UpdateStorageLogicalUnitParams(req models.RpcRequest, res
 				t.UpdateStatus("Started updating osd params: %v", t.ID)
 				ok, err := cephapi_backend.UpdateOSD(monnode.Hostname, *cluster_id, osdId, osdData, ctxt)
 				if err != nil || !ok {
-					utils.FailTask(fmt.Sprintf("Could not update osd params for slu: %s of cluster: %v", slu_id, cluster_id), fmt.Errorf("%s-%v", ctxt, err), t)
+					utils.FailTask(fmt.Sprintf("Could not update osd params for slu: %v of cluster: %v", slu_id, cluster_id), fmt.Errorf("%s-%v", ctxt, err), t)
 					return
 				}
 				//Now update the latest status from calamari
@@ -1946,8 +1946,6 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 	coll_slu := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
 	coll_nodes := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 
-	var slu models.StorageLogicalUnit
-
 	for _, osd := range osds {
 		// Get the node details for SLU
 		var node models.Node
@@ -1978,23 +1976,6 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 			continue
 		}
 
-		if err := coll_slu.Find(bson.M{"nodeid": node.NodeId,
-			"clusterid":      clusterId,
-			"options.device": deviceDetails.DevName}).One(&slu); err != nil {
-			logger.Get().Error("Failed to sync osd details of %v node of cluster %v on device %v", node.Hostname, clusterId, deviceDetails.DevName)
-			continue
-		}
-
-		var journalDetail JournalDetail
-		if val, ok := slu.Options["journal"]; ok {
-			if jDet, jDetOk := val.(JournalDetail); jDetOk {
-				journalDetail = jDet
-			}
-		}
-
-		journalDetail.OsdJournal = osd.OsdJournal
-		journalDetail.Reweight = float64(osd.Reweight)
-
 		if slu, ok := slus[fmt.Sprintf("%s:%s", node.NodeId.String(), deviceDetails.DevName)]; ok {
 			status := mapOsdStatus(osd.Up, osd.In)
 			state := mapOsdState(osd.In)
@@ -2005,6 +1986,13 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 			slu.Status = status
 			slu.SluId = osd.Uuid
 			slu.Name = fmt.Sprintf("osd.%d", osd.Id)
+
+			var journalDetail JournalDetail
+			if val, ok := slu.Options["journal"]; ok {
+				journalDetail = val.(JournalDetail)
+			}
+			journalDetail.OsdJournal = osd.OsdJournal
+			journalDetail.Reweight = float64(osd.Reweight)
 			slu.Options["journal"] = journalDetail
 
 			if err := coll_slu.Update(
@@ -2164,21 +2152,7 @@ func updateCrushMap(ctxt string, mon string, clusterId uuid.UUID) error {
 			continue
 		}
 
-		cRule := backend.CrushRuleRequest{Name: sprof.Name, RuleSet: ruleSetId, Type: "replicated", MinSize: MINSIZE, MaxSize: MAXSIZE}
-		step_take := make(map[string]interface{})
-		step_take["item_name"] = cRootNode.Name
-		step_take["item"] = cRootNodeId
-		step_take["op"] = "take"
-		cRule.Steps = append(cRule.Steps, step_take)
-		leaf := make(map[string]interface{})
-		leaf["num"] = 0
-		leaf["type"] = "host"
-		leaf["op"] = "chooseleaf_firstn"
-		cRule.Steps = append(cRule.Steps, leaf)
-		emit := make(map[string]interface{})
-		emit["op"] = "emit"
-		cRule.Steps = append(cRule.Steps, emit)
-		cRuleId, err := cephapi_backend.CreateCrushRule(mon, clusterId, cRule, ctxt)
+		cRuleId, err := createCrushRule(ctxt, sprof.Name, ruleSetId, cRootNode.Name, cRootNodeId, mon, clusterId)
 		if err != nil {
 			logger.Get().Error("Failed to create Crush rule for cluster: %s. error: %v", clusterId, err)
 			continue
@@ -2204,11 +2178,15 @@ func updateCrushMap(ctxt string, mon string, clusterId uuid.UUID) error {
 	return nil
 }
 
-func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID) error {
+func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID, sluList map[string]models.StorageLogicalUnit) error {
+
+	if len(sluList) == 0 {
+		return nil
+	}
 
 	cluster, err := getCluster(clusterId)
 	if err != nil {
-		logger.Get().Error("Failed to get details of cluster: %s. error: %v", clusterId, err)
+		logger.Get().Error("Failed to get details of clusreplicatedter: %s. error: %v", clusterId, err)
 		return err
 	}
 
@@ -2217,61 +2195,212 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID) error {
 		logger.Get().Error("%s-Could not get random mon. Err:%v", ctxt, err)
 		return err
 	}
+
+	cNodes, err := cephapi_backend.GetCrushNodes(monnode.Hostname, clusterId, ctxt)
+	if err != nil {
+		logger.Get().Error("Failed to retrieve Crush nodes for cluster: %s. error: %v", clusterId, err)
+		return err
+	}
+
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
+
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
+
+	var sluDbs []models.StorageLogicalUnit
+	if err := coll.Find(bson.M{"clusterid": clusterId}).All(&sluDbs); err != nil {
+		logger.Get().Error("Error getting the slus for cluster: %s. error: %v", clusterId, err)
+		return err
+	}
+
+	//create a updated list with the ones from DB
+	slus := make(map[string]models.StorageLogicalUnit)
+	for _, sluListItem := range sluList {
+		for _, sluDb := range sluDbs {
+			if sluListItem.Options["node"] == sluDb.Options["node"] && sluListItem.Options["device"] == sluDb.Options["device"] {
+				slus[fmt.Sprintf("%s:%s", sluDb.Options["node"], sluDb.Options["device"])] = sluDb
+			}
+		}
+	}
+
+	//Add crush nodes for slus belongs to existing hosts
+	for _, cNode := range cNodes {
+		var (
+			found    bool
+			nodeName string
+		)
+		for key, slu := range slus {
+			if slu.Name == "" {
+				delete(slus, key)
+				continue
+			}
+			nodeName = fmt.Sprintf("%s-%s", slu.Options["node"], slu.StorageProfile)
+			if cNode.Name == nodeName {
+				id, _ := strconv.Atoi(strings.Split(slu.Name, `.`)[1])
+				item := backend.CrushItem{Id: id, Pos: len(cNode.Items)}
+				cNode.Items = append(cNode.Items, item)
+				found = true
+				delete(slus, key)
+			}
+		}
+		if found {
+			params := map[string]interface{}{
+				"bucket_type": cNode.BucketType,
+				"name":        nodeName,
+				"items":       cNode.Items,
+			}
+			_, err := cephapi_backend.PatchCrushNode(monnode.Hostname, clusterId, cNode.Id, params, ctxt)
+			if err != nil {
+				logger.Get().Error("Failed to update Crush node for cluster: %s. error: %v", clusterId, err)
+				continue
+			}
+		}
+
+	}
+
+	//check if any slus remaining else return
+	if len(slus) == 0 {
+		return nil
+	}
+
+	//Add crush nodes for slus belongs to newly added hosts
+	nodecoll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 	scoll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_PROFILE)
 
-	var sProfiles []models.StorageProfile
+	var (
+		nodes     models.Nodes
+		sProfiles []models.StorageProfile
+	)
+	//Get Nodes in the cluster
+	if err := nodecoll.Find(bson.M{"clusterid": clusterId, "roles": OSD}).All(&nodes); err != nil {
+		logger.Get().Error("%s-Error getting the nodes list. error: %v", ctxt, err)
+		return err
+	}
 	//Get the stoarge profiles
 	if err := scoll.Find(nil).All(&sProfiles); err != nil {
 		logger.Get().Error("Error getting the storageprofiles error: %v", err)
 		return err
 	}
+
+	//Get the buckets corresponding to the storage profile
+	rulesetmapval, ok := cluster.Options["rulesetmap"]
+	if !ok {
+		logger.Get().Error("Error getting the ruleset for cluster: %s", cluster.Name)
+		return nil
+	}
+	rulesetmap := rulesetmapval.(map[string]interface{})
+
 	for _, sprof := range sProfiles {
-		//Get the OSDs per storageprofiles
-		var slus []models.StorageLogicalUnit
-		if err := coll.Find(bson.M{"storageprofile": sprof.Name}).All(&slus); err != nil {
-			logger.Get().Error("Error getting the slus for cluster: %s. error: %v", clusterId, err)
-			continue
-		}
-		if len(slus) == 0 {
-			continue
-		}
-		var (
-			pos   int
-			items []backend.CrushItem
-		)
-		for _, slu := range slus {
-			id, _ := strconv.Atoi(strings.Split(slu.Name, `.`)[1])
-			item := backend.CrushItem{Id: id, Pos: pos}
-			items = append(items, item)
-			pos = pos + 1
-		}
 
-		rulesetmapval, ok := cluster.Options["rulesetmap"]
-		if !ok {
+		for _, node := range nodes {
+			nodeName := fmt.Sprintf("%s-%s", node.Hostname, sprof.Name)
+			cNode := backend.CrushNodeRequest{BucketType: "host", Name: nodeName}
+			var pos int
+			for key, slu := range slus {
+				if slu.Name == "" {
+					delete(slus, key)
+					continue
+				}
+				if node.Hostname == slu.Options["node"] && sprof.Name == slu.StorageProfile {
+					id, _ := strconv.Atoi(strings.Split(slu.Name, `.`)[1])
+					item := backend.CrushItem{Id: id, Pos: pos}
+					cNode.Items = append(cNode.Items, item)
+					pos++
+					delete(slus, key)
+				}
+			}
+			if len(cNode.Items) > 0 {
+				cNodeId, err := cephapi_backend.CreateCrushNode(monnode.Hostname, clusterId, cNode, ctxt)
+				if err != nil {
+					logger.Get().Error("Failed to create Crush node for cluster: %s. error: %v", clusterId, err)
+					continue
+				}
+				var rootNodeFound bool
+				for _, crNode := range cNodes {
+					if crNode.Name == sprof.Name {
+						item := backend.CrushItem{Id: cNodeId, Pos: len(crNode.Items)}
+						crNode.Items = append(crNode.Items, item)
+						params := map[string]interface{}{
+							"bucket_type": crNode.BucketType,
+							"name":        crNode.Name,
+							"items":       crNode.Items,
+						}
+						_, err := cephapi_backend.PatchCrushNode(monnode.Hostname, clusterId, crNode.Id, params, ctxt)
+						if err != nil {
+							logger.Get().Error("Failed to update Crush node for cluster: %s. error: %v", clusterId, err)
+						}
+						rootNodeFound = true
+						break
+					}
+				}
+				//create root as it is not found in the list
+				if !rootNodeFound {
+					nNode := backend.CrushNodeRequest{BucketType: "root", Name: sprof.Name}
+					item := backend.CrushItem{Id: cNodeId, Pos: len(nNode.Items)}
+					nNode.Items = append(nNode.Items, item)
+					nNodeId, err := cephapi_backend.CreateCrushNode(monnode.Hostname, clusterId, nNode, ctxt)
+					if err != nil {
+						logger.Get().Error("Failed to create Crush node for cluster: %s. error: %v", clusterId, err)
+						continue
+					}
 
-			logger.Get().Error("Error getting the ruleset for cluster: %s", cluster.Name)
-			return nil
+					//Create the crush rule
+					cRules, err := cephapi_backend.GetCrushRules(monnode.Hostname, clusterId, ctxt)
+					if err != nil {
+						logger.Get().Error("Failed to retrieve Crush nodes for cluster: %s. error: %v", clusterId, err)
+						return err
+					}
+					cRuleId, err := createCrushRule(ctxt, sprof.Name, len(cRules), nNode.Name, nNodeId, monnode.Hostname, clusterId)
+					if err != nil {
+						logger.Get().Error("Failed to create Crush rule for cluster: %s. error: %v", clusterId, err)
+						continue
+					}
+					ruleInfo := bigfinmodels.CrushInfo{RuleSetId: cRuleId, CrushNodeId: nNodeId}
+					rulesetmap[sprof.Name] = ruleInfo
+
+					cNodesCreated, err := cephapi_backend.GetCrushNode(monnode.Hostname, clusterId, nNodeId, ctxt)
+					if err != nil {
+						logger.Get().Error("Failed to retrieve Crush node for cluster: %s. error: %v", clusterId, err)
+						continue
+					}
+					cNodes = append(cNodes, cNodesCreated)
+				}
+			}
 
 		}
-		rulesetmap := rulesetmapval.(map[string]interface{})
-		rulesetval, ok := rulesetmap[sprof.Name]
-		if !ok {
-			logger.Get().Error("Error getting the ruleset for cluster: %s", cluster.Name)
-			return nil
-		}
-		ruleset := rulesetval.(map[string]interface{})
-		params := map[string]interface{}{
-			"items": items,
-		}
-		_, err := cephapi_backend.PatchCrushNode(monnode.Hostname, clusterId, ruleset["crushnodeid"].(int), params, ctxt)
-		if err != nil {
-			logger.Get().Error("Failed to update Crush node for cluster: %s. error: %v", clusterId, err)
-			continue
-		}
+	}
+
+	cluster.Options["rulesetmap"] = rulesetmap
+	ccoll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	if err := ccoll.Update(
+		bson.M{"clusterid": clusterId}, bson.M{"$set": bson.M{"options": cluster.Options}}); err != nil {
+		logger.Get().Error("%s-Error updating the cluster: %s. error: %v", ctxt, clusterId, err)
+		return err
 
 	}
+
 	return nil
+}
+
+func createCrushRule(ctxt string, name string, ruleset int, cnodeName string, cNodeId int, monnode string, clusterId uuid.UUID) (int, error) {
+	cRule := backend.CrushRuleRequest{Name: name, RuleSet: ruleset, Type: models.STORAGE_TYPE_REPLICATED, MinSize: MINSIZE, MaxSize: MAXSIZE}
+	step_take := make(map[string]interface{})
+	step_take["item_name"] = cnodeName
+	step_take["item"] = cNodeId
+	step_take["op"] = "take"
+	cRule.Steps = append(cRule.Steps, step_take)
+	leaf := make(map[string]interface{})
+	leaf["num"] = 0
+	leaf["type"] = "host"
+	leaf["op"] = "chooseleaf_firstn"
+	cRule.Steps = append(cRule.Steps, leaf)
+	emit := make(map[string]interface{})
+	emit["op"] = "emit"
+	cRule.Steps = append(cRule.Steps, emit)
+	cRuleId, err := cephapi_backend.CreateCrushRule(monnode, clusterId, cRule, ctxt)
+	if err != nil {
+		logger.Get().Error("Failed to create Crush rule for cluster: %s. error: %v", clusterId, err)
+		return cRuleId, err
+	}
+	return cRuleId, err
 }
