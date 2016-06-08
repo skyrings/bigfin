@@ -5,6 +5,8 @@
 	"block_device_utilization":   "RBD Utilization",
 	"storage_profile_utilzation": "Storage Profile Utilization",
 	"osd_added_or_removed":       "OSD Added/Removed",
+	"rbd_added_or_removed":       "RBD Added/Removed",
+	"rbd_resized":                "RBD Resized",
 	"pool_added_or_removed":      "Pool Added/Removed",
 	"osd_state_changed":          "OSD State changed",
 	"mon_state_changed":          "MON State changed",

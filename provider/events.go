@@ -16,6 +16,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/skyrings/bigfin/backend"
 	"github.com/skyrings/bigfin/bigfinmodels"
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/conf"
@@ -42,6 +43,9 @@ var (
 		"calamari/ceph/osd/propertyChanged":                              ceph_osd_property_changed_handler,
 		"calamari/ceph/mon/propertyChanged":                              ceph_mon_property_changed_handler,
 		"calamari/ceph/cluster/health/changed":                           ceph_cluster_health_changed,
+		"calamari/ceph/rbd/created":                                      ceph_rbd_create_handler,
+		"calamari/ceph/rbd/deleted":                                      ceph_rbd_delete_handler,
+		"calamari/ceph/rbd/resized":                                      ceph_rbd_resize_handler,
 		"skyring/ceph/cluster/*/threshold/slu_utilization/*":             ceph_osd_utilization_threshold_changed,
 		"skyring/ceph/cluster/*/threshold/block_device_utilization/*":    ceph_rbd_utilization_threshold_changed,
 		"skyring/ceph/cluster/*/threshold/cluster_utilization/*":         ceph_cluster_utilization_threshold_changed,
@@ -865,6 +869,259 @@ func ceph_pool_add_handler(event models.AppEvent, ctxt string) (models.AppEvent,
 	} else {
 		return event, fmt.Errorf("pool already added in DB")
 	}
+}
+
+func ceph_rbd_delete_handler(event models.AppEvent, ctxt string) (models.AppEvent, error) {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+
+	event.NotificationEntity = models.NOTIFICATION_ENTITY_BLOCK_DEVICE
+	event.Name = EventTypes["rbd_added_or_removed"]
+
+	var cluster models.Cluster
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	if err := coll.Find(bson.M{"clusterid": event.ClusterId}).One(&cluster); err != nil {
+		logger.Get().Error("%s- Unable to get cluster: %v detail from DB. Error: %v", ctxt, event.ClusterId, err)
+		return event, err
+	}
+
+	var pool models.Storage
+	poolColl := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+	if err := poolColl.Find(bson.M{"clusterid": event.ClusterId, "name": event.Tags["poolName"]}).One(&pool); err != nil {
+		logger.Get().Error(
+			"%s-Error getting the pool: %s for cluster: %v. error: %v",
+			ctxt,
+			event.Tags["poolName"],
+			event.ClusterId,
+			err)
+		return event, err
+	}
+
+	event.ClusterName = cluster.Name
+	rbdColl := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_BLOCK_DEVICES)
+	if err := rbdColl.Remove(
+		bson.M{
+			"clusterid": event.ClusterId,
+			"storageid": pool.StorageId,
+			"name":      event.Tags["rbdName"]}); err != nil {
+		logger.Get().Error(
+			"%s-Error removing the block device: %s "+
+				"of pool: %s on cluster: %s. error: %v",
+			ctxt,
+			event.Tags["rbdName"],
+			pool.Name,
+			cluster.Name,
+			err)
+		return event, err
+	}
+	event.Message = fmt.Sprintf("Detected removal of RBD %s on %s pool.",
+		event.Tags["rbdName"],
+		event.Tags["poolName"],
+	)
+	event.Severity = models.ALARM_STATUS_CLEARED
+	event.Notify = false
+	logger.Get().Info(
+		"%s-Removed block device: %s of pool: %s "+
+			"on cluster: %s from the DB",
+		ctxt,
+		event.Tags["rbdName"],
+		pool.Name,
+		cluster.Name)
+	return event, nil
+}
+
+func ceph_rbd_create_handler(event models.AppEvent, ctxt string) (models.AppEvent, error) {
+	// if rbd is created through skyring let the details be updated by
+	// creator itself. This is mainly to handle rbd creation from backend
+	// So this sleep will make sure that the rbd details are updated before
+	// this function tries to update.
+	time.Sleep(60 * time.Second)
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+
+	event.NotificationEntity = models.NOTIFICATION_ENTITY_BLOCK_DEVICE
+	event.Name = EventTypes["rbd_added_or_removed"]
+
+	cluster, pool, blkDeviceDet, err := get_rbd_detail(event, ctxt)
+	if err != nil {
+		logger.Get().Error("%s-Could not get the details required for rbd addition. Err: %v", ctxt, err)
+		return event, err
+	}
+	event.ClusterName = cluster.Name
+
+	id, err := uuid.New()
+	if err != nil {
+		logger.Get().Error(
+			"%s-Error creating id for block device. error: %v",
+			ctxt,
+			err)
+		return event, err
+	}
+	newDevice := models.BlockDevice{
+		Id:          *id,
+		Name:        blkDeviceDet.Name,
+		ClusterId:   cluster.ClusterId,
+		ClusterName: cluster.Name,
+		StorageId:   pool.StorageId,
+		StorageName: pool.Name,
+		Size:        fmt.Sprintf("%dMB", blkDeviceDet.Size/1048576),
+	}
+
+	var existing_blkDevice models.BlockDevice
+	rbdColl := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_BLOCK_DEVICES)
+	if err := rbdColl.Find(bson.M{
+		"clusterid": event.ClusterId,
+		"storageid": pool.StorageId,
+		"name":      event.Tags["rbdName"]}).One(&existing_blkDevice); err != nil {
+		if err.Error() == mgo.ErrNotFound.Error() {
+			if err := rbdColl.Insert(newDevice); err != nil {
+				logger.Get().Error(
+					"%s-Error adding the block device: %s of pool: %s "+
+						"on cluster: %s. error: %v",
+					ctxt,
+					blkDeviceDet.Name,
+					pool.Name,
+					cluster.Name,
+					err)
+				return event, err
+			} else {
+				logger.Get().Info(
+					"%s-Added new block device: %s of pool: %s on cluster: %s",
+					ctxt,
+					blkDeviceDet.Name,
+					pool.Name,
+					cluster.Name)
+				event.Message = fmt.Sprintf("Detected Addition of RBD %s on %s pool.",
+					event.Tags["rbdName"],
+					event.Tags["poolName"],
+				)
+				event.Severity = models.ALARM_STATUS_CLEARED
+				event.Notify = false
+				return event, nil
+			}
+		} else {
+			logger.Get().Error("%s- Error while reading RBD details from DB. Error: %v", err)
+			return event, err
+		}
+	}
+	return event, fmt.Errorf("%s- RBD %s already present in DB. So this event will be ignored",
+		ctxt,
+		blkDeviceDet.Name)
+}
+
+func get_rbd_detail(event models.AppEvent, ctxt string) (models.Cluster,
+	models.Storage,
+	backend.BlockDevice,
+	error) {
+	var pool models.Storage
+	var cluster models.Cluster
+	var blkDeviceDet backend.BlockDevice
+
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	if err := coll.Find(bson.M{"clusterid": event.ClusterId}).One(&cluster); err != nil {
+		logger.Get().Error("%s- Unable to get cluster: %v detail from DB. Error: %v", ctxt, event.ClusterId, err)
+		return cluster, pool, blkDeviceDet, err
+	}
+
+	poolColl := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+	if err := poolColl.Find(bson.M{"clusterid": event.ClusterId, "name": event.Tags["poolName"]}).One(&pool); err != nil {
+		logger.Get().Error(
+			"%s-Error getting the pool: %s for cluster: %v. error: %v",
+			ctxt,
+			event.Tags["poolName"],
+			event.ClusterId,
+			err)
+		return cluster, pool, blkDeviceDet, err
+	}
+
+	cmd := fmt.Sprintf(
+		"rbd --cluster %s --image %s -p %s info --format=json",
+		cluster.Name,
+		event.Tags["rbdName"],
+		event.Tags["poolName"],
+	)
+
+	ok, out, err := cephapi_backend.ExecCmd(
+		event.NodeName,
+		cluster.ClusterId,
+		cmd,
+		ctxt)
+	if !ok || err != nil {
+		logger.Get().Error(
+			"%s-Error getting information of block device: %s "+
+				"of pool: %s on cluster: %s. error: %v",
+			ctxt,
+			blkDeviceDet.Name,
+			pool.Name,
+			cluster.Name,
+			err)
+		return cluster, pool, blkDeviceDet, err
+	} else {
+		if err := json.Unmarshal([]byte(out), &blkDeviceDet); err != nil {
+			logger.Get().Error(
+				"%s-Error parsing block device details for %s "+
+					"of pool: %s on cluster: %s. error: %v",
+				ctxt,
+				blkDeviceDet.Name,
+				pool.Name,
+				cluster.Name,
+				err)
+			return cluster, pool, blkDeviceDet, err
+		}
+	}
+	return cluster, pool, blkDeviceDet, nil
+}
+
+func ceph_rbd_resize_handler(event models.AppEvent, ctxt string) (models.AppEvent, error) {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+
+	event.NotificationEntity = models.NOTIFICATION_ENTITY_BLOCK_DEVICE
+	event.Name = EventTypes["rbd_resized"]
+
+	cluster, pool, blkDeviceDet, err := get_rbd_detail(event, ctxt)
+	if err != nil {
+		logger.Get().Error("%s-Could not get the details required for rbd resize updation. Err: %v", ctxt, err)
+		return event, err
+	}
+	event.ClusterName = cluster.Name
+	rbdColl := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_BLOCK_DEVICES)
+	if err := rbdColl.Update(
+		bson.M{
+			"clusterid": event.ClusterId,
+			"storageid": pool.StorageId,
+			"name":      event.Tags["rbdName"]},
+		bson.M{
+			"$set": bson.M{"size": fmt.Sprintf(
+				"%dMB",
+				blkDeviceDet.Size/1048576)}}); err != nil {
+		logger.Get().Error(
+			"%s-Error updating the details of block device: %s "+
+				"of pool: %s on cluster: %s. error: %v",
+			ctxt,
+			blkDeviceDet.Name,
+			pool.Name,
+			cluster.Name,
+			err)
+		return event, err
+	}
+	event.Message = fmt.Sprintf("RBD %s on %s pool has been resized to %s",
+		event.Tags["rbdName"],
+		event.Tags["poolName"],
+		fmt.Sprintf("%dMB", blkDeviceDet.Size/1048576),
+	)
+	event.Severity = models.ALARM_STATUS_CLEARED
+	event.Notify = false
+	logger.Get().Info(
+		"%s-Updated the details of block device: %s of pool: %s "+
+			"on cluster: %s",
+		ctxt,
+		blkDeviceDet.Name,
+		pool.Name,
+		cluster.Name)
+	return event, nil
 }
 
 func ceph_pool_delete_handler(event models.AppEvent, ctxt string) (models.AppEvent, error) {
