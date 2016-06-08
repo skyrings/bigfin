@@ -251,6 +251,7 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 	if !ok {
 
 		logger.Get().Error("Error getting the ruleset for cluster: %s", cluster.Name)
+		utils.FailTask("", fmt.Errorf("%s - Error getting the ruleset for cluster: %s", ctxt, cluster.Name), t)
 		return nil, false
 
 	}
