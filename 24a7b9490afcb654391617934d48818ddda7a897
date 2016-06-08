@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_511e650c",
+        "filename": "main.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 90,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-08T04:38:30Z",
+      "side": 1,
+      "message": "Function name with underscores doesnt look good :) Let Make is like ScheduleRbdEventEmitter()",
+      "range": {
+        "startLine": 90,
+        "startChar": 20,
+        "endLine": 90,
+        "endChar": 46
+      },
+      "revId": "24a7b9490afcb654391617934d48818ddda7a897",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_3119a122",
+        "filename": "provider/events.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 971,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-08T04:38:30Z",
+      "side": 1,
+      "message": "lowercase?",
+      "range": {
+        "startLine": 971,
+        "startChar": 28,
+        "endLine": 971,
+        "endChar": 29
+      },
+      "revId": "24a7b9490afcb654391617934d48818ddda7a897",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
