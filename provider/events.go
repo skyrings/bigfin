@@ -426,7 +426,7 @@ func osd_add_or_delete_handler(event models.AppEvent, osdname string, ctxt strin
 
 		event.NodeId = node.NodeId
 		event.NodeName = node.Hostname
-		deviceDetails, err := salt_backend.GetPartDeviceDetails(
+		/*deviceDetails, err := salt_backend.GetPartDeviceDetails(
 			node.Hostname,
 			osd.OsdData,
 			ctxt)
@@ -475,7 +475,8 @@ func osd_add_or_delete_handler(event models.AppEvent, osdname string, ctxt strin
 		} else {
 			logger.Get().Info("%s-Successfully updated the SLU: %s", ctxt, osdname)
 			return event, nil
-		}
+		}*/
+		return event, nil
 	} else {
 		if err := coll.Remove(bson.M{"sluid": event.EntityId}); err != nil {
 			logger.Get().Warning(
