@@ -2,6 +2,75 @@
   "comments": [
     {
       "key": {
+        "uuid": "baa041b7_f1d5791b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-08T04:49:51Z",
+      "side": 1,
+      "message": "create/resize/remove",
+      "range": {
+        "startLine": 7,
+        "startChar": 30,
+        "endLine": 7,
+        "endChar": 50
+      },
+      "revId": "2385e01296018215d3cd1e045ad102529d37a6ca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_b1db714e",
+        "filename": "salt_module/mon_remote.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 1,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-08T04:49:51Z",
+      "side": 1,
+      "message": "We mostly add copyright notice as below in sources\n\n------------------\n#\n# Copyright 2016 Red Hat, Inc.\n#\n# Licensed under the Apache License, Version 2.0 (the \"License\");\n# you may not use this file except in compliance with the License.\n# You may obtain a copy of the License at\n#\n#     http://www.apache.org/licenses/LICENSE-2.0\n#\n# Unless required by applicable law or agreed to in writing, software\n# distributed under the License is distributed on an \"AS IS\" BASIS,\n# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.\n# See the License for the specific language governing permissions and\n# limitations under the License.",
+      "range": {
+        "startLine": 1,
+        "startChar": 0,
+        "endLine": 1,
+        "endChar": 28
+      },
+      "revId": "2385e01296018215d3cd1e045ad102529d37a6ca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_71ea89dc",
+        "filename": "salt_module/mon_remote.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 154,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-08T04:49:51Z",
+      "side": 1,
+      "message": "we have a utility available which provides execCmd() function. Can we try using the same? another module ceph.py is using the same for any command executions.",
+      "range": {
+        "startLine": 150,
+        "startChar": 4,
+        "endLine": 154,
+        "endChar": 20
+      },
+      "revId": "2385e01296018215d3cd1e045ad102529d37a6ca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_c10ab91f",
         "filename": "salt_module/mon_remote.py",
         "patchSetId": 1
