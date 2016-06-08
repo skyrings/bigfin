@@ -633,11 +633,33 @@ func (c CephApi) GetCrushNodes(mon string, clusterId uuid.UUID, ctxt string) ([]
 	return nodes, nil
 }
 
+func (c CephApi) GetCrushNode(mon string, clusterId uuid.UUID, crushNodeId int, ctxt string) (backend.CrushNode, error) {
+
+	route := CEPH_API_ROUTES["GetCrushNode"]
+	route.Pattern = strings.Replace(route.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+	route.Pattern = strings.Replace(route.Pattern, "{crush-node-id}", strconv.Itoa(crushNodeId), 1)
+
+	resp, err := route_request(route, mon, bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return backend.CrushNode{}, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return backend.CrushNode{}, err
+	}
+
+	var node backend.CrushNode
+	if err := json.Unmarshal(respBody, &node); err != nil {
+		return backend.CrushNode{}, err
+	}
+	return node, nil
+}
+
 func (c CephApi) PatchCrushNode(mon string, clusterId uuid.UUID, crushNodeId int, params map[string]interface{}, ctxt string) (bool, error) {
 	// Replace cluster id in route pattern
 	route := CEPH_API_ROUTES["PatchCrushNode"]
 	route.Pattern = strings.Replace(route.Pattern, "{cluster-fsid}", clusterId.String(), 1)
-	route.Pattern = strings.Replace(route.Pattern, "{crush_node_id}", strconv.Itoa(crushNodeId), 1)
+	route.Pattern = strings.Replace(route.Pattern, "{crush-node-id}", strconv.Itoa(crushNodeId), 1)
 
 	buf, err := json.Marshal(params)
 	if err != nil {

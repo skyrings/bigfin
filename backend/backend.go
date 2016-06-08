@@ -129,6 +129,7 @@ type Backend interface {
 	CreateCrushRule(mon string, clusterId uuid.UUID, rule CrushRuleRequest, ctxt string) (int, error)
 	CreateCrushNode(mon string, clusterId uuid.UUID, node CrushNodeRequest, ctxt string) (int, error)
 	GetCrushNodes(mon string, clusterId uuid.UUID, ctxt string) ([]CrushNode, error)
+	GetCrushNode(mon string, clusterId uuid.UUID, crushNodeId int, ctxt string) (CrushNode, error)
 	PatchCrushNode(mon string, clusterId uuid.UUID, crushNodeId int, params map[string]interface{}, ctxt string) (bool, error)
 	GetCrushRules(mon string, clusterId uuid.UUID, ctxt string) ([]map[string]interface{}, error)
 	GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error)

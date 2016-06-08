@@ -288,6 +288,10 @@ func (c Salt) GetCrushNodes(mon string, clusterId uuid.UUID, ctxt string) ([]bac
 	return []backend.CrushNode{}, nil
 }
 
+func (c Salt) GetCrushNode(mon string, clusterId uuid.UUID, crushNodeId int, ctxt string) (backend.CrushNode, error) {
+	return backend.CrushNode{}, nil
+}
+
 func (c Salt) PatchCrushNode(mon string, clusterId uuid.UUID, crushNodeId int, params map[string]interface{}, ctxt string) (bool, error) {
 	return true, nil
 }
