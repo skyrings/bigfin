@@ -217,7 +217,7 @@ func (s *CephProvider) ImportCluster(req models.RpcRequest, resp *models.RpcResp
 				err)
 		}
 		// Get and update block devices
-		/*t.UpdateStatus("Updating cluster block devices")
+		t.UpdateStatus("Updating cluster block devices")
 		if err := PopulateBlockDevices(request.BootstrapNode, *cluster_uuid, ctxt); err != nil {
 			t.UpdateStatus("Failed populating block devices details")
 			logger.Get().Warning(
@@ -225,7 +225,7 @@ func (s *CephProvider) ImportCluster(req models.RpcRequest, resp *models.RpcResp
 				ctxt,
 				clusterName,
 				err)
-		}*/
+		}
 		setClusterState(*cluster_uuid, models.CLUSTER_STATE_ACTIVE, ctxt)
 
 		// Create default EC profiles
@@ -243,7 +243,7 @@ func (s *CephProvider) ImportCluster(req models.RpcRequest, resp *models.RpcResp
 		}
 
 		//Update the CRUSH MAP
-		/*t.UpdateStatus("Updating the CRUSH Map")
+		t.UpdateStatus("Updating the CRUSH Map")
 		if err := updateCrushMap(
 			ctxt,
 			request.BootstrapNode,
@@ -256,7 +256,7 @@ func (s *CephProvider) ImportCluster(req models.RpcRequest, resp *models.RpcResp
 			t.UpdateStatus("Failed to update Crush map")
 			t.Done(models.TASK_STATUS_SUCCESS)
 			return
-		}*/
+		}
 
 		// Update the notification details
 		t.UpdateStatus("Creating notification subscription configuartions")
