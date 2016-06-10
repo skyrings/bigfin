@@ -1,0 +1,188 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_3de3a835",
+        "filename": "provider/cluster.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 522,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-10T11:55:21Z",
+      "side": 1,
+      "message": "Remove as not required now..",
+      "range": {
+        "startLine": 522,
+        "startChar": 2,
+        "endLine": 522,
+        "endChar": 26
+      },
+      "revId": "dde79f271a7a75aafd6f7be4587a34911a5c4066",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_1dcfc4b4",
+        "filename": "provider/cluster.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 672,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-10T11:55:21Z",
+      "side": 1,
+      "message": "Remove",
+      "range": {
+        "startLine": 672,
+        "startChar": 3,
+        "endLine": 672,
+        "endChar": 102
+      },
+      "revId": "dde79f271a7a75aafd6f7be4587a34911a5c4066",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_5d19cc21",
+        "filename": "provider/cluster.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 2207,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-10T11:55:21Z",
+      "side": 1,
+      "message": "This function for sure should be broken in 4-5 smaller ones. better in new source and use here as well as in create cluster flow :)",
+      "range": {
+        "startLine": 2207,
+        "startChar": 5,
+        "endLine": 2207,
+        "endChar": 25
+      },
+      "revId": "dde79f271a7a75aafd6f7be4587a34911a5c4066",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_9dc3d48a",
+        "filename": "provider/cluster.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 2245,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-10T11:55:21Z",
+      "side": 1,
+      "message": "I feel we can create map of [name]slu from fetched from db list so second level for loop not required and using name only we can get the exact one. If not found in map, continue.. what you say?",
+      "range": {
+        "startLine": 2244,
+        "startChar": 1,
+        "endLine": 2245,
+        "endChar": 32
+      },
+      "revId": "dde79f271a7a75aafd6f7be4587a34911a5c4066",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_fd3ae097",
+        "filename": "provider/cluster.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 2257,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-10T11:55:21Z",
+      "side": 1,
+      "message": "Can define outside for loop and re-initialize every time in loop..",
+      "range": {
+        "startLine": 2254,
+        "startChar": 2,
+        "endLine": 2257,
+        "endChar": 3
+      },
+      "revId": "dde79f271a7a75aafd6f7be4587a34911a5c4066",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_dd3f1c86",
+        "filename": "provider/cluster.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 2269,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-10T11:55:21Z",
+      "side": 1,
+      "message": "Shouldnt we break here ?",
+      "range": {
+        "startLine": 2269,
+        "startChar": 4,
+        "endLine": 2269,
+        "endChar": 21
+      },
+      "revId": "dde79f271a7a75aafd6f7be4587a34911a5c4066",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_7df5b0c9",
+        "filename": "provider/cluster.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 2370,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-10T11:55:21Z",
+      "side": 1,
+      "message": "There is variable defined this. Please use that...",
+      "range": {
+        "startLine": 2370,
+        "startChar": 86,
+        "endLine": 2370,
+        "endChar": 96
+      },
+      "revId": "dde79f271a7a75aafd6f7be4587a34911a5c4066",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_3dff28ac",
+        "filename": "provider/cluster.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 2384,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-10T11:55:21Z",
+      "side": 1,
+      "message": "I remember this logic written exactly the same way while create cluster as well. Why not define a function and use in both the places... May be we can have crush_utils.go to add all such functions like createRootNode(), createCrushNode(), createRule() etc....",
+      "range": {
+        "startLine": 2370,
+        "startChar": 5,
+        "endLine": 2384,
+        "endChar": 94
+      },
+      "revId": "dde79f271a7a75aafd6f7be4587a34911a5c4066",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
