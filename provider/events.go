@@ -528,13 +528,20 @@ func osd_state_change_handler(event models.AppEvent, osdname string, ctxt string
 		return event, err
 	}
 	logger.Get().Info("%s-Updated the status of slu: osd.%d on cluster: %v", ctxt, osd.Id, event.ClusterId)
-
+	var active bool
 	if strings.Contains(event.Message, bigfinmodels.OSD_DOWN_MESSAGE) {
 		event.Severity = models.ALARM_STATUS_WARNING
+		active = false
 		event.Message = fmt.Sprintf("OSD %s on %s cluster went down", osdname, event.ClusterName)
 	} else {
+		active = true
 		event.Severity = models.ALARM_STATUS_CLEARED
 		event.Message = fmt.Sprintf("OSD %s on %s cluster came up", osdname, event.ClusterName)
+	}
+
+	if err := utils.UpdateNodeServiceState(event.NodeId, osdname, active, ctxt); err != nil {
+		logger.Get().Error("%s- Error updating service state for node: %s. Error:", ctxt, event.NodeId, event.NodeName)
+		return event, err
 	}
 
 	clearedSeverity, err := common_event.ClearCorrespondingAlert(event, ctxt)
@@ -613,10 +620,18 @@ func ceph_mon_property_changed_handler(event models.AppEvent, ctxt string) (mode
 	event.NotificationEntity = models.NOTIFICATION_ENTITY_HOST
 	event.Name = EventTypes["mon_state_changed"]
 	event.Notify = true
+	var active bool
 	if strings.Contains(event.Message, "joined quorum") {
 		event.Severity = models.ALARM_STATUS_CLEARED
+		active = true
 	} else {
 		event.Severity = models.ALARM_STATUS_WARNING
+		active = false
+	}
+
+	if err := utils.UpdateNodeServiceState(event.NodeId, "Monitor", active, ctxt); err != nil {
+		logger.Get().Error("%s- Error updating service state for node: %s. Error:", ctxt, event.NodeId, event.NodeName)
+		return event, err
 	}
 
 	clearedSeverity, err := common_event.ClearCorrespondingAlert(event, ctxt)
