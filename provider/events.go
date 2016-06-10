@@ -529,11 +529,12 @@ func osd_state_change_handler(event models.AppEvent, osdname string, ctxt string
 		return event, err
 	}
 	logger.Get().Info("%s-Updated the status of slu: osd.%d on cluster: %v", ctxt, osd.Id, event.ClusterId)
-
 	if strings.Contains(event.Message, bigfinmodels.OSD_DOWN_MESSAGE) {
+		util.AppendServiceToNode(bson.M{"nodeid": event.NodeId}, fmt.Sprintf("%s-%s", bigfinmodels.NODE_SERVICE_OSD, osdname), models.STATUS_DOWN, ctxt)
 		event.Severity = models.ALARM_STATUS_WARNING
 		event.Message = fmt.Sprintf("OSD %s on %s cluster went down", osdname, event.ClusterName)
 	} else {
+		util.AppendServiceToNode(bson.M{"nodeid": event.NodeId}, fmt.Sprintf("%s-%s", bigfinmodels.NODE_SERVICE_OSD, osdname), models.STATUS_UP, ctxt)
 		event.Severity = models.ALARM_STATUS_CLEARED
 		event.Message = fmt.Sprintf("OSD %s on %s cluster came up", osdname, event.ClusterName)
 	}
@@ -610,13 +611,26 @@ func ceph_osd_property_changed_handler(event models.AppEvent, ctxt string) (mode
 }
 
 func ceph_mon_property_changed_handler(event models.AppEvent, ctxt string) (models.AppEvent, error) {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	node_coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
+	var node models.Node
+	if err := node_coll.Find(bson.M{"hostname": bson.M{"$regex": fmt.Sprintf("%s.*", event.Tags["fqdn"]), "$options": "$i"}}).One(&node); err != nil {
+		logger.Get().Error("%s-Error fetching node details for mon : %s on cluster: %v. error: %v", ctxt, event.Tags["fqdn"], event.ClusterId, err)
+		return event, err
+	}
+
+	event.NodeId = node.NodeId
+	event.NodeName = node.Hostname
 	event.EntityId = event.NodeId
 	event.NotificationEntity = models.NOTIFICATION_ENTITY_HOST
 	event.Name = EventTypes["mon_state_changed"]
 	event.Notify = true
 	if strings.Contains(event.Message, "joined quorum") {
 		event.Severity = models.ALARM_STATUS_CLEARED
+		util.AppendServiceToNode(bson.M{"nodeid": event.NodeId}, bigfinmodels.NODE_SERVICE_MON, models.STATUS_UP, ctxt)
 	} else {
+		util.AppendServiceToNode(bson.M{"nodeid": event.NodeId}, bigfinmodels.NODE_SERVICE_MON, models.STATUS_DOWN, ctxt)
 		event.Severity = models.ALARM_STATUS_WARNING
 	}
 
