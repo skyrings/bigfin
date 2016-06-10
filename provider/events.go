@@ -528,11 +528,12 @@ func osd_state_change_handler(event models.AppEvent, osdname string, ctxt string
 		return event, err
 	}
 	logger.Get().Info("%s-Updated the status of slu: osd.%d on cluster: %v", ctxt, osd.Id, event.ClusterId)
-
 	if strings.Contains(event.Message, bigfinmodels.OSD_DOWN_MESSAGE) {
+		util.AppendServiceToNode(bson.M{"nodeid": event.NodeId}, osdname, models.STATUS_DOWN, ctxt)
 		event.Severity = models.ALARM_STATUS_WARNING
 		event.Message = fmt.Sprintf("OSD %s on %s cluster went down", osdname, event.ClusterName)
 	} else {
+		util.AppendServiceToNode(bson.M{"nodeid": event.NodeId}, osdname, models.STATUS_UP, ctxt)
 		event.Severity = models.ALARM_STATUS_CLEARED
 		event.Message = fmt.Sprintf("OSD %s on %s cluster came up", osdname, event.ClusterName)
 	}
@@ -615,7 +616,9 @@ func ceph_mon_property_changed_handler(event models.AppEvent, ctxt string) (mode
 	event.Notify = true
 	if strings.Contains(event.Message, "joined quorum") {
 		event.Severity = models.ALARM_STATUS_CLEARED
+		util.AppendServiceToNode(bson.M{"nodeid": event.NodeId}, bigfinmodels.NODE_SERVICE_MON, models.STATUS_UP, ctxt)
 	} else {
+		util.AppendServiceToNode(bson.M{"nodeid": event.NodeId}, bigfinmodels.NODE_SERVICE_MON, models.STATUS_DOWN, ctxt)
 		event.Severity = models.ALARM_STATUS_WARNING
 	}
 
