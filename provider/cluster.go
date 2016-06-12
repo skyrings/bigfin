@@ -312,6 +312,7 @@ func CreateClusterUsingSalt(cluster_uuid *uuid.UUID, request models.AddClusterRe
 				ctxt); err != nil || !ret_val {
 				failedMons = append(failedMons, mon.Node)
 			} else {
+				util.AppendServiceToNode(bson.M{"hostname": mon.Node}, bigfinmodels.NODE_SERVICE_MON, models.STATUS_UP, ctxt)
 				succeededMons = append(succeededMons, mon.Node)
 				t.UpdateStatus(fmt.Sprintf("Added mon node: %s", mon.Node))
 			}
@@ -423,6 +424,7 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 				failedMons = append(failedMons, mon["host"].(string))
 				logger.Get().Error("%s-Failed to add MON %v. error: %v", ctxt, mon["host"].(string), err)
 			} else {
+				util.AppendServiceToNode(bson.M{"hostname": mon["host"]}, bigfinmodels.NODE_SERVICE_MON, models.STATUS_UP, ctxt)
 				t.UpdateStatus(fmt.Sprintf("Added mon node: %s", mon["host"].(string)))
 				succeededMons = append(succeededMons, mon["host"].(string))
 
@@ -1055,6 +1057,7 @@ func startAndPersistMons(clusterId uuid.UUID, mons []string, ctxt string) (bool,
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 	for _, mon := range mons {
+		util.AppendServiceToNode(bson.M{"hostname": mon}, bigfinmodels.NODE_SERVICE_MON, models.STATUS_UP, ctxt)
 		if err := coll.Update(
 			bson.M{"hostname": mon},
 			bson.M{"$set": bson.M{
@@ -1191,6 +1194,9 @@ func persistOSD(slu models.StorageLogicalUnit, t *task.Task, ctxt string) (bool,
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
 	var existing_slu models.StorageLogicalUnit
+	if slu.Name != "" {
+		util.AppendServiceToNode(bson.M{"nodeid": slu.NodeId}, fmt.Sprintf("%s-%s", bigfinmodels.NODE_SERVICE_OSD, slu.Name), mapOSDStatusToServiceStatus(slu.State), ctxt)
+	}
 	if err := coll.Find(bson.M{"nodeid": slu.NodeId,
 		"clusterid":      slu.ClusterId,
 		"options.device": slu.Options["device"]}).One(&existing_slu); err != nil {
@@ -1360,6 +1366,7 @@ func ExpandClusterUsingSalt(cluster_uuid *uuid.UUID, request models.AddClusterRe
 				failedMons = append(failedMons, mon.Node)
 			} else {
 				succeededMons = append(succeededMons, mon.Node)
+				util.AppendServiceToNode(bson.M{"hostname": mon.Node}, bigfinmodels.NODE_SERVICE_MON, models.STATUS_UP, ctxt)
 				t.UpdateStatus(fmt.Sprintf("Added mon node: %s", mon.Node))
 			}
 		}
@@ -1515,6 +1522,7 @@ func ExpandClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 					failedMons = append(failedMons, mon["host"].(string))
 					logger.Get().Error("%s-Failed to add MON %v. error: %v", ctxt, mon["host"].(string), err)
 				} else {
+					util.AppendServiceToNode(bson.M{"hostname": mon["host"]}, bigfinmodels.NODE_SERVICE_MON, models.STATUS_UP, ctxt)
 					t.UpdateStatus(fmt.Sprintf("Added mon node: %s", mon["host"].(string)))
 					succeededMons = append(succeededMons, mon["host"].(string))
 
@@ -1717,6 +1725,11 @@ func (s *CephProvider) UpdateStorageLogicalUnitParams(req models.RpcRequest, res
 				slu.State = state
 				slu.Status = status
 
+				/*
+					Update the service list according to slu state
+				*/
+				util.AppendServiceToNode(bson.M{"nodeid": slu.NodeId}, fmt.Sprintf("%s-%s", bigfinmodels.NODE_SERVICE_OSD, slu.Name), mapOSDStatusToServiceStatus(slu.State), ctxt)
+
 				coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
 
 				if err := coll.Update(bson.M{"sluid": fetchedOSD.Uuid, "clusterid": cluster_id}, slu); err != nil {
@@ -1743,6 +1756,15 @@ func (s *CephProvider) UpdateStorageLogicalUnitParams(req models.RpcRequest, res
 		*resp = utils.WriteAsyncResponse(taskId, fmt.Sprintf("Task Created for update OSD %s on cluster: %v", *slu_id, *cluster_id), []byte{})
 	}
 	return nil
+}
+
+func mapOSDStatusToServiceStatus(status string) string {
+	switch status {
+	case bigfinmodels.OSD_STATE_IN:
+		return models.STATUS_UP
+	default:
+		return models.STATUS_DOWN
+	}
 }
 
 func (s *CephProvider) SyncStorageLogicalUnitParams(req models.RpcRequest, resp *models.RpcResponse) error {
@@ -1995,6 +2017,9 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 			journalDetail.Reweight = float64(osd.Reweight)
 			slu.Options["journal"] = journalDetail
 
+			//Update Service list in accordance with new slu state
+			util.AppendServiceToNode(bson.M{"nodeid": node.NodeId}, fmt.Sprintf("%s-%s", bigfinmodels.NODE_SERVICE_OSD, slu.Name), mapOSDStatusToServiceStatus(slu.State), ctxt)
+
 			if err := coll_slu.Update(
 				bson.M{
 					"nodeid":         node.NodeId,
@@ -2003,6 +2028,7 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 				logger.Get().Error("%s-Error updating the slu: %s. error: %v", ctxt, osd.Uuid.String(), err)
 				continue
 			}
+
 			logger.Get().Info("%s-Updated the slu: osd.%d on cluster: %v", ctxt, osd.Id, clusterId)
 		}
 	}
@@ -2060,6 +2086,9 @@ func SyncOsdStatus(clusterId uuid.UUID, ctxt string) error {
 		slu.Options["journal"] = journalDetail
 		slu.State = state
 		slu.Status = status
+
+		util.AppendServiceToNode(bson.M{"nodeid": slu.NodeId}, fmt.Sprintf("%s-%s", bigfinmodels.NODE_SERVICE_OSD, slu.Name), mapOSDStatusToServiceStatus(slu.State), ctxt)
+
 		if err := coll.Update(
 			bson.M{"sluid": fetchedOSD.Uuid, "clusterid": clusterId},
 			bson.M{"$set": bson.M{"status": status, "state": state, "options": slu.Options}}); err != nil {
