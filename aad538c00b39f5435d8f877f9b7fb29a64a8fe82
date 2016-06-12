@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_b63eb527",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1060,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-12T16:49:53Z",
+      "side": 1,
+      "message": "duplication you are already doing this as part of create cluster?",
+      "range": {
+        "startLine": 1060,
+        "startChar": 2,
+        "endLine": 1060,
+        "endChar": 15
+      },
+      "revId": "aad538c00b39f5435d8f877f9b7fb29a64a8fe82",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_963bb138",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1197,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-12T16:49:53Z",
+      "side": 1,
+      "message": "duplication you are already doing this as part of syncOSDdetails?",
+      "range": {
+        "startLine": 1197,
+        "startChar": 1,
+        "endLine": 1197,
+        "endChar": 15
+      },
+      "revId": "aad538c00b39f5435d8f877f9b7fb29a64a8fe82",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
