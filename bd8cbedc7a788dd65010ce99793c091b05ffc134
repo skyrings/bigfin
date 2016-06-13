@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_155794cb",
+        "filename": "provider/cluster.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 1448,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-13T17:20:53Z",
+      "side": 1,
+      "message": "This cluster creation using salt. Not required to change at this point",
+      "parentUuid": "baa041b7_35d4d845",
+      "range": {
+        "startLine": 1445,
+        "startChar": 3,
+        "endLine": 1448,
+        "endChar": 6
+      },
+      "revId": "bd8cbedc7a788dd65010ce99793c091b05ffc134",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_15c9d4ac",
         "filename": "provider/cluster.go",
         "patchSetId": 6
@@ -48,6 +72,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_f55b10f5",
+        "filename": "provider/cluster.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 2189,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-13T17:20:53Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_15c9d4ac",
+      "range": {
+        "startLine": 2189,
+        "startChar": 47,
+        "endLine": 2189,
+        "endChar": 64
+      },
+      "revId": "bd8cbedc7a788dd65010ce99793c091b05ffc134",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_d5c36c89",
         "filename": "provider/events.go",
         "patchSetId": 6
@@ -59,6 +107,30 @@
       "writtenOn": "2016-06-13T17:09:08Z",
       "side": 1,
       "message": "Now we dont need this logic during event??",
+      "range": {
+        "startLine": 429,
+        "startChar": 2,
+        "endLine": 478,
+        "endChar": 5
+      },
+      "revId": "bd8cbedc7a788dd65010ce99793c091b05ffc134",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_75682088",
+        "filename": "provider/events.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 478,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-13T17:20:53Z",
+      "side": 1,
+      "message": "Commenting out for as this is buggy. Need to fix it when we support OSD addition externally",
+      "parentUuid": "baa041b7_d5c36c89",
       "range": {
         "startLine": 429,
         "startChar": 2,
