@@ -237,6 +237,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_32786e8f",
+        "filename": "provider/cluster.go",
+        "patchSetId": 5
+      },
+      "lineNbr": 2257,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-13T13:11:37Z",
+      "side": 1,
+      "message": "I think this is fine as it gets initialized properly in the outer loop",
+      "parentUuid": "baa041b7_56a9a97a",
+      "range": {
+        "startLine": 2254,
+        "startChar": 2,
+        "endLine": 2257,
+        "endChar": 3
+      },
+      "revId": "dde79f271a7a75aafd6f7be4587a34911a5c4066",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_dd3f1c86",
         "filename": "provider/cluster.go",
         "patchSetId": 5
