@@ -1973,8 +1973,9 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 		var node models.Node
 		if err := coll_nodes.Find(
 			bson.M{"hostname": bson.M{
-				"$regex":   osd.Server,
-				"$options": "$i"}}).One(&node); err != nil {
+				"$regex":   fmt.Sprintf("%s.", osd.Server),
+				"$options": "$i"},
+				"clusterid": clusterId}).One(&node); err != nil {
 
 			logger.Get().Error(
 				"%s-Error fetching node details for SLU id: %d on cluster: %v. error: %v",

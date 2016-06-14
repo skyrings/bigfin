@@ -419,7 +419,7 @@ func osd_add_or_delete_handler(event models.AppEvent, osdname string, ctxt strin
 
 		node_coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 		var node models.Node
-		if err := node_coll.Find(bson.M{"hostname": bson.M{"$regex": fmt.Sprintf("%s.*", osd.Server), "$options": "$i"}}).One(&node); err != nil {
+		if err := node_coll.Find(bson.M{"hostname": bson.M{"$regex": fmt.Sprintf("%s.*", osd.Server), "$options": "$i"}, "clusterid:": event.ClusterId}).One(&node); err != nil {
 			logger.Get().Error("%s-Error fetching node details for SLU id: %d on cluster: %v. error: %v", ctxt, osd.Id, event.ClusterId, err)
 			return event, err
 		}
@@ -514,7 +514,7 @@ func osd_state_change_handler(event models.AppEvent, osdname string, ctxt string
 	}
 	node_coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 	var node models.Node
-	if err := node_coll.Find(bson.M{"hostname": bson.M{"$regex": fmt.Sprintf("%s.*", osd.Server), "$options": "$i"}}).One(&node); err != nil {
+	if err := node_coll.Find(bson.M{"hostname": bson.M{"$regex": fmt.Sprintf("%s.*", osd.Server), "$options": "$i"}, "clusterid": event.ClusterId}).One(&node); err != nil {
 		logger.Get().Error("%s-Error fetching node details for SLU id: %d on cluster: %v. error: %v", ctxt, osd.Id, node.ClusterId, err)
 		return event, err
 	}
@@ -615,7 +615,7 @@ func ceph_mon_property_changed_handler(event models.AppEvent, ctxt string) (mode
 	defer sessionCopy.Close()
 	node_coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 	var node models.Node
-	if err := node_coll.Find(bson.M{"hostname": bson.M{"$regex": fmt.Sprintf("%s.*", event.Tags["fqdn"]), "$options": "$i"}}).One(&node); err != nil {
+	if err := node_coll.Find(bson.M{"hostname": bson.M{"$regex": fmt.Sprintf("%s.*", event.Tags["fqdn"]), "$options": "$i"}, "clusterid": event.ClusterId}).One(&node); err != nil {
 		logger.Get().Error("%s-Error fetching node details for mon : %s on cluster: %v. error: %v", ctxt, event.Tags["fqdn"], event.ClusterId, err)
 		return event, err
 	}

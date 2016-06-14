@@ -361,8 +361,8 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 		var node models.Node
 		if err := coll_nodes.Find(
 			bson.M{"hostname": bson.M{
-				"$regex":   osd.Server,
-				"$options": "$i"}}).One(&node); err != nil {
+				"$regex":   fmt.Sprintf("%s.*", osd.Server),
+				"$options": "$i"}, "clusterid": clusterId}).One(&node); err != nil {
 			logger.Get().Error(
 				"%s-Error fetching node details for SLU id: %d on cluster: %v. error: %v",
 				ctxt,
@@ -777,7 +777,8 @@ func syncStorageNodes(mon string, clusterId uuid.UUID, ctxt string) error {
 		var updates bson.M = make(map[string]interface{})
 		for _, service := range node.Services {
 			if err := coll.Find(bson.M{"hostname": bson.M{
-				"$regex": fmt.Sprintf("%s.*", node.FQDN)}}).One(&fetchedNode); err != nil {
+				"$regex": node.FQDN},
+				"clusterid": clusterId}).One(&fetchedNode); err != nil {
 				logger.Get().Warning(
 					"%s-Failed to update OSD role for node: %s. error: %v",
 					ctxt,
