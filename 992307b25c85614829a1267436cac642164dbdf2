@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_f80f8786",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 1761,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-14T05:10:54Z",
+      "side": 1,
+      "message": "There is already such a function I remember. why not use the same ?",
+      "range": {
+        "startLine": 1761,
+        "startChar": 5,
+        "endLine": 1761,
+        "endChar": 32
+      },
+      "revId": "992307b25c85614829a1267436cac642164dbdf2",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
