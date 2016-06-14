@@ -1215,9 +1215,6 @@ func persistOSD(slu models.StorageLogicalUnit, t *task.Task, ctxt string) (bool,
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
 	var existing_slu models.StorageLogicalUnit
-	if slu.Name != "" {
-		util.AppendServiceToNode(bson.M{"nodeid": slu.NodeId}, fmt.Sprintf("%s-%s", bigfinmodels.NODE_SERVICE_OSD, slu.Name), mapOSDStatusToServiceStatus(slu.State), ctxt)
-	}
 	if err := coll.Find(bson.M{"nodeid": slu.NodeId,
 		"clusterid":      slu.ClusterId,
 		"options.device": slu.Options["device"]}).One(&existing_slu); err != nil {
