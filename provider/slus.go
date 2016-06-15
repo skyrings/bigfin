@@ -76,7 +76,9 @@ func (s *CephProvider) GetDiskHierarchy(req models.RpcRequest, resp *models.RpcR
 			}
 		}
 
-		diskWithJournalMapped := getDiskWithJournalMapped(devices, request.JournalSize)
+		// Utility function returns value in MB so multiply by 1024 to make is bytes
+		jSize := utils.SizeFromStr(request.JournalSize) * uint64(1024)
+		diskWithJournalMapped := getDiskWithJournalMapped(devices, jSize)
 		for disk, journal := range diskWithJournalMapped {
 			disksMap[disk] = journal.JournalDisk
 			for _, storageDisk := range storageNode.StorageDisks {
