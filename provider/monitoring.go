@@ -388,7 +388,11 @@ func FetchOSDStats(ctxt string, cluster models.Cluster, monName string) (map[str
 		metrics[metric_name+skyring_monitoring.FREE_SPACE] = map[string]string{timeStampStr: strconv.FormatInt(osd.Available*1024, 10)}
 		metrics[metric_name+skyring_monitoring.USED_SPACE] = map[string]string{timeStampStr: strconv.FormatInt(osd.Used*1024, 10)}
 		metrics[metric_name+skyring_monitoring.PERCENT_USED] = map[string]string{timeStampStr: strconv.FormatFloat(osd.UsagePercent, 'E', -1, 64)}
-		usage := models.Utilization{Used: int64(osd.Used * 1024), Total: int64(osd.Total * 1024), PercentUsed: float64(osd.UsagePercent)}
+		usage := models.Utilization{
+			Used:        int64(osd.Used * 1024),
+			Total:       int64(osd.Total * 1024),
+			PercentUsed: float64(osd.UsagePercent),
+			UpdatedAt:   time.Now().String()}
 		if dbUpdateErr := updateDB(
 			bson.M{"name": osd.Name, "clusterid": cluster.ClusterId},
 			bson.M{"$set": bson.M{"usage": usage}},
@@ -538,7 +542,7 @@ func FetchStorageProfileUtilizations(ctxt string, osdDetails OSDStats, cluster m
 				if spUsed+spFree > 0 {
 					percentUsed = float64(spUsed*100) / float64(spUsed+spFree)
 				}
-				cluster.StorageProfileUsage[slu.StorageProfile] = models.Utilization{Used: int64(spUsed), Total: int64(spUsed + spFree), PercentUsed: percentUsed}
+				cluster.StorageProfileUsage[slu.StorageProfile] = models.Utilization{Used: int64(spUsed), Total: int64(spUsed + spFree), PercentUsed: percentUsed, UpdatedAt: time.Now().String()}
 
 				statsToPush[metric_name+skyring_monitoring.USAGE_PERCENT] = map[string]string{currentTimeStamp: fmt.Sprintf("%v", percentUsed)}
 
@@ -629,7 +633,11 @@ func FetchRBDStats(ctxt string, cluster models.Cluster, monName string) (map[str
 			if rbdStat.Total > 0 {
 				percent_used = float64(rbdStat.Used*100) / float64(rbdStat.Total)
 			}
-			if err := rbdColl.Update(bson.M{"clusterid": cluster.ClusterId, "name": rbdStat.Name, "storageid": pool.StorageId}, bson.M{"$set": bson.M{"usage": models.Utilization{Used: int64(rbdStat.Used), Total: int64(rbdStat.Total), PercentUsed: percent_used}}}); err != nil {
+			if err := rbdColl.Update(bson.M{"clusterid": cluster.ClusterId, "name": rbdStat.Name, "storageid": pool.StorageId}, bson.M{"$set": bson.M{"usage": models.Utilization{
+				Used:        int64(rbdStat.Used),
+				Total:       int64(rbdStat.Total),
+				PercentUsed: percent_used,
+				UpdatedAt:   time.Now().String()}}}); err != nil {
 				err_str = fmt.Sprintf("%s.Unable to update rbd stats of rbd %v from mon %v of pool %v, cluster %v.Error: %v",
 					err_str, rbdStat.Name, monName, pool.Name, cluster.Name, err)
 			}
@@ -703,7 +711,8 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 				"usage": models.Utilization{
 					Used:        statistics.Stats.Used,
 					Total:       statistics.Stats.Total,
-					PercentUsed: percentUsed}}},
+					PercentUsed: percentUsed,
+					UpdatedAt:   time.Now().String()}}},
 		models.COLL_NAME_STORAGE_CLUSTERS); err != nil {
 		logger.Get().Error("%s-Updating the cluster statistics to db for the cluster %v failed.Error %v", ctxt, cluster.Name, err.Error())
 	}
@@ -736,7 +745,11 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 				}
 			}
 		}
-		dbUpdateError := collection.Update(bson.M{"clusterid": cluster.ClusterId, "name": poolStat.Name}, bson.M{"$set": bson.M{"usage": models.Utilization{Used: used, Total: total, PercentUsed: percentUsed}}})
+		dbUpdateError := collection.Update(bson.M{"clusterid": cluster.ClusterId, "name": poolStat.Name}, bson.M{"$set": bson.M{"usage": models.Utilization{
+			Used:        used,
+			Total:       total,
+			PercentUsed: percentUsed,
+			UpdatedAt:   time.Now().String()}}})
 		if dbUpdateError != nil {
 			logger.Get().Error("%s-Failed to update utilization of pool %v of cluster %v to db.Error %v", ctxt, poolStat.Name, cluster.Name, dbUpdateError)
 		}
