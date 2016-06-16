@@ -1,9 +1,9 @@
 package provider
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
-	"github.com/skyrings/bigfin/backend"
 	bigfin_models "github.com/skyrings/bigfin/bigfinmodels"
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/conf"
@@ -18,6 +18,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"text/template"
 	"time"
 )
 
@@ -29,9 +30,69 @@ var monitoringRoutines = []interface{}{
 	FetchPGSummary,
 }
 
+type ClusterStats struct {
+	Stats struct {
+		Total     int64 `json:"total_bytes"`
+		Used      int64 `json:"total_used_bytes"`
+		Available int64 `json:"total_avail_bytes"`
+	} `json:"stats"`
+	Pools []struct {
+		Name            string `json:"name"`
+		Id              int    `json:"id"`
+		PoolUtilization struct {
+			Used      int64 `json:"bytes_used"`
+			Available int64 `json:"max_avail"`
+		} `json:"stats"`
+	} `json:"pools"`
+}
+
+type OSDStats struct {
+	OSDs []struct {
+		Name         string  `json:"name"`
+		Id           int     `json:"id"`
+		Available    int64   `json:"kb_avail"`
+		Used         int64   `json:"kb_used"`
+		UsagePercent float64 `json:"utilization"`
+		Total        int64   `json:"kb"`
+	} `json:"nodes"`
+}
+
+type RBDStats struct {
+	RBDs []struct {
+		Name  string `json:"name"`
+		Used  int64  `json:"used_size"`
+		Total int64  `json:"provisioned_size"`
+	} `json:"images"`
+}
+
+var commandTemplates = map[string]string{
+	skyring_monitoring.SLU_UTILIZATION:          "ceph osd df --cluster {{.clusterName}} -f json",
+	skyring_monitoring.CLUSTER_UTILIZATION:      "ceph df --cluster {{.clusterName}} -f json",
+	skyring_monitoring.BLOCK_DEVICE_UTILIZATION: "rbd du --cluster {{.clusterName}} -p {{.poolName}} --format=json",
+	skyring_monitoring.NO_OF_OBJECT:             "rados df --cluster {{.clusterName}} --format=json",
+}
+
 var (
 	MonitoringManager skyring_monitoring.MonitoringManagerInterface
 )
+
+func getStatsFromCalamariApi(ctxt string, mon string, clusterId uuid.UUID, commandParams map[string]string, utilizationType string) (response string, isSuccess bool) {
+	buf := new(bytes.Buffer)
+	parsedTemplate, err := template.New("monitoring").Parse(commandTemplates[utilizationType])
+	if err != nil {
+		logger.Get().Error("%s - Failed to fetch %v of cluster %v.Could not parse template %v with params %v.Error %v", ctxt, utilizationType, clusterId, commandTemplates[utilizationType], commandParams, err)
+		return "", false
+	}
+	parsedTemplate.Execute(buf, commandParams)
+	commandString := buf.String()
+
+	ok, out, err := cephapi_backend.ExecCmd(mon, clusterId, commandString, ctxt)
+	if !ok || err != nil {
+		logger.Get().Error("%s - Failed to fetch %v metrics from cluster %v.Err %v", ctxt, utilizationType, clusterId, err)
+		return "", false
+	}
+	return out, true
+}
 
 func InitMonitoringManager() error {
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
@@ -295,22 +356,39 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 }
 
 func FetchOSDStats(ctxt string, cluster models.Cluster, monName string) (map[string]map[string]string, error) {
+	var statistics OSDStats
 	var osdEvents []models.Event
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
-	statistics, statsFetchErr := salt_backend.GetOSDDetails(monName, cluster.Name, ctxt)
-	if statsFetchErr != nil {
-		return nil, fmt.Errorf("Unable to fetch cluster stats from mon %v of cluster %v.Error: %v", monName, cluster.Name, statsFetchErr)
+
+	response, isSuccess := getStatsFromCalamariApi(ctxt,
+		monName,
+		cluster.ClusterId,
+		map[string]string{"clusterName": cluster.Name},
+		skyring_monitoring.SLU_UTILIZATION)
+
+	if !isSuccess {
+		/*
+			Already generically handled in above getStatsFromCalamariApi function.
+			So just a return from this function is required here.
+		*/
+
+		return nil, nil
 	}
+
+	if err := json.Unmarshal([]byte(response), &statistics); err != nil {
+		return nil, fmt.Errorf("%s - Failed to fetch osd stats from cluster %v.Could not unmarshal %v.Error %v", ctxt, cluster.Name, response, err)
+	}
+
 	metrics := make(map[string]map[string]string)
 	currentTimeStamp := time.Now().Unix()
 
-	for _, osd := range statistics {
+	for _, osd := range statistics.OSDs {
 		metric_name := monitoringConfig.CollectionName + "." + strings.Replace(cluster.Name, ".", "_", -1) + "." + skyring_monitoring.SLU_UTILIZATION + "_" + strings.Replace(osd.Name, ".", "_", -1) + "."
 		timeStampStr := strconv.FormatInt(currentTimeStamp, 10)
-		metrics[metric_name+skyring_monitoring.FREE_SPACE] = map[string]string{timeStampStr: strconv.FormatUint(osd.Available, 10)}
-		metrics[metric_name+skyring_monitoring.USED_SPACE] = map[string]string{timeStampStr: strconv.FormatUint(osd.Used, 10)}
-		metrics[metric_name+skyring_monitoring.PERCENT_USED] = map[string]string{timeStampStr: strconv.FormatUint(osd.UsagePercent, 10)}
-		usage := models.Utilization{Used: int64(osd.Used), Total: int64(osd.Available + osd.Used), PercentUsed: float64(osd.UsagePercent)}
+		metrics[metric_name+skyring_monitoring.FREE_SPACE] = map[string]string{timeStampStr: strconv.FormatInt(osd.Available*1024, 10)}
+		metrics[metric_name+skyring_monitoring.USED_SPACE] = map[string]string{timeStampStr: strconv.FormatInt(osd.Used*1024, 10)}
+		metrics[metric_name+skyring_monitoring.PERCENT_USED] = map[string]string{timeStampStr: strconv.FormatFloat(osd.UsagePercent, 'E', -1, 64)}
+		usage := models.Utilization{Used: int64(osd.Used * 1024), Total: int64(osd.Total * 1024), PercentUsed: float64(osd.UsagePercent)}
 		if dbUpdateErr := updateDB(
 			bson.M{"name": osd.Name, "clusterid": cluster.ClusterId},
 			bson.M{"$set": bson.M{"usage": usage}},
@@ -415,7 +493,7 @@ func FetchOSDStats(ctxt string, cluster models.Cluster, monName string) (map[str
 	return metrics, nil
 }
 
-func FetchStorageProfileUtilizations(ctxt string, osdDetails []backend.OSDDetails, cluster models.Cluster) (statsToPush map[string]map[string]string, err error, storageProfileEvents []models.Event) {
+func FetchStorageProfileUtilizations(ctxt string, osdDetails OSDStats, cluster models.Cluster) (statsToPush map[string]map[string]string, err error, storageProfileEvents []models.Event) {
 	statsToPush = make(map[string]map[string]string)
 	statsForEventAnalyse := make(map[string]float64)
 	cluster.StorageProfileUsage = make(map[string]models.Utilization)
@@ -426,35 +504,35 @@ func FetchStorageProfileUtilizations(ctxt string, osdDetails []backend.OSDDetail
 	}
 	currentTimeStamp := strconv.FormatInt(time.Now().Unix(), 10)
 	metric_prefix := monitoringConfig.CollectionName + "." + strings.Replace(cluster.Name, ".", "_", -1) + "." + skyring_monitoring.STORAGE_PROFILE_UTILIZATION + "_"
-	var spFree uint64
-	var spUsed uint64
+	var spFree int64
+	var spUsed int64
 	for _, slu := range slus {
-		for _, osdDetail := range osdDetails {
+		for _, osdDetail := range osdDetails.OSDs {
 			if osdDetail.Name == slu.Name {
 
 				metric_name := metric_prefix + strings.Replace(slu.StorageProfile, ".", "_", -1) + "."
 				if utilization, ok := statsToPush[metric_name+skyring_monitoring.USED_SPACE]; ok {
-					existingUtilization, err := strconv.ParseUint(utilization[currentTimeStamp], 10, 64)
+					existingUtilization, err := strconv.ParseInt(utilization[currentTimeStamp], 10, 64)
 					if err != nil {
 						return nil, fmt.Errorf("Error fetching osd stats for cluster %v. Error %v", cluster.Name, err), []models.Event{}
 					}
-					spUsed = osdDetail.Used + existingUtilization
-					statsToPush[metric_name+skyring_monitoring.USED_SPACE] = map[string]string{currentTimeStamp: strconv.FormatUint(spUsed, 10)}
+					spUsed = (osdDetail.Used * 1024) + existingUtilization
+					statsToPush[metric_name+skyring_monitoring.USED_SPACE] = map[string]string{currentTimeStamp: strconv.FormatInt(spUsed, 10)}
 				} else {
-					spUsed = osdDetail.Used
-					statsToPush[metric_name+skyring_monitoring.USED_SPACE] = map[string]string{currentTimeStamp: strconv.FormatUint(spUsed, 10)}
+					spUsed = osdDetail.Used * 1024
+					statsToPush[metric_name+skyring_monitoring.USED_SPACE] = map[string]string{currentTimeStamp: strconv.FormatInt(spUsed, 10)}
 				}
 
 				if utilization, ok := statsToPush[metric_name+skyring_monitoring.FREE_SPACE]; ok {
-					existingUtilization, err := strconv.ParseUint(utilization[currentTimeStamp], 10, 64)
+					existingUtilization, err := strconv.ParseInt(utilization[currentTimeStamp], 10, 64)
 					if err != nil {
 						return nil, fmt.Errorf("Error fetching osd stats for cluster %v. Error %v", cluster.Name, err), []models.Event{}
 					}
-					spFree = osdDetail.Available + existingUtilization
-					statsToPush[metric_name+skyring_monitoring.FREE_SPACE] = map[string]string{currentTimeStamp: strconv.FormatUint(spFree, 10)}
+					spFree = (osdDetail.Available * 1024) + existingUtilization
+					statsToPush[metric_name+skyring_monitoring.FREE_SPACE] = map[string]string{currentTimeStamp: strconv.FormatInt(spFree, 10)}
 				} else {
-					spFree = osdDetail.Available
-					statsToPush[metric_name+skyring_monitoring.FREE_SPACE] = map[string]string{currentTimeStamp: strconv.FormatUint(spFree, 10)}
+					spFree = osdDetail.Available * 1024
+					statsToPush[metric_name+skyring_monitoring.FREE_SPACE] = map[string]string{currentTimeStamp: strconv.FormatInt(spFree, 10)}
 				}
 				var percentUsed float64
 				if spUsed+spFree > 0 {
@@ -522,16 +600,30 @@ func FetchRBDStats(ctxt string, cluster models.Cluster, monName string) (map[str
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
 	var err_str string
 	currentTimeStamp := strconv.FormatInt(time.Now().Unix(), 10)
+	var statistics RBDStats
 	for _, pool := range pools {
 		metric_name := fmt.Sprintf("%s.%s.%s.%s.", monitoringConfig.CollectionName, strings.Replace(cluster.Name, ".", "_", -1), strings.Replace(pool.Name, ".", "_", -1), models.COLL_NAME_BLOCK_DEVICES)
-		statistics, statsFetchErr := salt_backend.GetRBDStats(monName, pool.Name, cluster.Name, ctxt)
-		if statsFetchErr != nil {
-			err_str = fmt.Sprintf("%s.Unable to fetch rbd stats from mon %v of pool %v, cluster %v.Error: %v",
-				err_str, monName, pool.Name, cluster.Name, statsFetchErr)
+		response, isSuccess := getStatsFromCalamariApi(ctxt,
+			monName,
+			cluster.ClusterId,
+			map[string]string{"clusterName": cluster.Name, "poolName": pool.Name},
+			skyring_monitoring.BLOCK_DEVICE_UTILIZATION)
+
+		if !isSuccess {
+			/*
+				Already generically handled in above getStatsFromCalamariApi function.
+				So just a process next item.
+			*/
+
 			continue
 		}
+
+		if err := json.Unmarshal([]byte(response), &statistics); err != nil {
+			return nil, fmt.Errorf("%s - Failed to fetch rbd stats from pool %v, cluster %v.Could not unmarshal %v.Error %v", ctxt, pool.Name, cluster.Name, response, err)
+		}
+
 		rbdColl := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_BLOCK_DEVICES)
-		for _, rbdStat := range statistics {
+		for _, rbdStat := range statistics.RBDs {
 			metric_name = fmt.Sprintf("%s%s.", metric_name, strings.Replace(rbdStat.Name, ".", "_", -1))
 			var percent_used float64
 			if rbdStat.Total > 0 {
@@ -570,9 +662,24 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
 
-	statistics, statsFetchErr := salt_backend.GetClusterStats(monName, cluster.Name, ctxt)
-	if statsFetchErr != nil {
-		return nil, fmt.Errorf("Unable to fetch cluster stats from mon %v of cluster %v.Error: %v", monName, cluster.Name, statsFetchErr)
+	var statistics ClusterStats
+	response, isSuccess := getStatsFromCalamariApi(ctxt,
+		monName,
+		cluster.ClusterId,
+		map[string]string{"clusterName": cluster.Name},
+		skyring_monitoring.CLUSTER_UTILIZATION)
+
+	if !isSuccess {
+		/*
+			Already generically handled in above getStatsFromCalamariApi function.
+			So just a return from this function is required here.
+		*/
+
+		return nil, nil
+	}
+
+	if err := json.Unmarshal([]byte(response), &statistics); err != nil {
+		return nil, fmt.Errorf("%s - Failed to fetch cluster stats from cluster %v.Could not unmarshal %v.Error %v", ctxt, cluster.Name, response, err)
 	}
 
 	metrics := make(map[string]map[string]string)
@@ -580,13 +687,13 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 
 	metric_name := fmt.Sprintf("%s.%s.%s.", monitoringConfig.CollectionName, strings.Replace(cluster.Name, ".", "_", -1), skyring_monitoring.CLUSTER_UTILIZATION)
 
-	metrics[metric_name+skyring_monitoring.USED_SPACE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", statistics.Used)}
-	metrics[metric_name+skyring_monitoring.FREE_SPACE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", statistics.Available)}
-	metrics[metric_name+skyring_monitoring.TOTAL_SPACE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", statistics.Total)}
+	metrics[metric_name+skyring_monitoring.USED_SPACE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", statistics.Stats.Used)}
+	metrics[metric_name+skyring_monitoring.FREE_SPACE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", statistics.Stats.Available)}
+	metrics[metric_name+skyring_monitoring.TOTAL_SPACE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", statistics.Stats.Total)}
 
 	percentUsed := 0.0
-	if statistics.Total != 0 {
-		percentUsed = (float64(statistics.Used*100) / float64(statistics.Total))
+	if statistics.Stats.Total != 0 {
+		percentUsed = (float64(statistics.Stats.Used*100) / float64(statistics.Stats.Total))
 	}
 	metrics[metric_name+skyring_monitoring.USAGE_PERCENTAGE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", percentUsed)}
 	if err := updateDB(
@@ -594,8 +701,8 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 		bson.M{
 			"$set": bson.M{
 				"usage": models.Utilization{
-					Used:        statistics.Used,
-					Total:       statistics.Total,
+					Used:        statistics.Stats.Used,
+					Total:       statistics.Stats.Total,
 					PercentUsed: percentUsed}}},
 		models.COLL_NAME_STORAGE_CLUSTERS); err != nil {
 		logger.Get().Error("%s-Updating the cluster statistics to db for the cluster %v failed.Error %v", ctxt, cluster.Name, err.Error())
@@ -613,8 +720,8 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 
 	collection := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
 	for _, poolStat := range statistics.Pools {
-		used := poolStat.Used
-		total := poolStat.Used + poolStat.Available
+		used := poolStat.PoolUtilization.Used
+		total := poolStat.PoolUtilization.Used + poolStat.PoolUtilization.Available
 		percentUsed := 0.0
 		if total != 0 {
 			percentUsed = (float64(used*100) / float64(total))
