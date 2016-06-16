@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_5cd099c9",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 395,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-16T20:47:44Z",
+      "side": 1,
+      "message": "time stamp as is instead of string?",
+      "range": {
+        "startLine": 395,
+        "startChar": 16,
+        "endLine": 395,
+        "endChar": 26
+      },
+      "revId": "69610c8b4ff83522c8ae568cc7f1cf7a8eeb3154",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
