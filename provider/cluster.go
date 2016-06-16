@@ -55,6 +55,7 @@ const (
 	JOURNALSIZE         = 5120
 	MAX_JOURNALS_ON_SSD = 4
 	MIN_MON_IN_CLUSTER  = 3
+	BYTE_TO_TB          = 1099511627776
 )
 
 type JournalDetail struct {
@@ -1991,14 +1992,12 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 	coll_slu := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
 	coll_nodes := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 
+	slusFound := make(map[string]models.StorageLogicalUnit)
 	for _, osd := range osds {
 		// Get the node details for SLU
 		var node models.Node
 		if err := coll_nodes.Find(
-			bson.M{"hostname": bson.M{
-				"$regex":   osd.Server,
-				"$options": "$i"}}).One(&node); err != nil {
-
+			bson.M{"hostname": osd.Server}).One(&node); err != nil {
 			logger.Get().Error(
 				"%s-Error fetching node details for SLU id: %d on cluster: %v. error: %v",
 				ctxt,
@@ -2049,10 +2048,29 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 					"clusterid":      clusterId,
 					"options.device": deviceDetails.DevName}, slu); err != nil {
 				logger.Get().Error("%s-Error updating the slu: %s. error: %v", ctxt, osd.Uuid.String(), err)
+				slusFound[fmt.Sprintf("%s:%s", node.NodeId.String(), deviceDetails.DevName)] = slu
 				continue
 			}
 
 			logger.Get().Info("%s-Updated the slu: osd.%d on cluster: %v", ctxt, osd.Id, clusterId)
+			slusFound[fmt.Sprintf("%s:%s", node.NodeId.String(), deviceDetails.DevName)] = slu
+		}
+	}
+	//If some slus are remaining in the list, those should be deleted as it is not found in cluster
+	for key, slu := range slus {
+		if _, ok := slusFound[key]; !ok {
+			logger.Get().Info("%s-SLU:%v not found in cluster, removing from DB", ctxt, slu)
+			if err := coll_slu.Remove(
+				bson.M{
+					"nodeid":         slu.NodeId,
+					"clusterid":      slu.ClusterId,
+					"options.device": slu.Options["device"]}); err != nil {
+				logger.Get().Info(
+					"%s-Error removing the slu for cluster: %v. error: %v",
+					ctxt,
+					slu.ClusterId,
+					err)
+			}
 		}
 	}
 	return nil
@@ -2178,14 +2196,19 @@ func updateCrushMap(ctxt string, mon string, clusterId uuid.UUID) error {
 			}
 			nodeName := fmt.Sprintf("%s-%s", node.Hostname, sprof.Name)
 			cNode := backend.CrushNodeRequest{BucketType: "host", Name: nodeName}
-			var pos int
+			var (
+				pos        int
+				nodeWeight float64
+			)
 			for _, cslu := range cslus {
 				if cslu.Name == "" {
 					continue
 				}
 				id, _ := strconv.Atoi(strings.Split(cslu.Name, `.`)[1])
-				item := backend.CrushItem{Id: id, Pos: pos}
+				weight := float64(cslu.StorageDeviceSize) / BYTE_TO_TB
+				item := backend.CrushItem{Id: id, Pos: pos, Weight: weight}
 				cNode.Items = append(cNode.Items, item)
+				nodeWeight += weight
 				pos++
 			}
 			cNodeId, err := cephapi_backend.CreateCrushNode(mon, clusterId, cNode, ctxt)
@@ -2194,7 +2217,7 @@ func updateCrushMap(ctxt string, mon string, clusterId uuid.UUID) error {
 				continue
 			}
 			//Get the created crushnode and add to the root bucket
-			ritem := backend.CrushItem{Id: cNodeId, Pos: rpos}
+			ritem := backend.CrushItem{Id: cNodeId, Pos: rpos, Weight: nodeWeight}
 			cRootNode.Items = append(cRootNode.Items, ritem)
 			rpos++
 		}
@@ -2280,7 +2303,9 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID, sluList map[string]m
 		var (
 			found    bool
 			nodeName string
+			rootNode string
 		)
+		nodeWeight := calculateCrushRootWeight(ctxt, cNode)
 		for key, slu := range slus {
 			if slu.Name == "" {
 				delete(slus, key)
@@ -2289,9 +2314,12 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID, sluList map[string]m
 			nodeName = fmt.Sprintf("%s-%s", slu.Options["node"], slu.StorageProfile)
 			if cNode.Name == nodeName {
 				id, _ := strconv.Atoi(strings.Split(slu.Name, `.`)[1])
-				item := backend.CrushItem{Id: id, Pos: len(cNode.Items)}
+				weight := float64(slu.StorageDeviceSize) / BYTE_TO_TB
+				item := backend.CrushItem{Id: id, Pos: len(cNode.Items), Weight: weight}
 				cNode.Items = append(cNode.Items, item)
 				found = true
+				rootNode = slu.StorageProfile
+				nodeWeight += weight
 				delete(slus, key)
 			}
 		}
@@ -2304,6 +2332,11 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID, sluList map[string]m
 			_, err := cephapi_backend.PatchCrushNode(monnode.Hostname, clusterId, cNode.Id, params, ctxt)
 			if err != nil {
 				logger.Get().Error("Failed to update Crush node for cluster: %s. error: %v", clusterId, err)
+				continue
+			}
+			err = setCrushRootWeight(ctxt, cNodes, rootNode, nodeWeight, cNode.Id, monnode.Hostname, clusterId)
+			if err != nil {
+				logger.Get().Error("Failed to update Crush node weight for cluster: %s. error: %v", clusterId, err)
 				continue
 			}
 		}
@@ -2347,7 +2380,10 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID, sluList map[string]m
 		for _, node := range nodes {
 			nodeName := fmt.Sprintf("%s-%s", node.Hostname, sprof.Name)
 			cNode := backend.CrushNodeRequest{BucketType: "host", Name: nodeName}
-			var pos int
+			var (
+				pos        int
+				nodeWeight float64
+			)
 			for key, slu := range slus {
 				if slu.Name == "" {
 					delete(slus, key)
@@ -2355,9 +2391,11 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID, sluList map[string]m
 				}
 				if node.Hostname == slu.Options["node"] && sprof.Name == slu.StorageProfile {
 					id, _ := strconv.Atoi(strings.Split(slu.Name, `.`)[1])
-					item := backend.CrushItem{Id: id, Pos: pos}
+					weight := float64(slu.StorageDeviceSize) / BYTE_TO_TB
+					item := backend.CrushItem{Id: id, Pos: pos, Weight: weight}
 					cNode.Items = append(cNode.Items, item)
 					pos++
+					nodeWeight += weight
 					delete(slus, key)
 				}
 			}
@@ -2370,7 +2408,7 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID, sluList map[string]m
 				var rootNodeFound bool
 				for _, crNode := range cNodes {
 					if crNode.Name == sprof.Name {
-						item := backend.CrushItem{Id: cNodeId, Pos: len(crNode.Items)}
+						item := backend.CrushItem{Id: cNodeId, Pos: len(crNode.Items), Weight: nodeWeight}
 						crNode.Items = append(crNode.Items, item)
 						params := map[string]interface{}{
 							"bucket_type": crNode.BucketType,
@@ -2388,7 +2426,7 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID, sluList map[string]m
 				//create root as it is not found in the list
 				if !rootNodeFound {
 					nNode := backend.CrushNodeRequest{BucketType: "root", Name: sprof.Name}
-					item := backend.CrushItem{Id: cNodeId, Pos: len(nNode.Items)}
+					item := backend.CrushItem{Id: cNodeId, Pos: len(nNode.Items), Weight: nodeWeight}
 					nNode.Items = append(nNode.Items, item)
 					nNodeId, err := cephapi_backend.CreateCrushNode(monnode.Hostname, clusterId, nNode, ctxt)
 					if err != nil {
@@ -2455,4 +2493,37 @@ func createCrushRule(ctxt string, name string, ruleset int, cnodeName string, cN
 		return cRuleId, err
 	}
 	return cRuleId, err
+}
+
+func setCrushRootWeight(ctxt string, cNodes []backend.CrushNode, rootNode string, weight float64, cNodeId int, mon string, clusterId uuid.UUID) error {
+	for _, crNode := range cNodes {
+		if crNode.Name == rootNode {
+			for _, item := range crNode.Items {
+				if item.Id == cNodeId {
+					item.Weight = weight
+					break
+				}
+			}
+			params := map[string]interface{}{
+				"bucket_type": crNode.BucketType,
+				"name":        crNode.Name,
+				"items":       crNode.Items,
+			}
+			_, err := cephapi_backend.PatchCrushNode(mon, clusterId, crNode.Id, params, ctxt)
+			if err != nil {
+				logger.Get().Error("%s-Failed to update Crush weight for cluster: %s. error: %v", ctxt, clusterId, err)
+				return err
+			}
+			break
+		}
+	}
+	return nil
+}
+
+func calculateCrushRootWeight(ctxt string, cNode backend.CrushNode) float64 {
+	var weight float64
+	for _, item := range cNode.Items {
+		weight += item.Weight
+	}
+	return weight
 }
