@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_bcf8c54a",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 57,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-06-16T20:56:20Z",
+      "side": 1,
+      "message": "nodes itself as in the json response",
+      "parentUuid": "baa041b7_3c5ef576",
+      "range": {
+        "startLine": 57,
+        "startChar": 10,
+        "endLine": 57,
+        "endChar": 15
+      },
+      "revId": "c5d9d2e600739f6c52654b5abcb1673a508262b3",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_bc4a05ab",
         "filename": "provider/monitoring.go",
         "patchSetId": 1
