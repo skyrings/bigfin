@@ -54,6 +54,7 @@ const (
 	OSD                 = "OSD"
 	JOURNALSIZE         = 5120
 	MAX_JOURNALS_ON_SSD = 4
+	BYTE_TO_TB          = 1099511627776
 )
 
 type JournalDetail struct {
@@ -1973,7 +1974,7 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 		var node models.Node
 		if err := coll_nodes.Find(
 			bson.M{"hostname": bson.M{
-				"$regex":   osd.Server,
+				"$regex":   fmt.Sprintf("%s.*", osd.Server),
 				"$options": "$i"}}).One(&node); err != nil {
 
 			logger.Get().Error(
@@ -2026,10 +2027,28 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 					"clusterid":      clusterId,
 					"options.device": deviceDetails.DevName}, slu); err != nil {
 				logger.Get().Error("%s-Error updating the slu: %s. error: %v", ctxt, osd.Uuid.String(), err)
+				delete(slus, fmt.Sprintf("%s:%s", node.NodeId.String(), deviceDetails.DevName))
 				continue
 			}
 
 			logger.Get().Info("%s-Updated the slu: osd.%d on cluster: %v", ctxt, osd.Id, clusterId)
+			delete(slus, fmt.Sprintf("%s:%s", node.NodeId.String(), deviceDetails.DevName))
+		}
+	}
+	//If some slus are remaining in the list, those should be deleted as it is not found in cluster
+	logger.Get().Info("%s-SLUs:%v are not found in cluster, removing from DB", ctxt, slus)
+	for _, slu := range slus {
+
+		if err := coll_slu.Remove(
+			bson.M{
+				"nodeid":         slu.NodeId,
+				"clusterid":      slu.ClusterId,
+				"options.device": slu.Options["device"]}); err != nil {
+			logger.Get().Info(
+				"%s-Error removing the slu for cluster: %v. error: %v",
+				ctxt,
+				slu.ClusterId,
+				err)
 		}
 	}
 	return nil
@@ -2155,26 +2174,33 @@ func updateCrushMap(ctxt string, mon string, clusterId uuid.UUID) error {
 			}
 			nodeName := fmt.Sprintf("%s-%s", node.Hostname, sprof.Name)
 			cNode := backend.CrushNodeRequest{BucketType: "host", Name: nodeName}
-			var pos int
+			var (
+				pos        int
+				nodeWeight float64
+			)
 			for _, cslu := range cslus {
 				if cslu.Name == "" {
 					continue
 				}
 				id, _ := strconv.Atoi(strings.Split(cslu.Name, `.`)[1])
-				item := backend.CrushItem{Id: id, Pos: pos}
+				weight := float64(cslu.StorageDeviceSize) / BYTE_TO_TB
+				item := backend.CrushItem{Id: id, Pos: pos, Weight: weight}
 				cNode.Items = append(cNode.Items, item)
+				nodeWeight += weight
 				pos++
 			}
+			logger.Get().Error("$$$$$$$CNODE: %v", cNode)
 			cNodeId, err := cephapi_backend.CreateCrushNode(mon, clusterId, cNode, ctxt)
 			if err != nil {
 				logger.Get().Error("Failed to create Crush node for cluster: %s. error: %v", clusterId, err)
 				continue
 			}
 			//Get the created crushnode and add to the root bucket
-			ritem := backend.CrushItem{Id: cNodeId, Pos: rpos}
+			ritem := backend.CrushItem{Id: cNodeId, Pos: rpos, Weight: nodeWeight}
 			cRootNode.Items = append(cRootNode.Items, ritem)
 			rpos++
 		}
+		logger.Get().Error("$$$$$$$CROOTNODE: %v", cRootNode)
 		cRootNodeId, err := cephapi_backend.CreateCrushNode(mon, clusterId, cRootNode, ctxt)
 		if err != nil {
 			logger.Get().Error("Failed to create Crush node for cluster: %s. error: %v", clusterId, err)
