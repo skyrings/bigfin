@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_a3ac278d",
+        "filename": "conf/ceph.conf",
+        "patchSetId": 1
+      },
+      "lineNbr": 15,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-16T12:42:36Z",
+      "side": 1,
+      "message": "This is configurable in UI as well. What if there is a mismatch between the values??",
+      "range": {
+        "startLine": 15,
+        "startChar": 9,
+        "endLine": 15,
+        "endChar": 32
+      },
+      "revId": "d9013ab11179eeb7a5ec85513f0cdfb03878bf53",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
