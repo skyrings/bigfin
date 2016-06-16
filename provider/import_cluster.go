@@ -264,10 +264,22 @@ func (s *CephProvider) ImportCluster(req models.RpcRequest, resp *models.RpcResp
 		for _, notification := range bigfin_models.NOTIFICATIONS_SUPPORTED {
 			bigfin_notifications = append(bigfin_notifications, models.NotificationSubscription{
 				Name:    notification,
+				Enabled: true,
+			})
+		}
+		for _, notification := range bigfin_models.NOTIFICATIONS_UNSUPPORTED {
+			bigfin_notifications = append(bigfin_notifications, models.NotificationSubscription{
+				Name:    notification,
 				Enabled: false,
 			})
 		}
 		for _, notification := range models.NOTIFICATIONS_SUPPORTED {
+			bigfin_notifications = append(bigfin_notifications, models.NotificationSubscription{
+				Name:    notification,
+				Enabled: true,
+			})
+		}
+		for _, notification := range models.NOTIFICATIONS_UNSUPPORTED {
 			bigfin_notifications = append(bigfin_notifications, models.NotificationSubscription{
 				Name:    notification,
 				Enabled: false,
