@@ -54,6 +54,7 @@ const (
 	OSD                 = "OSD"
 	JOURNALSIZE         = 5120
 	MAX_JOURNALS_ON_SSD = 4
+	MIN_MON_IN_CLUSTER  = 3
 )
 
 type JournalDetail struct {
@@ -113,18 +114,26 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 	}
 
 	nodeRoleMapFromRequest := make(map[string][]string)
-	var flag bool
+	var mon_count int
 
 	for _, req_node := range request.Nodes {
 		if util.StringInSlice("MON", req_node.NodeType) {
-			flag = true
+			mon_count += 1
 		}
 		nodeRoleMapFromRequest[req_node.NodeId] = req_node.NodeType
 	}
-	if !flag {
-		logger.Get().Error(fmt.Sprintf("%s-No mons mentioned in the node list while create cluster %s", ctxt, request.Name))
-		*resp = utils.WriteResponse(http.StatusInternalServerError, "No mons mentioned in the node list")
-		return errors.New(fmt.Sprintf("No mons mentioned in the node list while create cluster %s", request.Name))
+	var min_mon_in_cluster int
+	if val, ok := bigfin_conf.ProviderConfig.ProviderOptions["min_monitors_in_cluster"]; !ok {
+		min_mon_in_cluster = MIN_MON_IN_CLUSTER
+	} else {
+		min_mon_in_cluster = int(val.(float64))
+	}
+
+	if mon_count < min_mon_in_cluster {
+		logger.Get().Error(fmt.Sprintf("%s-Monitor count is less than Minimun required(%v) to create cluster. %s", ctxt, min_mon_in_cluster,
+			request.Name))
+		*resp = utils.WriteResponse(http.StatusInternalServerError, "Monitor count less than minimum required")
+		return errors.New(fmt.Sprintf("Monitor count less than minimum required(%v). %s", min_mon_in_cluster, request.Name))
 	}
 
 	asyncTask := func(t *task.Task) {
