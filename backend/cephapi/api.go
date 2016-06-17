@@ -113,8 +113,7 @@ func (c CephApi) CreateECPool(
 	createPoolRoute.Pattern = strings.Replace(createPoolRoute.Pattern, "{cluster-fsid}", cluster_id, 1)
 
 	pool := map[string]interface{}{
-		"name":                 name,
-		"size":                 replicas,
+		"name": name,
 		"quota_max_objects":    quotaMaxObjects,
 		"quota_max_bytes":      quotaMaxBytes,
 		"pg_num":               int(pgnum),
