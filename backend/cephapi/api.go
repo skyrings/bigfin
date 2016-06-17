@@ -114,7 +114,6 @@ func (c CephApi) CreateECPool(
 
 	pool := map[string]interface{}{
 		"name":                 name,
-		"size":                 replicas,
 		"quota_max_objects":    quotaMaxObjects,
 		"quota_max_bytes":      quotaMaxBytes,
 		"pg_num":               int(pgnum),
