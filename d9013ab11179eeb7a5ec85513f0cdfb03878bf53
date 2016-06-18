@@ -70,6 +70,29 @@
       "revId": "d9013ab11179eeb7a5ec85513f0cdfb03878bf53",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_1679c82f",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-18T07:52:35Z",
+      "side": 1,
+      "message": "There is mismatch in name of the attribute. It should be \"min_monitors_in_cluster\" as defined in conf file. It would have worked in your verification due to default assignment to 3. \n\nYou should verify with value as 2 or 1 in conf file as well.",
+      "range": {
+        "startLine": 126,
+        "startChar": 59,
+        "endLine": 126,
+        "endChar": 77
+      },
+      "revId": "d9013ab11179eeb7a5ec85513f0cdfb03878bf53",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
