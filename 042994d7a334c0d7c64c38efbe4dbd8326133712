@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_56d510b7",
+        "filename": "provider/cluster.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 2054,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-18T11:22:49Z",
+      "side": 1,
+      "message": "ctxt is not used any log messages here",
+      "range": {
+        "startLine": 2054,
+        "startChar": 5,
+        "endLine": 2054,
+        "endChar": 18
+      },
+      "revId": "042994d7a334c0d7c64c38efbe4dbd8326133712",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
