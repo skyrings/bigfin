@@ -777,7 +777,8 @@ func syncStorageNodes(mon string, clusterId uuid.UUID, ctxt string) error {
 		var updates bson.M = make(map[string]interface{})
 		for _, service := range node.Services {
 			if err := coll.Find(bson.M{"hostname": bson.M{
-				"$regex": fmt.Sprintf("%s.*", node.FQDN)}}).One(&fetchedNode); err != nil {
+				"$regex":   node.FQDN,
+				"$options": "$i"}}).One(&fetchedNode); err != nil {
 				logger.Get().Warning(
 					"%s-Failed to update OSD role for node: %s. error: %v",
 					ctxt,
