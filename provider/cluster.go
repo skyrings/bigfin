@@ -232,7 +232,7 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 					}
 				}
 
-				if err := CreateClusterUsingInstaller(cluster_uuid, request, nodes, node_ips, t, ctxt); err != nil {
+				if err := CreateClusterUsingInstaller(cluster_uuid, request, nodes, node_ips, t, min_mon_in_cluster, ctxt); err != nil {
 
 					utils.FailTask(fmt.Sprintf("%s-Cluster creation failed for %s", ctxt, request.Name), err, t)
 					setClusterState(*cluster_uuid, models.CLUSTER_STATE_FAILED, ctxt)
@@ -416,7 +416,7 @@ func validateClusterNodes(nodes map[uuid.UUID]models.Node, ctxt string) error {
 
 func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClusterRequest,
 	nodes map[uuid.UUID]models.Node, node_ips map[uuid.UUID]map[string]string,
-	t *task.Task, ctxt string) error {
+	t *task.Task, min_mon_in_cluster int, ctxt string) error {
 
 	var (
 		clusterMons               []map[string]interface{}
@@ -467,8 +467,8 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 
 	if len(failedMons) > 0 {
 		t.UpdateStatus(fmt.Sprintf("Failed to add mon(s) %v", failedMons))
-		if len(succeededMons) == 0 {
-			return errors.New("Cluster creation failed. All mons failed")
+		if len(succeededMons) < min_mon_in_cluster {
+			return errors.New("Cluster creation failed. Minimum number of mons not created")
 		}
 	}
 
