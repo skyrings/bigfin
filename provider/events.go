@@ -649,6 +649,16 @@ func ceph_mon_property_changed_handler(event models.AppEvent, ctxt string) (mode
 			" event:%v .Error: %v", ctxt, event.EventId, err)
 		return event, err
 	}
+
+	if err = common_event.UpdateNodeAlarmCount(
+		event,
+		clearedSeverity,
+		ctxt); err != nil {
+		logger.Get().Error("%s-Could not update Alarm state and"+
+			" count for event:%v .Error: %v", ctxt, event.EventId, err)
+		return event, err
+	}
+
 	return event, nil
 }
 
