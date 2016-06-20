@@ -1529,7 +1529,7 @@ func ExpandClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 					t.UpdateStatus(fmt.Sprintf("Failed to add MON node: %v", req_node.NodeId))
 					continue
 				}
-				mon["calamari"] = true
+				mon["calamari"] = false
 				mon["host"] = nodes[*nodeid].Hostname
 				mon["address"] = node_ips[*nodeid]["cluster"]
 				mon["fsid"] = cluster_uuid.String()
@@ -1568,8 +1568,9 @@ func ExpandClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 			if err := coll_nodes.Update(
 				bson.M{"hostname": mon},
 				bson.M{"$set": bson.M{
-					"clusterid":   *cluster_uuid,
-					"options.mon": "Y"}}); err != nil {
+					"clusterid":        *cluster_uuid,
+					"options.mon":      "Y",
+					"options.calamari": "N"}}); err != nil {
 				return err
 			}
 			logger.Get().Info(fmt.Sprintf("%s-Added mon node: %s", ctxt, mon))
