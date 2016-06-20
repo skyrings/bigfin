@@ -235,7 +235,6 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 				if err := CreateClusterUsingInstaller(cluster_uuid, request, nodes, node_ips, t, ctxt); err != nil {
 
 					utils.FailTask(fmt.Sprintf("%s-Cluster creation failed for %s", ctxt, request.Name), err, t)
-					setClusterState(*cluster_uuid, models.CLUSTER_STATE_FAILED, ctxt)
 					return
 				}
 
@@ -465,10 +464,16 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 		}
 	}
 
+	var min_mon_in_cluster int
+	if val, ok := bigfin_conf.ProviderConfig.ProviderOptions["min_monitors_in_cluster"]; !ok {
+		min_mon_in_cluster = MIN_MON_IN_CLUSTER
+	} else {
+		min_mon_in_cluster = int(val.(float64))
+	}
 	if len(failedMons) > 0 {
 		t.UpdateStatus(fmt.Sprintf("Failed to add mon(s) %v", failedMons))
-		if len(succeededMons) == 0 {
-			return errors.New("Cluster creation failed. All mons failed")
+		if len(succeededMons) < min_mon_in_cluster {
+			return errors.New("Cluster creation failed. Minimum number of mons not created")
 		}
 	}
 
