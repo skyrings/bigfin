@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_99a9887e",
+        "filename": "provider/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 422,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-20T10:04:51Z",
+      "side": 1,
+      "message": "Actually with fully qualified names with domain name, we dont need this regex as well. We can just say \n\nbson{\"hostname\": osd.Server}\n\napplies to all other location also. Please correct and verify..",
+      "range": {
+        "startLine": 422,
+        "startChar": 46,
+        "endLine": 422,
+        "endChar": 92
+      },
+      "revId": "2819b465a7be9ef1afeccc88f7d8f220cf042594",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
