@@ -85,12 +85,11 @@ func GetCalamariMonNode(clusterId uuid.UUID, ctxt string) (*models.Node, error) 
 	defer sessionCopy.Close()
 	var calamariMonNode models.Node
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
-	err := coll.
-		Find(bson.M{
+	err := coll.Find(
+		bson.M{
 			"clusterid":        clusterId,
 			"options.mon":      models.Yes,
-			"options.calamari": models.Yes}).
-		One(&calamariMonNode)
+			"options.calamari": models.Yes}).One(&calamariMonNode)
 	if err == nil {
 		// Check availability of calamari
 		dummyUrl := fmt.Sprintf(
@@ -115,12 +114,11 @@ func GetCalamariMonNode(clusterId uuid.UUID, ctxt string) (*models.Node, error) 
 	}
 
 	var monNodes models.Nodes
-	if err := coll.
-		Find(bson.M{
+	if err := coll.Find(
+		bson.M{
 			"clusterid":        clusterId,
 			"options.mon":      models.Yes,
-			"options.calamari": "N"}).
-		All(&monNodes); err != nil {
+			"options.calamari": "N"}).All(&monNodes); err != nil {
 		return nil, err
 	}
 	logger.Get().Error("Mon length: %d", len(monNodes))
