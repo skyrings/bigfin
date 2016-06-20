@@ -386,7 +386,11 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 		if _, ok := fetchedSlusMap[fmt.Sprintf("%s:%s", node.NodeId.String(), deviceDetails.DevName)]; ok {
 			status := mapOsdStatus(osd.Up, osd.In)
 			state := mapOsdState(osd.In)
-			skyring_util.AppendServiceToNode(bson.M{"nodeid": node.NodeId}, fmt.Sprintf("%s-%s", bigfinmodels.NODE_SERVICE_OSD, fmt.Sprintf("osd.%d", osd.Id)), mapOSDStatusToServiceStatus(state), ctxt)
+			osdStatus := models.STATUS_DOWN
+			if osd.Up {
+				osdStatus = models.STATUS_UP
+			}
+			skyring_util.AppendServiceToNode(bson.M{"nodeid": node.NodeId}, fmt.Sprintf("%s-%s", bigfinmodels.NODE_SERVICE_OSD, fmt.Sprintf("osd.%d", osd.Id)), osdStatus, ctxt)
 			if err := coll_slu.Update(
 				bson.M{
 					"name":      fmt.Sprintf("osd.%d", osd.Id),
@@ -795,7 +799,11 @@ func syncStorageNodes(mon string, clusterId uuid.UUID, ctxt string) error {
 				if ok := skyring_util.StringInSlice(MON, nodeRoles); !ok {
 					updates["roles"] = append(nodeRoles, MON)
 				}
-				skyring_util.AppendServiceToNode(bson.M{"hostname": fetchedNode.Hostname}, bigfinmodels.NODE_SERVICE_MON, models.STATUS_UP, ctxt)
+				monStatus := models.STATUS_DOWN
+				if service.Running {
+					monStatus = models.STATUS_UP
+				}
+				skyring_util.AppendServiceToNode(bson.M{"hostname": fetchedNode.Hostname}, bigfinmodels.NODE_SERVICE_MON, monStatus, ctxt)
 				if err := coll.Update(
 					bson.M{"hostname": fetchedNode.Hostname},
 					bson.M{"$set": updates}); err != nil {
@@ -804,6 +812,11 @@ func syncStorageNodes(mon string, clusterId uuid.UUID, ctxt string) error {
 				succeededNodes = append(succeededNodes, node.Hostname)
 			}
 			if service.Type == bigfin_models.NODE_SERVICE_OSD {
+				osdStatus := models.STATUS_DOWN
+				if service.Running {
+					osdStatus = models.STATUS_UP
+				}
+				skyring_util.AppendServiceToNode(bson.M{"hostname": fetchedNode.Hostname}, bigfinmodels.NODE_SERVICE_MON, osdStatus, ctxt)
 				if ok := skyring_util.StringInSlice(OSD, nodeRoles); !ok {
 					if err := coll.Update(
 						bson.M{"hostname": fetchedNode.Hostname},

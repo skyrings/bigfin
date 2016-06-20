@@ -1753,7 +1753,11 @@ func (s *CephProvider) UpdateStorageLogicalUnitParams(req models.RpcRequest, res
 				/*
 					Update the service list according to slu state
 				*/
-				util.AppendServiceToNode(bson.M{"nodeid": slu.NodeId}, fmt.Sprintf("%s-%s", bigfinmodels.NODE_SERVICE_OSD, slu.Name), mapOSDStatusToServiceStatus(slu.State), ctxt)
+				osdStatus := models.STATUS_DOWN
+				if fetchedOSD.Up {
+					osdStatus = models.STATUS_UP
+				}
+				util.AppendServiceToNode(bson.M{"nodeid": slu.NodeId}, fmt.Sprintf("%s-%s", bigfinmodels.NODE_SERVICE_OSD, slu.Name), osdStatus, ctxt)
 
 				coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
 
@@ -1781,15 +1785,6 @@ func (s *CephProvider) UpdateStorageLogicalUnitParams(req models.RpcRequest, res
 		*resp = utils.WriteAsyncResponse(taskId, fmt.Sprintf("Task Created for update OSD %s on cluster: %v", *slu_id, *cluster_id), []byte{})
 	}
 	return nil
-}
-
-func mapOSDStatusToServiceStatus(status string) string {
-	switch status {
-	case bigfinmodels.OSD_STATE_IN:
-		return models.STATUS_UP
-	default:
-		return models.STATUS_DOWN
-	}
 }
 
 func (s *CephProvider) SyncStorageLogicalUnitParams(req models.RpcRequest, resp *models.RpcResponse) error {
@@ -2041,7 +2036,11 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 			slu.Options["journal"] = journalDetail
 
 			//Update Service list in accordance with new slu state
-			util.AppendServiceToNode(bson.M{"nodeid": node.NodeId}, fmt.Sprintf("%s-%s", bigfinmodels.NODE_SERVICE_OSD, slu.Name), mapOSDStatusToServiceStatus(slu.State), ctxt)
+			osdStatus := models.STATUS_DOWN
+			if osd.Up {
+				osdStatus = models.STATUS_UP
+			}
+			util.AppendServiceToNode(bson.M{"nodeid": node.NodeId}, fmt.Sprintf("%s-%s", bigfinmodels.NODE_SERVICE_OSD, slu.Name), osdStatus, ctxt)
 
 			if err := coll_slu.Update(
 				bson.M{
@@ -2129,7 +2128,11 @@ func SyncOsdStatus(clusterId uuid.UUID, ctxt string) error {
 		slu.State = state
 		slu.Status = status
 
-		util.AppendServiceToNode(bson.M{"nodeid": slu.NodeId}, fmt.Sprintf("%s-%s", bigfinmodels.NODE_SERVICE_OSD, slu.Name), mapOSDStatusToServiceStatus(slu.State), ctxt)
+		osdStatus := models.STATUS_DOWN
+		if fetchedOSD.Up {
+			osdStatus = models.STATUS_UP
+		}
+		util.AppendServiceToNode(bson.M{"nodeid": slu.NodeId}, fmt.Sprintf("%s-%s", bigfinmodels.NODE_SERVICE_OSD, slu.Name), osdStatus, ctxt)
 
 		if err := coll.Update(
 			bson.M{"sluid": fetchedOSD.Uuid, "clusterid": clusterId},
