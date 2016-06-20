@@ -101,9 +101,7 @@ func (s *CephProvider) GetClusterNodesForImport(req models.RpcRequest, resp *mod
 			}
 		}
 		if err := coll.Find(
-			bson.M{"hostname": bson.M{
-				"$regex":   node.FQDN,
-				"$options": "$i"}}).One(&fetchedNode); err != nil {
+			bson.M{"hostname": node.FQDN}).One(&fetchedNode); err != nil {
 			clusterNode.Found = false
 		} else {
 			clusterNode.Found = true

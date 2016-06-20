@@ -360,9 +360,7 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 		// Get the node details for SLU
 		var node models.Node
 		if err := coll_nodes.Find(
-			bson.M{"hostname": bson.M{
-				"$regex":   osd.Server,
-				"$options": "$i"}}).One(&node); err != nil {
+			bson.M{"hostname": osd.Server}).One(&node); err != nil {
 			logger.Get().Error(
 				"%s-Error fetching node details for SLU id: %d on cluster: %v. error: %v",
 				ctxt,
@@ -776,8 +774,7 @@ func syncStorageNodes(mon string, clusterId uuid.UUID, ctxt string) error {
 	for _, node := range nodes {
 		var updates bson.M = make(map[string]interface{})
 		for _, service := range node.Services {
-			if err := coll.Find(bson.M{"hostname": bson.M{
-				"$regex": fmt.Sprintf("%s.*", node.FQDN)}}).One(&fetchedNode); err != nil {
+			if err := coll.Find(bson.M{"hostname": node.FQDN}).One(&fetchedNode); err != nil {
 				logger.Get().Warning(
 					"%s-Failed to update OSD role for node: %s. error: %v",
 					ctxt,
@@ -844,9 +841,7 @@ func syncStorageNodes(mon string, clusterId uuid.UUID, ctxt string) error {
 		}
 		if mondet.State == "leader" {
 			if err := coll.Find(
-				bson.M{"hostname": bson.M{
-					"$regex":   node,
-					"$options": "$i"}}).One(&fetchedNode); err != nil {
+				bson.M{"hostname": node}).One(&fetchedNode); err != nil {
 				logger.Get().Warning(
 					"%s-Failed to mark mon node: %s as leader. error: %v",
 					ctxt,
