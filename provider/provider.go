@@ -93,12 +93,13 @@ func GetCalamariMonNode(clusterId uuid.UUID, ctxt string) (*models.Node, error) 
 	if err == nil {
 		// Check availability of calamari
 		dummyUrl := fmt.Sprintf(
-			"https://%s:%d/%s/v%d/auth/login",
+			"https://%s:%d/%s/v%d/",
 			calamariMonNode.Hostname,
 			cephapi_models.CEPH_API_PORT,
 			cephapi_models.CEPH_API_DEFAULT_PREFIX,
 			cephapi_models.CEPH_API_DEFAULT_VERSION)
-		_, err := handler.HttpGet(calamariMonNode.Hostname, dummyUrl)
+		resp, err := handler.HttpGet(calamariMonNode.Hostname, dummyUrl)
+		resp.Body.Close()
 		if err != nil {
 			// Not a valid calamari. start another one
 			if err := coll.Update(

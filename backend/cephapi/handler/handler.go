@@ -179,9 +179,11 @@ func login(session *http.Client, mon string, loginUrl string) error {
 	// Get the csrf token details
 	resp, err := session.Get(loginUrl)
 	if err != nil {
+		resp.Body.Close()
 		return fmt.Errorf("Error running dummy url to get csrf token: %v", err)
 	}
 	token := csrf_token(resp)
+	resp.Body.Close()
 
 	// Login
 	reqData := make(map[string]interface{})
@@ -198,11 +200,13 @@ func login(session *http.Client, mon string, loginUrl string) error {
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Referer", loginUrl)
 	req.Header.Set("X-XSRF-TOKEN", token)
-	resp, err = session.Do(req)
-	if err != nil {
-		return fmt.Errorf("Error logging in: %v", err)
+	resp1, err1 := session.Do(req)
+	if err1 != nil {
+		resp1.Body.Close()
+		return fmt.Errorf("Error logging in: %v", err1)
 	}
 
+	resp1.Body.Close()
 	loggedIn = true
 	return nil
 }
