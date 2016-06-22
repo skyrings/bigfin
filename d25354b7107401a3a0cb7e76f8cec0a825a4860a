@@ -22,6 +22,30 @@
       "revId": "d25354b7107401a3a0cb7e76f8cec0a825a4860a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_fde3d531",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1755,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-06-22T04:04:01Z",
+      "side": 1,
+      "message": "Here, we bring down to only 2 states up or down services and based only on the field Up of the api response. The status in #1745 returns one of the multiple possible statuses like :\nmodels.SLU_STATUS_OK\nmodels.SLU_STATUS_WARN\nmodels.SLU_STATUS_ERROR\nmodels.SLU_STATUS_UNKNOWN\nand this depending on 2 fields Up and In of api response.\nAfter bringing down osd process, I found that still the In field was true however the Up field appropriately turned false. So, we depend purely on Up instead of In.",
+      "parentUuid": "baa041b7_a873d414",
+      "range": {
+        "startLine": 1755,
+        "startChar": 4,
+        "endLine": 1755,
+        "endChar": 13
+      },
+      "revId": "d25354b7107401a3a0cb7e76f8cec0a825a4860a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
