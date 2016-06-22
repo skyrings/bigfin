@@ -22,6 +22,30 @@
       "revId": "92d38b482d3d077d8b1a4ee4b22edfe38422460e",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_085f590f",
+        "filename": "provider/cluster.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 469,
+      "author": {
+        "id": 1006236
+      },
+      "writtenOn": "2016-06-22T10:01:18Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_68414539",
+      "range": {
+        "startLine": 469,
+        "startChar": 59,
+        "endLine": 469,
+        "endChar": 82
+      },
+      "revId": "92d38b482d3d077d8b1a4ee4b22edfe38422460e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
