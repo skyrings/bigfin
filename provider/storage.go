@@ -276,7 +276,8 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 			quotaMaxObjects,
 			quotaMaxBytes,
 			request.Options["ecprofile"],
-			ruleset["rulesetid"].(int),
+			ruleset,
+			request.Profile,
 			ctxt)
 	} else {
 		ok, err = cephapi_backend.CreatePool(

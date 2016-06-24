@@ -124,7 +124,8 @@ func (s Salt) CreateECPool(
 	quotaMaxObjects int,
 	quotaMaxBytes uint64,
 	ecProfile string,
-	ruleset int,
+	ruleset map[string]interface{},
+	sProfile string,
 	ctxt string) (bool, error) {
 	return true, nil
 }
@@ -300,6 +301,15 @@ func (c Salt) PatchCrushNode(mon string, clusterId uuid.UUID, crushNodeId int, p
 func (c Salt) GetCrushRules(mon string, clusterId uuid.UUID, ctxt string) ([]map[string]interface{}, error) {
 	var m []map[string]interface{}
 	return m, nil
+}
+
+func (c Salt) GetCrushRule(mon string, clusterId uuid.UUID, crushRuleId int, ctxt string) (map[string]interface{}, error) {
+	var m map[string]interface{}
+	return m, nil
+}
+
+func (c Salt) PatchCrushRule(mon string, clusterId uuid.UUID, crushRuleId int, params map[string]interface{}, ctxt string) (bool, error) {
+	return true, nil
 }
 
 func (c Salt) GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error) {
