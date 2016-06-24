@@ -1,0 +1,67 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_da8fecca",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 13,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-24T07:03:44Z",
+      "side": 1,
+      "message": "Can we add the calamari BZ reference for future?",
+      "range": {
+        "startLine": 13,
+        "startChar": 0,
+        "endLine": 13,
+        "endChar": 52
+      },
+      "revId": "94bef644dd2e9aa5b4f9b52af03f1a64cdd4acd9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_ba49c890",
+        "filename": "backend/cephapi/api.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 158,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-24T07:03:44Z",
+      "side": 1,
+      "message": "ctxt?",
+      "revId": "94bef644dd2e9aa5b4f9b52af03f1a64cdd4acd9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_1a5b1456",
+        "filename": "backend/cephapi/api.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 749,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-24T07:03:44Z",
+      "side": 1,
+      "message": "Response body close as discussed required",
+      "range": {
+        "startLine": 749,
+        "startChar": 17,
+        "endLine": 749,
+        "endChar": 29
+      },
+      "revId": "94bef644dd2e9aa5b4f9b52af03f1a64cdd4acd9",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
