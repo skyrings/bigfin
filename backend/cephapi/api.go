@@ -27,6 +27,7 @@ import (
 	skyringmodels "github.com/skyrings/skyring-common/models"
 	"github.com/skyrings/skyring-common/monitoring"
 	skyring_monitoring "github.com/skyrings/skyring-common/monitoring"
+	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/uuid"
 	"gopkg.in/mgo.v2/bson"
 	"io"
@@ -36,6 +37,8 @@ import (
 	"strings"
 	"time"
 )
+
+var ErrTimedOut = errors.New("Timed out")
 
 type CephApi struct {
 }
@@ -100,14 +103,57 @@ func (c CephApi) CreateECPool(
 	quotaMaxObjects int,
 	quotaMaxBytes uint64,
 	ecProfile string,
-	ruleset int,
+	ruleset map[string]interface{},
+	sProfile string,
 	ctxt string) (bool, error) {
 	// Get the cluster id
 	cluster_id, err := cluster_id(clusterName)
 	if err != nil {
 		return false, errors.New(fmt.Sprintf("Could not get id for cluster: %s. error: %v", clusterName, err))
 	}
+	cid, _ := uuid.Parse(cluster_id)
+	//Create the crush rule
+	cRule := backend.CrushRuleRequest{Name: name, Type: "erasure", MinSize: 3, MaxSize: 6}
+	var steps []map[string]interface{}
 
+	leafTries := make(map[string]interface{})
+	leafTries["num"] = 5
+	leafTries["op"] = "set_chooseleaf_tries"
+	steps = append(steps, leafTries)
+
+	tries := make(map[string]interface{})
+	tries["num"] = 100
+	tries["op"] = "set_choose_tries"
+	steps = append(steps, tries)
+
+	step_take := make(map[string]interface{})
+	step_take["item_name"] = sProfile
+	step_take["item"] = ruleset["crushnodeid"].(int)
+	step_take["op"] = "take"
+	steps = append(steps, step_take)
+
+	leaf := make(map[string]interface{})
+	leaf["num"] = 0
+	leaf["type"] = "host"
+	leaf["op"] = "chooseleaf_indep"
+	steps = append(steps, leaf)
+
+	emit := make(map[string]interface{})
+	emit["op"] = "emit"
+	steps = append(steps, emit)
+
+	logger.Get().Error("$$$$$steps:%v", steps)
+	/*params := map[string]interface{}{
+		"steps": steps,
+	}*/
+	cRule.Steps = steps
+
+	cRuleId, err := c.CreateCrushRule(mon, *cid, cRule, ctxt)
+	if err != nil {
+		logger.Get().Error("Failed to create Crush rule for cluster: %s. error: %v", cluster_id, err)
+		return false, errors.New(fmt.Sprintf("Failed to create pool: %s for cluster: %s. error: %v", name, clusterName, err))
+	}
+	logger.Get().Error("$$$$$Rule CREATE success:%v", cRuleId)
 	// Replace cluster id in route pattern
 	createPoolRoute := CEPH_API_ROUTES["CreatePool"]
 	createPoolRoute.Pattern = strings.Replace(createPoolRoute.Pattern, "{cluster-fsid}", cluster_id, 1)
@@ -120,7 +166,7 @@ func (c CephApi) CreateECPool(
 		"pgp_num":              int(pgnum),
 		"type":                 "erasure",
 		"erasure_code_profile": ecProfile,
-		"crush_ruleset":        ruleset,
+		"crush_ruleset":        cRuleId,
 	}
 
 	buf, err := json.Marshal(pool)
@@ -134,7 +180,87 @@ func (c CephApi) CreateECPool(
 	} else {
 		ok, err := syncRequestStatus(mon, resp)
 		return ok, err
+		/*if err != ErrTimedOut {
+			return ok, err
+		}
+		//find pool details
+		var (
+			cPool       backend.CephPool
+			poolcreated bool
+		)
+		cid, err := uuid.Parse(cluster_id)
+
+		pools, err := c.GetPools(mon, *cid, ctxt)
+		if err != nil {
+			return false, errors.New(fmt.Sprintf("Failed to create pool: %s for cluster: %s. error: %v", name, clusterName, err))
+		}
+
+		for _, pool := range pools {
+			if name == pool.Name {
+				cPool = pool
+				poolcreated = true
+				logger.Get().Error("$$$$$pool:%v", cPool)
+				break
+			}
+		}
+		//get the crush rule
+		if poolcreated {
+			cRule := backend.CrushRuleRequest{Name: name, RuleSet: ruleset, Type: "erasure", MinSize: 3, MaxSize: 6}
+			logger.Get().Error("$$$$$pool!!!!!:%v", cPool)
+			var steps []map[string]interface{}
+
+			leafTries := make(map[string]interface{})
+			leafTries["num"] = 5
+			leafTries["op"] = "set_chooseleaf_tries"
+			steps = append(steps, leafTries)
+
+			tries := make(map[string]interface{})
+			tries["num"] = 100
+			tries["op"] = "set_choose_tries"
+			steps = append(steps, tries)
+
+			step_take := make(map[string]interface{})
+			step_take["item_name"] = sProfile
+			step_take["item"] = ruleset["crushnodeid"].(int)
+			step_take["op"] = "take"
+			steps = append(steps, step_take)
+
+			leaf := make(map[string]interface{})
+			leaf["num"] = 0
+			leaf["type"] = "host"
+			leaf["op"] = "chooseleaf_indep"
+			steps = append(steps, leaf)
+
+			emit := make(map[string]interface{})
+			emit["op"] = "emit"
+			steps = append(steps, emit)
+
+			logger.Get().Error("$$$$$steps:%v", steps)
+			params := map[string]interface{}{
+				"steps": steps,
+			}
+
+			cRuleId, err := c.CreateCrushRule(mon, *cid, cRule, ctxt)
+			if err != nil {
+				logger.Get().Error("Failed to create Crush rule for cluster: %s. error: %v", clusterId, err)
+				return cRuleId, err
+			}
+
+				//update the crush rule
+				_, err := c.PatchCrushRule(mon, *cid, cPool.CrushRuleSet, params, ctxt)
+				if err != nil {
+					logger.Get().Error("$$$$$Rule Update Erroooooooooooo")
+					logger.Get().Error("Failed to update Crush rule for cluster: %s. error: %v", cluster_id, err)
+					return false, errors.New(fmt.Sprintf("Failed to create pool: %s for cluster: %s. error: %v", name, clusterName, err))
+				}
+				logger.Get().Error("$$$$$Rule Update success")
+			ok, err := syncRequestStatus(mon, resp)
+			return ok, err
+		}*/
+		//get the crush node corresponding to storage profile
+		//update the crush rule with right
 	}
+	return true, err
 }
 
 func (c CephApi) ListPoolNames(mon string, clusterName string, ctxt string) ([]string, error) {
@@ -209,7 +335,7 @@ func syncRequestStatus(mon string, resp *http.Response) (bool, error) {
 		}
 	}
 	if reqStatus.State == "" || reqStatus.State != "complete" {
-		return false, fmt.Errorf("Syncing request status timed out")
+		return false, ErrTimedOut
 	}
 	return true, nil
 }
@@ -693,6 +819,48 @@ func (c CephApi) GetCrushRules(mon string, clusterId uuid.UUID, ctxt string) ([]
 	}
 
 	return m, nil
+}
+
+func (c CephApi) GetCrushRule(mon string, clusterId uuid.UUID, crushRuleId int, ctxt string) (map[string]interface{}, error) {
+	// Replace cluster id in route pattern
+	route := CEPH_API_ROUTES["GetCrushRule"]
+	route.Pattern = strings.Replace(route.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+	route.Pattern = strings.Replace(route.Pattern, "{crush-rule-id}", strconv.Itoa(crushRuleId), 1)
+
+	var m map[string]interface{}
+	resp, err := route_request(route, mon, bytes.NewBuffer([]byte{}))
+	if err != nil {
+		return m, err
+	}
+	respBody, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return m, err
+	}
+	if err := json.Unmarshal(respBody, &m); err != nil {
+		return m, err
+	}
+
+	return m, nil
+}
+
+func (c CephApi) PatchCrushRule(mon string, clusterId uuid.UUID, crushRuleId int, params map[string]interface{}, ctxt string) (bool, error) {
+	// Replace cluster id in route pattern
+	route := CEPH_API_ROUTES["PatchCrushRule"]
+	route.Pattern = strings.Replace(route.Pattern, "{cluster-fsid}", clusterId.String(), 1)
+	route.Pattern = strings.Replace(route.Pattern, "{crush-rule-id}", strconv.Itoa(crushRuleId), 1)
+
+	buf, err := json.Marshal(params)
+	if err != nil {
+		return false, errors.New(fmt.Sprintf("Error forming request body: %v", err))
+	}
+	body := bytes.NewBuffer(buf)
+	resp, err := route_request(route, mon, body)
+	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted) {
+		return false, errors.New(fmt.Sprintf("Failed to update crush Rule: %v for cluster: %v.error: %v", crushRuleId, clusterId, err))
+	} else {
+		ok, err := syncRequestStatus(mon, resp)
+		return ok, err
+	}
 }
 
 func (c CephApi) GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error) {

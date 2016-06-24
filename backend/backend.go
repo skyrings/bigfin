@@ -109,7 +109,7 @@ type Backend interface {
 	StartMon(nodes []string, ctxt string) (bool, error)
 	AddOSD(clusterName string, osd OSD, ctxt string) (map[string][]string, error)
 	CreatePool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64, ruleset int, ctxt string) (bool, error)
-	CreateECPool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64, ecProfile string, ruleset int, ctxt string) (bool, error)
+	CreateECPool(name string, mon string, clusterName string, pgnum uint, replicas int, quotaMaxObjects int, quotaMaxBytes uint64, ecProfile string, ruleset map[string]interface{}, sProfile string, ctxt string) (bool, error)
 	ListPoolNames(mon string, clusterName string, ctxt string) ([]string, error)
 	GetClusterStatus(mon string, clusterId uuid.UUID, clusterName string, ctxt string) (string, error)
 	GetPools(mon string, clusterId uuid.UUID, ctxt string) ([]CephPool, error)
@@ -132,6 +132,8 @@ type Backend interface {
 	GetCrushNode(mon string, clusterId uuid.UUID, crushNodeId int, ctxt string) (CrushNode, error)
 	PatchCrushNode(mon string, clusterId uuid.UUID, crushNodeId int, params map[string]interface{}, ctxt string) (bool, error)
 	GetCrushRules(mon string, clusterId uuid.UUID, ctxt string) ([]map[string]interface{}, error)
+	GetCrushRule(mon string, clusterId uuid.UUID, crushRuleId int, ctxt string) (map[string]interface{}, error)
+	PatchCrushRule(mon string, clusterId uuid.UUID, crushRuleId int, params map[string]interface{}, ctxt string) (bool, error)
 	GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]string, error)
 	GetCluster(mon string, ctxt string) (CephCluster, error)
 	GetClusterNetworks(mon string, clusterId uuid.UUID, ctxt string) (models.ClusterNetworks, error)
@@ -197,7 +199,6 @@ type CrushNodeRequest struct {
 
 type CrushRuleRequest struct {
 	Name    string                   `json:"name"`
-	RuleSet int                      `json:"ruleset"`
 	Type    string                   `json:"type"`
 	MinSize int                      `json:"min_size"`
 	MaxSize int                      `json:"max_size"`
