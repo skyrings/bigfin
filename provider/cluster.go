@@ -2477,7 +2477,7 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID, sluList map[string]m
 }
 
 func createCrushRule(ctxt string, name string, ruleset int, cnodeName string, cNodeId int, monnode string, clusterId uuid.UUID) (int, error) {
-	cRule := backend.CrushRuleRequest{Name: name, RuleSet: ruleset, Type: models.STORAGE_TYPE_REPLICATED, MinSize: MINSIZE, MaxSize: MAXSIZE}
+	cRule := backend.CrushRuleRequest{Name: name, Type: models.STORAGE_TYPE_REPLICATED, MinSize: MINSIZE, MaxSize: MAXSIZE}
 	step_take := make(map[string]interface{})
 	step_take["item_name"] = cnodeName
 	step_take["item"] = cNodeId
