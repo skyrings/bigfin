@@ -2485,7 +2485,7 @@ func createCrushRule(ctxt string, name string, ruleset int, cnodeName string, cN
 	cRule.Steps = append(cRule.Steps, step_take)
 	leaf := make(map[string]interface{})
 	leaf["num"] = 0
-	leaf["type"] = "host"
+	leaf["type"] = "osd"
 	leaf["op"] = "chooseleaf_firstn"
 	cRule.Steps = append(cRule.Steps, leaf)
 	emit := make(map[string]interface{})
