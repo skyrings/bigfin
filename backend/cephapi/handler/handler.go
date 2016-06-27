@@ -102,7 +102,7 @@ func invokeUpdateRestApi(method string, mon string, url string, contentType stri
 	}
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
-		return nil, errors.New("Failed")
+		return nil, errors.New("Failed" + resp.Status)
 	} else if resp.StatusCode == http.StatusForbidden {
 		logger.Get().Warning("Session seems invalidated. Trying to login again.")
 		if err := login(session, mon, loginUrl); err != nil {
@@ -178,12 +178,11 @@ func csrfTokenFromSession(session *http.Client, loginUrl string) string {
 func login(session *http.Client, mon string, loginUrl string) error {
 	// Get the csrf token details
 	resp, err := session.Get(loginUrl)
+	defer closeRespBody(resp)
 	if err != nil {
-		resp.Body.Close()
 		return fmt.Errorf("Error running dummy url to get csrf token: %v", err)
 	}
 	token := csrf_token(resp)
-	resp.Body.Close()
 
 	// Login
 	reqData := make(map[string]interface{})
@@ -201,12 +200,17 @@ func login(session *http.Client, mon string, loginUrl string) error {
 	req.Header.Set("Referer", loginUrl)
 	req.Header.Set("X-XSRF-TOKEN", token)
 	resp1, err1 := session.Do(req)
+	defer closeRespBody(resp1)
 	if err1 != nil {
-		resp1.Body.Close()
 		return fmt.Errorf("Error logging in: %v", err1)
 	}
 
-	resp1.Body.Close()
 	loggedIn = true
 	return nil
+}
+
+func closeRespBody(resp *http.Response) {
+	if resp != nil {
+		resp.Body.Close()
+	}
 }
