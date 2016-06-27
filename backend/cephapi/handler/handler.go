@@ -56,15 +56,15 @@ func HttpGet(mon, url string) (*http.Response, error) {
 		url,
 		bytes.NewBuffer([]byte{}))
 	if err != nil {
-		return nil, fmt.Errorf("Error executing request: %v", err)
+		return resp, fmt.Errorf("Error executing request: %v", err)
 	}
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
-		return nil, fmt.Errorf(resp.Status)
+		return resp, fmt.Errorf(resp.Status)
 	} else if resp.StatusCode == http.StatusForbidden {
 		logger.Get().Warning("Session seems invalidated. Trying to login again.")
 		if err := login(session, mon, loginUrl); err != nil {
-			return nil, fmt.Errorf("Failed to relogin")
+			return resp, fmt.Errorf("Failed to relogin")
 		}
 		return doRequest(session, csrf_token, "GET", "application/json", url, bytes.NewBuffer([]byte{}))
 	}
@@ -98,15 +98,15 @@ func invokeUpdateRestApi(method string, mon string, url string, contentType stri
 		url,
 		body)
 	if err != nil {
-		return nil, fmt.Errorf("Error executing request: %v", err)
+		return resp, fmt.Errorf("Error executing request: %v", err)
 	}
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
-		return nil, errors.New("Failed")
+		return resp, errors.New("Failed" + resp.Status)
 	} else if resp.StatusCode == http.StatusForbidden {
 		logger.Get().Warning("Session seems invalidated. Trying to login again.")
 		if err := login(session, mon, loginUrl); err != nil {
-			return nil, fmt.Errorf("Failed to relogin")
+			return resp, fmt.Errorf("Failed to relogin")
 		}
 		return doRequest(session, csrf_token, method, contentType, url, body)
 	}
@@ -134,7 +134,7 @@ func doRequest(
 	// Invoke the request
 	resp, err := session.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("Error executing the request: %v", err)
+		return resp, fmt.Errorf("Error executing the request: %v", err)
 	}
 
 	return resp, nil
@@ -178,12 +178,11 @@ func csrfTokenFromSession(session *http.Client, loginUrl string) string {
 func login(session *http.Client, mon string, loginUrl string) error {
 	// Get the csrf token details
 	resp, err := session.Get(loginUrl)
+	defer closeRespBody(resp)
 	if err != nil {
-		resp.Body.Close()
 		return fmt.Errorf("Error running dummy url to get csrf token: %v", err)
 	}
 	token := csrf_token(resp)
-	resp.Body.Close()
 
 	// Login
 	reqData := make(map[string]interface{})
@@ -201,12 +200,17 @@ func login(session *http.Client, mon string, loginUrl string) error {
 	req.Header.Set("Referer", loginUrl)
 	req.Header.Set("X-XSRF-TOKEN", token)
 	resp1, err1 := session.Do(req)
+	defer closeRespBody(resp1)
 	if err1 != nil {
-		resp1.Body.Close()
 		return fmt.Errorf("Error logging in: %v", err1)
 	}
 
-	resp1.Body.Close()
 	loggedIn = true
 	return nil
+}
+
+func closeRespBody(resp *http.Response) {
+	if resp != nil {
+		resp.Body.Close()
+	}
 }

@@ -92,12 +92,11 @@ func (c CephApi) CreatePool(name string, mon string, clusterName string, pgnum u
 	}
 	body := bytes.NewBuffer(buf)
 	resp, err := route_request(createPoolRoute, mon, body)
+	defer closeRespBody(resp)
 	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted) {
-		resp.Body.Close()
 		return false, errors.New(fmt.Sprintf("Failed to create pool: %s for cluster: %s. error: %v", name, clusterName, err))
 	} else {
 		ok, err := syncRequestStatus(mon, resp)
-		resp.Body.Close()
 		return ok, err
 	}
 }
@@ -180,12 +179,11 @@ func (c CephApi) CreateECPool(
 	}
 	body := bytes.NewBuffer(buf)
 	resp, err := route_request(createPoolRoute, mon, body)
+	defer closeRespBody(resp)
 	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted) {
-		resp.Body.Close()
 		return false, errors.New(fmt.Sprintf("Failed to create pool: %s for cluster: %s. error: %v", name, clusterName, err))
 	} else {
 		ok, err := syncRequestStatus(mon, resp)
-		resp.Body.Close()
 		return ok, err
 	}
 }
@@ -199,21 +197,18 @@ func (c CephApi) GetClusterStatus(mon string, clusterId uuid.UUID, clusterName s
 	getPoolsRoute := CEPH_API_ROUTES["GetClusterStatus"]
 	getPoolsRoute.Pattern = strings.Replace(getPoolsRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
 	resp, err := route_request(getPoolsRoute, mon, bytes.NewBuffer([]byte{}))
+	defer closeRespBody(resp)
 	if err != nil {
-		resp.Body.Close()
 		return "", err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		resp.Body.Close()
 		return "", err
 	}
 	var clusterHealth backend.CephClusterHealth
 	if err := json.Unmarshal(respBody, &clusterHealth); err != nil {
-		resp.Body.Close()
 		return "", err
 	}
-	resp.Body.Close()
 	return clusterHealth.OverallStatus, nil
 }
 
@@ -247,26 +242,22 @@ func syncRequestStatus(mon string, resp *http.Response) (bool, error) {
 		route := CEPH_API_ROUTES["GetRequestStatus"]
 		route.Pattern = strings.Replace(route.Pattern, "{request-fsid}", asyncReq.RequestId, 1)
 		resp1, err := route_request(route, mon, bytes.NewBuffer([]byte{}))
+		defer closeRespBody(resp1)
 		if err != nil {
-			resp1.Body.Close()
 			return false, errors.New("Error syncing request status from cluster")
 		}
 		respBodyStr, err := ioutil.ReadAll(resp1.Body)
 		if err != nil {
-			resp1.Body.Close()
 			return false, errors.New(fmt.Sprintf("Error parsing response data: %v", err))
 		}
 		if err := json.Unmarshal(respBodyStr, &reqStatus); err != nil {
-			resp1.Body.Close()
 			return false, errors.New(fmt.Sprintf("Error parsing response data: %v", err))
 		}
 		if reqStatus.State == "complete" {
 			// If request has failed return with error
 			if reqStatus.Error {
-				resp1.Body.Close()
 				return false, errors.New(fmt.Sprintf("Request failed. error: %s", reqStatus.ErrorMessage))
 			}
-			resp1.Body.Close()
 			break
 		}
 	}
@@ -328,21 +319,18 @@ func (c CephApi) GetPools(mon string, clusterId uuid.UUID, ctxt string) ([]backe
 	getPoolsRoute := CEPH_API_ROUTES["GetPools"]
 	getPoolsRoute.Pattern = strings.Replace(getPoolsRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
 	resp, err := route_request(getPoolsRoute, mon, bytes.NewBuffer([]byte{}))
+	defer closeRespBody(resp)
 	if err != nil {
-		resp.Body.Close()
 		return []backend.CephPool{}, err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		resp.Body.Close()
 		return []backend.CephPool{}, err
 	}
 	var pools []backend.CephPool
 	if err := json.Unmarshal(respBody, &pools); err != nil {
-		resp.Body.Close()
 		return []backend.CephPool{}, err
 	}
-	resp.Body.Close()
 	return pools, nil
 }
 
@@ -352,21 +340,18 @@ func (c CephApi) GetPool(mon string, clusterId uuid.UUID, pool_id int, ctxt stri
 	poolId := strconv.Itoa(pool_id)
 	getPoolRoute.Pattern = strings.Replace(getPoolRoute.Pattern, "{pool-id}", poolId, 1)
 	resp, err := route_request(getPoolRoute, mon, bytes.NewBuffer([]byte{}))
+	defer closeRespBody(resp)
 	if err != nil {
-		resp.Body.Close()
 		return backend.CephPool{}, err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		resp.Body.Close()
 		return backend.CephPool{}, err
 	}
 	var pool backend.CephPool
 	if err := json.Unmarshal(respBody, &pool); err != nil {
-		resp.Body.Close()
 		return backend.CephPool{}, err
 	}
-	resp.Body.Close()
 	return pool, nil
 }
 
@@ -382,12 +367,11 @@ func (c CephApi) UpdatePool(mon string, clusterId uuid.UUID, poolId int, pool ma
 	}
 	body := bytes.NewBuffer(buf)
 	resp, err := route_request(updatePoolRoute, mon, body)
+	defer closeRespBody(resp)
 	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted) {
-		resp.Body.Close()
 		return false, errors.New(fmt.Sprintf("Failed to update pool-id: %d for cluster: %v.error: %v", poolId, clusterId, err))
 	} else {
 		ok, err := syncRequestStatus(mon, resp)
-		resp.Body.Close()
 		return ok, err
 	}
 }
@@ -399,12 +383,11 @@ func (c CephApi) RemovePool(mon string, clusterId uuid.UUID, clusterName string,
 	removePoolRoute.Pattern = strings.Replace(removePoolRoute.Pattern, "{pool-id}", strconv.Itoa(poolId), 1)
 
 	resp, err := route_request(removePoolRoute, mon, bytes.NewBuffer([]byte{}))
+	defer closeRespBody(resp)
 	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted) {
-		resp.Body.Close()
 		return false, errors.New(fmt.Sprintf("Failed to remove pool-id: %d for cluster: %v.error: %v", poolId, clusterId, err))
 	} else {
 		ok, err := syncRequestStatus(mon, resp)
-		resp.Body.Close()
 		return ok, err
 	}
 }
@@ -433,21 +416,18 @@ func (c CephApi) GetPGCount(mon string, clusterId uuid.UUID, ctxt string) (map[s
 	pgStatsRoute := CEPH_API_ROUTES["GetPGCount"]
 	pgStatsRoute.Pattern = strings.Replace(pgStatsRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
 	resp, err := route_request(pgStatsRoute, mon, bytes.NewBuffer([]byte{}))
+	defer closeRespBody(resp)
 	var pgSummary map[string]interface{}
 	if err != nil {
-		resp.Body.Close()
 		return nil, err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		resp.Body.Close()
 		return nil, err
 	}
 	if err := json.Unmarshal(respBody, &pgSummary); err != nil {
-		resp.Body.Close()
 		return nil, err
 	}
-	resp.Body.Close()
 	pgMap, pgMapOk := pgSummary["pg"].(map[string]interface{})
 	if !pgMapOk {
 		return nil, fmt.Errorf("%s - Failed to fetch number of pgs for the cluster %v", ctxt, clusterId)
@@ -495,21 +475,18 @@ func (c CephApi) GetPGSummary(mon string, clusterId uuid.UUID, ctxt string) (bac
 	pgStatsRoute := CEPH_API_ROUTES["PGStatistics"]
 	pgStatsRoute.Pattern = strings.Replace(pgStatsRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
 	resp, err := route_request(pgStatsRoute, mon, bytes.NewBuffer([]byte{}))
+	defer closeRespBody(resp)
 	var pgsummary backend.PgSummary
 	if err != nil {
-		resp.Body.Close()
 		return pgsummary, err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		resp.Body.Close()
 		return pgsummary, err
 	}
 	if err := json.Unmarshal(respBody, &pgsummary); err != nil {
-		resp.Body.Close()
 		return pgsummary, err
 	}
-	resp.Body.Close()
 	return pgsummary, err
 }
 
@@ -524,21 +501,18 @@ func (c CephApi) ExecCmd(mon string, clusterId uuid.UUID, cmd string, ctxt strin
 	}
 	body := bytes.NewBuffer(buf)
 	resp, err := route_request(execCmdRoute, mon, body)
+	defer closeRespBody(resp)
 	if err != nil || resp.StatusCode != http.StatusOK {
-		resp.Body.Close()
 		return false, "", errors.New(fmt.Sprintf("Failed to execute command: %s. error: %v", cmd, err))
 	} else {
 		respBody, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			resp.Body.Close()
 			return false, "", err
 		}
 		var cmdExecResp models.CephCommandResponse
 		if err := json.Unmarshal(respBody, &cmdExecResp); err != nil {
-			resp.Body.Close()
 			return false, "", err
 		}
-		resp.Body.Close()
 		if cmdExecResp.Status != 0 {
 			return false, "", fmt.Errorf(cmdExecResp.Error)
 		} else {
@@ -552,21 +526,18 @@ func (c CephApi) GetOSDs(mon string, clusterId uuid.UUID, ctxt string) ([]backen
 	getOsdsRoute := CEPH_API_ROUTES["GetOSDs"]
 	getOsdsRoute.Pattern = strings.Replace(getOsdsRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
 	resp, err := route_request(getOsdsRoute, mon, bytes.NewBuffer([]byte{}))
+	defer closeRespBody(resp)
 	if err != nil {
-		resp.Body.Close()
 		return []backend.CephOSD{}, err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		resp.Body.Close()
 		return []backend.CephOSD{}, err
 	}
 	var osds []backend.CephOSD
 	if err := json.Unmarshal(respBody, &osds); err != nil {
-		resp.Body.Close()
 		return []backend.CephOSD{}, err
 	}
-	resp.Body.Close()
 	return osds, nil
 }
 
@@ -582,12 +553,11 @@ func (c CephApi) UpdateOSD(mon string, clusterId uuid.UUID, osdId string, params
 	}
 	body := bytes.NewBuffer(buf)
 	resp, err := route_request(updateOsdRoute, mon, body)
+	defer closeRespBody(resp)
 	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted) {
-		resp.Body.Close()
 		return false, errors.New(fmt.Sprintf("Failed to update osd-id: %s for cluster: %v.error: %v", osdId, clusterId, err))
 	} else {
 		ok, err := syncRequestStatus(mon, resp)
-		resp.Body.Close()
 		return ok, err
 	}
 }
@@ -598,21 +568,18 @@ func (c CephApi) GetOSD(mon string, clusterId uuid.UUID, osdId string, ctxt stri
 	getOsdRoute.Pattern = strings.Replace(getOsdRoute.Pattern, "{osd-id}", osdId, 1)
 
 	resp, err := route_request(getOsdRoute, mon, bytes.NewBuffer([]byte{}))
+	defer closeRespBody(resp)
 	if err != nil {
-		resp.Body.Close()
 		return backend.CephOSD{}, err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		resp.Body.Close()
 		return backend.CephOSD{}, err
 	}
 	var osds []backend.CephOSD
 	if err := json.Unmarshal(respBody, &osds); err != nil {
-		resp.Body.Close()
 		return backend.CephOSD{}, err
 	}
-	resp.Body.Close()
 	if len(osds) > 0 {
 		return osds[0], nil
 	} else {
@@ -625,21 +592,18 @@ func (c CephApi) GetClusterConfig(mon string, clusterId uuid.UUID, ctxt string) 
 	getClusterConfigRoute.Pattern = strings.Replace(getClusterConfigRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
 
 	resp, err := route_request(getClusterConfigRoute, mon, bytes.NewBuffer([]byte{}))
+	defer closeRespBody(resp)
 	if err != nil {
-		resp.Body.Close()
 		return map[string]string{}, err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		resp.Body.Close()
 		return map[string]string{}, err
 	}
 	var configs map[string]string
 	if err := json.Unmarshal(respBody, &configs); err != nil {
-		resp.Body.Close()
 		return map[string]string{}, err
 	}
-	resp.Body.Close()
 	return configs, nil
 }
 
@@ -655,17 +619,15 @@ func (c CephApi) CreateCrushRule(mon string, clusterId uuid.UUID, rule backend.C
 	}
 	body := bytes.NewBuffer(buf)
 	resp, err := route_request(route, mon, body)
+	defer closeRespBody(resp)
 	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted) {
-		resp.Body.Close()
 		return cRuleId, errors.New(fmt.Sprintf("Failed to create crush rule for cluster: %s. error: %v", clusterId.String(), err))
 	}
 
 	ok, err := syncRequestStatus(mon, resp)
 	if !ok {
-		resp.Body.Close()
 		return cRuleId, err
 	}
-	resp.Body.Close()
 	cRules, err := c.GetCrushRules(mon, clusterId, ctxt)
 	if err != nil {
 		return cRuleId, err
@@ -697,12 +659,11 @@ func (c CephApi) CreateCrushNode(mon string, clusterId uuid.UUID, node backend.C
 	}
 	body := bytes.NewBuffer(buf)
 	resp, err := route_request(route, mon, body)
+	defer closeRespBody(resp)
 	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted) {
-		resp.Body.Close()
 		return cNodeId, errors.New(fmt.Sprintf("Failed to create crush rule for cluster: %s. error: %v", clusterId.String(), err))
 	}
 	ok, err := syncRequestStatus(mon, resp)
-	resp.Body.Close()
 	if !ok {
 		return cNodeId, err
 	}
@@ -723,21 +684,18 @@ func (c CephApi) GetCrushNodes(mon string, clusterId uuid.UUID, ctxt string) ([]
 	route := CEPH_API_ROUTES["GetCrushNodes"]
 	route.Pattern = strings.Replace(route.Pattern, "{cluster-fsid}", clusterId.String(), 1)
 	resp, err := route_request(route, mon, bytes.NewBuffer([]byte{}))
+	defer closeRespBody(resp)
 	if err != nil {
-		resp.Body.Close()
 		return []backend.CrushNode{}, err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		resp.Body.Close()
 		return []backend.CrushNode{}, err
 	}
 	var nodes []backend.CrushNode
 	if err := json.Unmarshal(respBody, &nodes); err != nil {
-		resp.Body.Close()
 		return []backend.CrushNode{}, err
 	}
-	resp.Body.Close()
 	return nodes, nil
 }
 
@@ -748,22 +706,19 @@ func (c CephApi) GetCrushNode(mon string, clusterId uuid.UUID, crushNodeId int, 
 	route.Pattern = strings.Replace(route.Pattern, "{crush-node-id}", strconv.Itoa(crushNodeId), 1)
 
 	resp, err := route_request(route, mon, bytes.NewBuffer([]byte{}))
+	defer closeRespBody(resp)
 	if err != nil {
-		resp.Body.Close()
 		return backend.CrushNode{}, err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		resp.Body.Close()
 		return backend.CrushNode{}, err
 	}
 
 	var node backend.CrushNode
 	if err := json.Unmarshal(respBody, &node); err != nil {
-		resp.Body.Close()
 		return backend.CrushNode{}, err
 	}
-	resp.Body.Close()
 	return node, nil
 }
 
@@ -779,12 +734,11 @@ func (c CephApi) PatchCrushNode(mon string, clusterId uuid.UUID, crushNodeId int
 	}
 	body := bytes.NewBuffer(buf)
 	resp, err := route_request(route, mon, body)
+	defer closeRespBody(resp)
 	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted) {
-		resp.Body.Close()
 		return false, errors.New(fmt.Sprintf("Failed to update crush node: %v for cluster: %v.error: %v", crushNodeId, clusterId, err))
 	} else {
 		ok, err := syncRequestStatus(mon, resp)
-		resp.Body.Close()
 		return ok, err
 	}
 }
@@ -796,20 +750,17 @@ func (c CephApi) GetCrushRules(mon string, clusterId uuid.UUID, ctxt string) ([]
 
 	var m []map[string]interface{}
 	resp, err := route_request(route, mon, bytes.NewBuffer([]byte{}))
+	defer closeRespBody(resp)
 	if err != nil {
-		resp.Body.Close()
 		return m, err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		resp.Body.Close()
 		return m, err
 	}
 	if err := json.Unmarshal(respBody, &m); err != nil {
-		resp.Body.Close()
 		return m, err
 	}
-	resp.Body.Close()
 
 	return m, nil
 }
@@ -822,20 +773,17 @@ func (c CephApi) GetCrushRule(mon string, clusterId uuid.UUID, crushRuleId int, 
 
 	var m map[string]interface{}
 	resp, err := route_request(route, mon, bytes.NewBuffer([]byte{}))
+	defer closeRespBody(resp)
 	if err != nil {
-		resp.Body.Close()
 		return m, err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		resp.Body.Close()
 		return m, err
 	}
 	if err := json.Unmarshal(respBody, &m); err != nil {
-		resp.Body.Close()
 		return m, err
 	}
-	resp.Body.Close()
 	return m, nil
 }
 
@@ -851,12 +799,11 @@ func (c CephApi) PatchCrushRule(mon string, clusterId uuid.UUID, crushRuleId int
 	}
 	body := bytes.NewBuffer(buf)
 	resp, err := route_request(route, mon, body)
+	defer closeRespBody(resp)
 	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted) {
-		resp.Body.Close()
 		return false, errors.New(fmt.Sprintf("Failed to update crush Rule: %v for cluster: %v.error: %v", crushRuleId, clusterId, err))
 	} else {
 		ok, err := syncRequestStatus(mon, resp)
-		resp.Body.Close()
 		return ok, err
 	}
 }
@@ -866,21 +813,18 @@ func (c CephApi) GetMonitors(mon string, clusterId uuid.UUID, ctxt string) ([]st
 	getMonsRoute.Pattern = strings.Replace(getMonsRoute.Pattern, "{cluster-fsid}", clusterId.String(), 1)
 
 	resp, err := route_request(getMonsRoute, mon, bytes.NewBuffer([]byte{}))
+	defer closeRespBody(resp)
 	if err != nil {
-		resp.Body.Close()
 		return []string{}, err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		resp.Body.Close()
 		return []string{}, err
 	}
 	var monsDet backend.CephMons
 	if err := json.Unmarshal(respBody, &monsDet); err != nil {
-		resp.Body.Close()
 		return []string{}, err
 	}
-	resp.Body.Close()
 	if len(monsDet.Mons) > 0 {
 		var list []string
 		for _, mon := range monsDet.Mons {
@@ -896,21 +840,18 @@ func (c CephApi) GetCluster(mon string, ctxt string) (backend.CephCluster, error
 	getClusterRoute := CEPH_API_ROUTES["GetCluster"]
 
 	resp, err := route_request(getClusterRoute, mon, bytes.NewBuffer([]byte{}))
+	defer closeRespBody(resp)
 	if err != nil {
-		resp.Body.Close()
 		return backend.CephCluster{}, err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		resp.Body.Close()
 		return backend.CephCluster{}, err
 	}
 	var clusters []backend.CephCluster
 	if err := json.Unmarshal(respBody, &clusters); err != nil {
-		resp.Body.Close()
 		return backend.CephCluster{}, err
 	}
-	resp.Body.Close()
 	if len(clusters) > 0 {
 		return clusters[0], nil
 	} else {
@@ -926,21 +867,18 @@ func (c CephApi) GetClusterNetworks(mon string, clusterId uuid.UUID, ctxt string
 		clusterId.String(),
 		1)
 	resp, err := route_request(getGetClusterNetworksRoute, mon, bytes.NewBuffer([]byte{}))
+	defer closeRespBody(resp)
 	if err != nil {
-		resp.Body.Close()
 		return skyringmodels.ClusterNetworks{}, err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		resp.Body.Close()
 		return skyringmodels.ClusterNetworks{}, err
 	}
 	var configs map[string]string = make(map[string]string)
 	if err := json.Unmarshal(respBody, &configs); err != nil {
-		resp.Body.Close()
 		return skyringmodels.ClusterNetworks{}, err
 	}
-	resp.Body.Close()
 	var clusterNetworks skyringmodels.ClusterNetworks
 	clusterNetworks.Public = configs["public_network"]
 	if configs["cluster_network"] == "" {
@@ -959,21 +897,18 @@ func (c CephApi) GetClusterNodes(mon string, clusterId uuid.UUID, ctxt string) (
 		clusterId.String(),
 		1)
 	resp, err := route_request(getNodesRoute, mon, bytes.NewBuffer([]byte{}))
+	defer closeRespBody(resp)
 	if err != nil {
-		resp.Body.Close()
 		return []backend.CephClusterNode{}, err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		resp.Body.Close()
 		return []backend.CephClusterNode{}, err
 	}
 	var clusterNodes []backend.CephClusterNode
 	if err := json.Unmarshal(respBody, &clusterNodes); err != nil {
-		resp.Body.Close()
 		return []backend.CephClusterNode{}, err
 	}
-	resp.Body.Close()
 	return clusterNodes, nil
 }
 
@@ -990,21 +925,18 @@ func (c CephApi) GetMonStatus(mon string, clusterId uuid.UUID, node string, ctxt
 		strings.Split(node, ".")[0],
 		1)
 	resp, err := route_request(getMonStatusRoute, mon, bytes.NewBuffer([]byte{}))
+	defer closeRespBody(resp)
 	if err != nil {
-		resp.Body.Close()
 		return backend.MonNodeStatus{}, err
 	}
 	respBody, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		resp.Body.Close()
 		return backend.MonNodeStatus{}, err
 	}
 	var monStatus backend.MonNodeStatus
 	if err := json.Unmarshal(respBody, &monStatus); err != nil {
-		resp.Body.Close()
 		return backend.MonNodeStatus{}, err
 	}
-	resp.Body.Close()
 	return monStatus, nil
 }
 
@@ -1030,4 +962,10 @@ func (c CephApi) StopCalamari(node string, ctxt string) error {
 
 func (c CephApi) EmitRbdEvents(node string, cluster string, ctxt string) error {
 	return nil
+}
+
+func closeRespBody(resp *http.Response) {
+	if resp != nil {
+		resp.Body.Close()
+	}
 }
