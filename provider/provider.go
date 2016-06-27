@@ -99,7 +99,9 @@ func GetCalamariMonNode(clusterId uuid.UUID, ctxt string) (*models.Node, error) 
 			cephapi_models.CEPH_API_DEFAULT_PREFIX,
 			cephapi_models.CEPH_API_DEFAULT_VERSION)
 		resp, err := handler.HttpGet(calamariMonNode.Hostname, dummyUrl)
-		resp.Body.Close()
+		if resp != nil {
+			resp.Body.Close()
+		}
 		if err != nil {
 			// Not a valid calamari. start another one
 			if err := coll.Update(
