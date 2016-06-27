@@ -123,7 +123,7 @@ func (c CephApi) CreateECPool(
 	cid, _ := uuid.Parse(cluster_id)
 
 	//Create the crush rule
-	cRule := backend.CrushRuleRequest{Name: name, Type: "erasure", MinSize: 3, MaxSize: ec_pool_sizes["ecProfile"]}
+	cRule := backend.CrushRuleRequest{Name: name, Type: "erasure", MinSize: 3, MaxSize: ec_pool_sizes[ecProfile]}
 	var steps []map[string]interface{}
 
 	leafTries := make(map[string]interface{})
@@ -144,7 +144,7 @@ func (c CephApi) CreateECPool(
 
 	leaf := make(map[string]interface{})
 	leaf["num"] = 0
-	leaf["type"] = "host"
+	leaf["type"] = "osd"
 	leaf["op"] = "chooseleaf_indep"
 	steps = append(steps, leaf)
 
