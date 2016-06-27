@@ -60,10 +60,12 @@ func HttpGet(mon, url string) (*http.Response, error) {
 	}
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
+		resp.Body.Close()
 		return nil, fmt.Errorf(resp.Status)
 	} else if resp.StatusCode == http.StatusForbidden {
 		logger.Get().Warning("Session seems invalidated. Trying to login again.")
 		if err := login(session, mon, loginUrl); err != nil {
+			resp.Body.Close()
 			return nil, fmt.Errorf("Failed to relogin")
 		}
 		return doRequest(session, csrf_token, "GET", "application/json", url, bytes.NewBuffer([]byte{}))
@@ -102,10 +104,12 @@ func invokeUpdateRestApi(method string, mon string, url string, contentType stri
 	}
 
 	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
+		resp.Body.Close()
 		return nil, errors.New("Failed")
 	} else if resp.StatusCode == http.StatusForbidden {
 		logger.Get().Warning("Session seems invalidated. Trying to login again.")
 		if err := login(session, mon, loginUrl); err != nil {
+			resp.Body.Close()
 			return nil, fmt.Errorf("Failed to relogin")
 		}
 		return doRequest(session, csrf_token, method, contentType, url, body)
@@ -134,6 +138,7 @@ func doRequest(
 	// Invoke the request
 	resp, err := session.Do(req)
 	if err != nil {
+		resp.Body.Close()
 		return nil, fmt.Errorf("Error executing the request: %v", err)
 	}
 
