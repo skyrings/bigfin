@@ -19,6 +19,24 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_98772202",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-27T19:14:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_f8374e4b",
+      "revId": "98758b167f7a1189492e165212ccdf9cce5480ee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_18355245",
         "filename": "backend/cephapi/api.go",
         "patchSetId": 1
@@ -30,6 +48,30 @@
       "writtenOn": "2016-06-27T18:48:50Z",
       "side": 1,
       "message": "I think we just need defer \"closeRespBody(resp)\" per function which will be called when going out of this function. Applicable to all functions",
+      "range": {
+        "startLine": 96,
+        "startChar": 2,
+        "endLine": 96,
+        "endChar": 21
+      },
+      "revId": "98758b167f7a1189492e165212ccdf9cce5480ee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_78721e13",
+        "filename": "backend/cephapi/api.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-27T19:14:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_18355245",
       "range": {
         "startLine": 96,
         "startChar": 2,
@@ -65,6 +107,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_38637643",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-27T19:14:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_78ed7eb6",
+      "range": {
+        "startLine": 103,
+        "startChar": 3,
+        "endLine": 103,
+        "endChar": 12
+      },
+      "revId": "98758b167f7a1189492e165212ccdf9cce5480ee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_5804fa7c",
         "filename": "backend/cephapi/handler/handler.go",
         "patchSetId": 1
@@ -76,6 +142,30 @@
       "writtenOn": "2016-06-27T18:48:50Z",
       "side": 1,
       "message": "Need to have nil check here",
+      "range": {
+        "startLine": 187,
+        "startChar": 2,
+        "endLine": 187,
+        "endChar": 19
+      },
+      "revId": "98758b167f7a1189492e165212ccdf9cce5480ee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_185af283",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-27T19:14:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_5804fa7c",
       "range": {
         "startLine": 187,
         "startChar": 2,
@@ -111,6 +201,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_f85cee7e",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-27T19:14:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_3807f682",
+      "range": {
+        "startLine": 191,
+        "startChar": 1,
+        "endLine": 191,
+        "endChar": 18
+      },
+      "revId": "98758b167f7a1189492e165212ccdf9cce5480ee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_18fe726b",
         "filename": "backend/cephapi/handler/handler.go",
         "patchSetId": 1
@@ -134,6 +248,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_d8548a55",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-27T19:14:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_18fe726b",
+      "range": {
+        "startLine": 210,
+        "startChar": 2,
+        "endLine": 210,
+        "endChar": 18
+      },
+      "revId": "98758b167f7a1189492e165212ccdf9cce5480ee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_f8006e68",
         "filename": "backend/cephapi/handler/handler.go",
         "patchSetId": 1
@@ -145,6 +283,30 @@
       "writtenOn": "2016-06-27T18:48:50Z",
       "side": 1,
       "message": "same here",
+      "range": {
+        "startLine": 214,
+        "startChar": 1,
+        "endLine": 214,
+        "endChar": 18
+      },
+      "revId": "98758b167f7a1189492e165212ccdf9cce5480ee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_b84f86bd",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-06-27T19:14:10Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_f8006e68",
       "range": {
         "startLine": 214,
         "startChar": 1,
