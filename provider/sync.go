@@ -558,7 +558,7 @@ func syncStoragePools(mon string, clusterId uuid.UUID, ctxt string) error {
 			Name:     pool.Name,
 			Replicas: pool.Size,
 		}
-		if pool.QuotaMaxObjects != 0 && pool.QuotaMaxBytes != 0 {
+		if pool.QuotaMaxObjects != 0 || pool.QuotaMaxBytes != 0 {
 			storage.QuotaEnabled = true
 			quotaParams := make(map[string]string)
 			quotaParams["quota_max_objects"] = strconv.Itoa(pool.QuotaMaxObjects)
@@ -650,9 +650,9 @@ func syncStoragePools(mon string, clusterId uuid.UUID, ctxt string) error {
 			if err := coll.Update(
 				bson.M{"name": storage.Name},
 				bson.M{"$set": bson.M{
-					"options":       storage.Options,
-					"quota_enabled": storage.QuotaEnabled,
-					"quota_params":  storage.QuotaParams,
+					"options":      storage.Options,
+					"quotaenabled": storage.QuotaEnabled,
+					"quotaparams":  storage.QuotaParams,
 				}}); err != nil {
 				logger.Get().Error(
 					"%s-Error updating the storage entity: %s on cluster: %s. error: %v",
