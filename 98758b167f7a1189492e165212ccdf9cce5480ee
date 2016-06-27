@@ -1,0 +1,159 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_f8374e4b",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-27T18:48:50Z",
+      "side": 1,
+      "message": "We are missing the resp nil check in provider/provider.go",
+      "revId": "98758b167f7a1189492e165212ccdf9cce5480ee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_18355245",
+        "filename": "backend/cephapi/api.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 96,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-27T18:48:50Z",
+      "side": 1,
+      "message": "I think we just need defer \"closeRespBody(resp)\" per function which will be called when going out of this function. Applicable to all functions",
+      "range": {
+        "startLine": 96,
+        "startChar": 2,
+        "endLine": 96,
+        "endChar": 21
+      },
+      "revId": "98758b167f7a1189492e165212ccdf9cce5480ee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_78ed7eb6",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 103,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-27T18:48:50Z",
+      "side": 1,
+      "message": "don\u0027t we need to close the resp here?\nIs it because the doRequest is closing. I think the whole stuff is very confusing now. We are closing the handles at may different places which not the right thing to do. Either we need close in here or let the caller do that. I think closing here in all cases will not work out. So I would suggest to give out the resp to the caller all the time and let the caller close the connection which make the code much simpler",
+      "range": {
+        "startLine": 103,
+        "startChar": 3,
+        "endLine": 103,
+        "endChar": 12
+      },
+      "revId": "98758b167f7a1189492e165212ccdf9cce5480ee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_5804fa7c",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 187,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-27T18:48:50Z",
+      "side": 1,
+      "message": "Need to have nil check here",
+      "range": {
+        "startLine": 187,
+        "startChar": 2,
+        "endLine": 187,
+        "endChar": 19
+      },
+      "revId": "98758b167f7a1189492e165212ccdf9cce5480ee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_3807f682",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 191,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-27T18:48:50Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 191,
+        "startChar": 1,
+        "endLine": 191,
+        "endChar": 18
+      },
+      "revId": "98758b167f7a1189492e165212ccdf9cce5480ee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_18fe726b",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 210,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-27T18:48:50Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 210,
+        "startChar": 2,
+        "endLine": 210,
+        "endChar": 18
+      },
+      "revId": "98758b167f7a1189492e165212ccdf9cce5480ee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_f8006e68",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 214,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-27T18:48:50Z",
+      "side": 1,
+      "message": "same here",
+      "range": {
+        "startLine": 214,
+        "startChar": 1,
+        "endLine": 214,
+        "endChar": 18
+      },
+      "revId": "98758b167f7a1189492e165212ccdf9cce5480ee",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
