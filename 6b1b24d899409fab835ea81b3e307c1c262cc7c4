@@ -1,0 +1,165 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_2e821001",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 59,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-28T08:02:13Z",
+      "side": 1,
+      "message": "return resp, fmt.Errorf(\"Error executing request: %v\", err)\n\nOtherwise is resp will not closed in this case",
+      "range": {
+        "startLine": 59,
+        "startChar": 2,
+        "endLine": 59,
+        "endChar": 60
+      },
+      "revId": "6b1b24d899409fab835ea81b3e307c1c262cc7c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_ee7c2822",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 63,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-28T08:02:13Z",
+      "side": 1,
+      "message": "return resp, fmt.Errorf(resp.Status)",
+      "range": {
+        "startLine": 63,
+        "startChar": 2,
+        "endLine": 63,
+        "endChar": 37
+      },
+      "revId": "6b1b24d899409fab835ea81b3e307c1c262cc7c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_6e8ff823",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 67,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-28T08:02:13Z",
+      "side": 1,
+      "message": "return resp, fmt.Errorf(\"Failed to relogin\")",
+      "range": {
+        "startLine": 67,
+        "startChar": 3,
+        "endLine": 67,
+        "endChar": 46
+      },
+      "revId": "6b1b24d899409fab835ea81b3e307c1c262cc7c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_0e9cec5b",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 101,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-28T08:02:13Z",
+      "side": 1,
+      "message": "return resp, fmt.Errorf(\"Error executing request: %v\", err)",
+      "range": {
+        "startLine": 101,
+        "startChar": 2,
+        "endLine": 101,
+        "endChar": 60
+      },
+      "revId": "6b1b24d899409fab835ea81b3e307c1c262cc7c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_ce9e0454",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 105,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-28T08:02:13Z",
+      "side": 1,
+      "message": "return resp, errors.New(\"Failed\" + resp.Status)",
+      "range": {
+        "startLine": 105,
+        "startChar": 2,
+        "endLine": 105,
+        "endChar": 48
+      },
+      "revId": "6b1b24d899409fab835ea81b3e307c1c262cc7c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_8ea8fc78",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 109,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-28T08:02:13Z",
+      "side": 1,
+      "message": "return resp, fmt.Errorf(\"Failed to relogin\")",
+      "range": {
+        "startLine": 109,
+        "startChar": 3,
+        "endLine": 109,
+        "endChar": 46
+      },
+      "revId": "6b1b24d899409fab835ea81b3e307c1c262cc7c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_4eb9d4ca",
+        "filename": "backend/cephapi/handler/handler.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 137,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-06-28T08:02:13Z",
+      "side": 1,
+      "message": "return resp, fmt.Errorf(\"Error executing the request: %v\", err)",
+      "range": {
+        "startLine": 137,
+        "startChar": 2,
+        "endLine": 137,
+        "endChar": 64
+      },
+      "revId": "6b1b24d899409fab835ea81b3e307c1c262cc7c4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
