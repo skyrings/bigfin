@@ -752,8 +752,8 @@ func (s *CephProvider) UpdateStorage(req models.RpcRequest, resp *models.RpcResp
 				}
 				if request.QuotaEnabled {
 					for key, value := range request.QuotaParams {
-						reqVal, _ := strconv.ParseUint(value, 10, 32)
-						updatedFields[key] = uint(reqVal)
+						reqVal, _ := strconv.ParseUint(value, 10, 64)
+						updatedFields[key] = uint64(reqVal)
 					}
 				} else {
 					if request.QuotaParams["quota_max_objects"] == "0" && request.QuotaParams["quota_max_bytes"] == "0" {
