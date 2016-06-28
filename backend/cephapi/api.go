@@ -237,7 +237,7 @@ func syncRequestStatus(mon string, resp *http.Response) (bool, error) {
 	}
 	// Keep checking for the status of the request, and if completed return
 	var reqStatus models.CephRequestStatus
-	for count := 0; count < 30; count++ {
+	for count := 0; count < 150; count++ {
 		time.Sleep(2 * time.Second)
 		route := CEPH_API_ROUTES["GetRequestStatus"]
 		route.Pattern = strings.Replace(route.Pattern, "{request-fsid}", asyncReq.RequestId, 1)
