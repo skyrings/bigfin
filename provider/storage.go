@@ -141,8 +141,6 @@ func createBlockDevices(
 	request models.AddStorageRequest,
 	t *task.Task) {
 
-	sessionCopy := db.GetDatastore().Copy()
-	defer sessionCopy.Close()
 	t.UpdateStatus("Creating bolck devices")
 	var failedBlkDevices []string
 	for _, entry := range request.BlockDevices {

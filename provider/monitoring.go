@@ -200,9 +200,6 @@ func (s *CephProvider) GetClusterSummary(req models.RpcRequest, resp *models.Rpc
 		return fmt.Errorf("Error parsing the cluster id: %s.Error: %v", cluster_id_str, err)
 	}
 
-	sessionCopy := db.GetDatastore().Copy()
-	defer sessionCopy.Close()
-
 	mon_down_count := 0
 	monCriticalAlertsCount := 0
 	mons, monErr := GetMons(bson.M{"clusterid": *clusterId})
@@ -276,9 +273,6 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 
 	result := make(map[string]interface{})
 	httpStatusCode := http.StatusOK
-
-	sessionCopy := db.GetDatastore().Copy()
-	defer sessionCopy.Close()
 
 	mon_down_count := 0
 	monCriticalAlertsCount := 0

@@ -1315,8 +1315,6 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 	}
 
 	asyncTask := func(t *task.Task) {
-		sessionCopy := db.GetDatastore().Copy()
-		defer sessionCopy.Close()
 		for {
 			select {
 			case <-t.StopCh:
