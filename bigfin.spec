@@ -5,7 +5,6 @@ Release: 1%{?dist}
 Source0: %{name}-%{version}.tar.gz
 License: ASL 2.0
 Group: Development/Libraries
-BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 Url: https://github.com/skyrings/bigfin
 
 BuildRequires: golang
