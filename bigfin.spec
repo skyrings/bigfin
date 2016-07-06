@@ -1,15 +1,11 @@
-%define pkg_name bigfin
-%define pkg_version 0.0.30
-%define pkg_release 1
-
 Summary: SKYRING ceph provider
-Name: %{pkg_name}
-Version: %{pkg_version}
-Release: %{pkg_release}%{?dist}
-Source0: %{pkg_name}-%{pkg_version}.tar.gz
+Name: bigfin
+Version: 0.0.30
+Release: 1%{?dist}
+Source0: %{name}-%{version}.tar.gz
 License: ASL 2.0
 Group: Development/Libraries
-BuildRoot: %{_tmppath}/%{pkg_name}-%{pkg_version}-%{release}-buildroot
+BuildRoot: %{_tmppath}/%{name}-%{version}-%{release}-buildroot
 Url: https://github.com/skyrings/bigfin
 
 BuildRequires: golang
@@ -23,7 +19,7 @@ Requires: salt-master >= 2015.5.5
 SKYRING Ceph provider
 
 %prep
-%setup -n %{pkg_name}-%{pkg_version}
+%setup
 
 %build
 make build-special
