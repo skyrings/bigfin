@@ -25,7 +25,6 @@ make build-special
 make pybuild
 
 %install
-rm -rf $RPM_BUILD_ROOT
 install -m 755 -d $RPM_BUILD_ROOT/%{_var}/lib/skyring/providers
 install -D bigfin $RPM_BUILD_ROOT/%{_var}/lib/skyring/providers
 install -m 755 -d $RPM_BUILD_ROOT/%{_sysconfdir}/skyring/providers.d/
