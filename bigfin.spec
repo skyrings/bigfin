@@ -45,9 +45,6 @@ chmod -x $RPM_BUILD_ROOT/%{python2_sitelib}/bigfin/__init__.py
 chmod -x $RPM_BUILD_ROOT/%{python2_sitelib}/bigfin/saltwrapper.py
 chmod -x $RPM_BUILD_ROOT/%{python2_sitelib}/bigfin/utils.py
 
-%clean
-rm -rf $RPM_BUILD_ROOT
-
 %files
 %{_var}/lib/skyring/providers/bigfin
 %config(noreplace) %{_sysconfdir}/skyring/providers.d/ceph.conf
