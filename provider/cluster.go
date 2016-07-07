@@ -175,29 +175,11 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 					StaleNodes: []string{},
 				}
 				var bigfin_notifications []models.NotificationSubscription
-				for _, notification := range bigfinmodels.NOTIFICATIONS_SUPPORTED {
-					bigfin_notifications = append(bigfin_notifications, models.NotificationSubscription{
-						Name:    notification,
-						Enabled: true,
-					})
+				for _, notification := range models.Notifications {
+					bigfin_notifications = append(bigfin_notifications, notification)
 				}
-				for _, notification := range bigfinmodels.NOTIFICATIONS_UNSUPPORTED {
-					bigfin_notifications = append(bigfin_notifications, models.NotificationSubscription{
-						Name:    notification,
-						Enabled: false,
-					})
-				}
-				for _, notification := range models.NOTIFICATIONS_SUPPORTED {
-					bigfin_notifications = append(bigfin_notifications, models.NotificationSubscription{
-						Name:    notification,
-						Enabled: true,
-					})
-				}
-				for _, notification := range models.NOTIFICATIONS_UNSUPPORTED {
-					bigfin_notifications = append(bigfin_notifications, models.NotificationSubscription{
-						Name:    notification,
-						Enabled: false,
-					})
+				for _, notification := range bigfinmodels.Notifications {
+					bigfin_notifications = append(bigfin_notifications, notification)
 				}
 				notifSubsColl := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_CLUSTER_NOTIFICATION_SUBSCRIPTIONS)
 				if err := notifSubsColl.Insert(models.ClusterNotificationSubscription{ClusterId: *cluster_uuid, Notifications: bigfin_notifications}); err != nil {
