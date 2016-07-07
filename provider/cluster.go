@@ -47,15 +47,17 @@ var (
 )
 
 const (
-	RULEOFFSET          = 10000
-	MINSIZE             = 1
-	MAXSIZE             = 10
-	MON                 = "MON"
-	OSD                 = "OSD"
-	JOURNALSIZE         = 5120
-	MAX_JOURNALS_ON_SSD = 4
-	MIN_MON_IN_CLUSTER  = 3
-	BYTE_TO_TB          = 1099511627776
+	RULEOFFSET                 = 10000
+	MINSIZE                    = 1
+	MAXSIZE                    = 10
+	MON                        = "MON"
+	OSD                        = "OSD"
+	JOURNALSIZE                = 5120
+	MAX_JOURNALS_ON_SSD        = 4
+	MIN_MON_IN_CLUSTER         = 3
+	BYTE_TO_TB                 = 1099511627776
+	CRUSH_DEFAULT_ROOT_NODE_ID = -1
+	CRUSH_DEFAULT_RULE_ID      = 0
 )
 
 type JournalDetail struct {
@@ -2223,16 +2225,44 @@ func updateCrushMap(ctxt string, mon string, clusterId uuid.UUID) error {
 			cRootNode.Items = append(cRootNode.Items, ritem)
 			rpos++
 		}
-		cRootNodeId, err := cephapi_backend.CreateCrushNode(mon, clusterId, cRootNode, ctxt)
-		if err != nil {
-			logger.Get().Error("Failed to create Crush node for cluster: %s. error: %v", clusterId, err)
-			continue
-		}
+		var (
+			cRuleId     int
+			cRootNodeId int
+			err         error
+		)
+		if sprof.Name == models.DefaultProfile3 {
+			cRootNodeId = CRUSH_DEFAULT_ROOT_NODE_ID
+			cRuleId = CRUSH_DEFAULT_RULE_ID
 
-		cRuleId, err := createCrushRule(ctxt, sprof.Name, ruleSetId, cRootNode.Name, cRootNodeId, mon, clusterId)
-		if err != nil {
-			logger.Get().Error("Failed to create Crush rule for cluster: %s. error: %v", clusterId, err)
-			continue
+			cNode, err := cephapi_backend.GetCrushNode(mon, clusterId, cRootNodeId, ctxt)
+			if err != nil {
+				logger.Get().Error("Failed to retrieve Crush node:%v for cluster: %s. error: %v", cRootNodeId, clusterId, err)
+				return err
+			}
+			cNode.Items = append(cNode.Items, cRootNode.Items...)
+			params := map[string]interface{}{
+				"bucket_type": cRootNode.BucketType,
+				"name":        cRootNode.Name,
+				"items":       cNode.Items,
+			}
+			_, err = cephapi_backend.PatchCrushNode(mon, clusterId, cRootNodeId, params, ctxt)
+			if err != nil {
+				logger.Get().Error("Failed to update Crush node for cluster: %s. error: %v", clusterId, err)
+				continue
+			}
+
+		} else {
+			cRootNodeId, err = cephapi_backend.CreateCrushNode(mon, clusterId, cRootNode, ctxt)
+			if err != nil {
+				logger.Get().Error("Failed to create Crush node for cluster: %s. error: %v", clusterId, err)
+				continue
+			}
+
+			cRuleId, err = createCrushRule(ctxt, sprof.Name, ruleSetId, cRootNode.Name, cRootNodeId, mon, clusterId)
+			if err != nil {
+				logger.Get().Error("Failed to create Crush rule for cluster: %s. error: %v", clusterId, err)
+				continue
+			}
 		}
 		ruleInfo := bigfinmodels.CrushInfo{RuleSetId: cRuleId, CrushNodeId: cRootNodeId}
 		ruleSets[sprof.Name] = ruleInfo
@@ -2410,14 +2440,22 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID, sluList map[string]m
 				var rootNodeFound bool
 				for _, crNode := range cNodes {
 					if crNode.Name == sprof.Name {
-						item := backend.CrushItem{Id: cNodeId, Pos: len(crNode.Items), Weight: nodeWeight}
-						crNode.Items = append(crNode.Items, item)
-						params := map[string]interface{}{
-							"bucket_type": crNode.BucketType,
-							"name":        crNode.Name,
-							"items":       crNode.Items,
+
+						cNodeLatest, err := cephapi_backend.GetCrushNode(monnode.Hostname, clusterId, crNode.Id, ctxt)
+						if err != nil {
+							logger.Get().Error("Failed to retrieve Crush node:%v for cluster: %s. error: %v", crNode.Id, clusterId, err)
+							return err
 						}
-						_, err := cephapi_backend.PatchCrushNode(monnode.Hostname, clusterId, crNode.Id, params, ctxt)
+
+						item := backend.CrushItem{Id: cNodeId, Pos: len(cNodeLatest.Items), Weight: nodeWeight}
+
+						cNodeLatest.Items = append(cNodeLatest.Items, item)
+						params := map[string]interface{}{
+							"bucket_type": cNodeLatest.BucketType,
+							"name":        cNodeLatest.Name,
+							"items":       cNodeLatest.Items,
+						}
+						_, err = cephapi_backend.PatchCrushNode(monnode.Hostname, clusterId, cNodeLatest.Id, params, ctxt)
 						if err != nil {
 							logger.Get().Error("Failed to update Crush node for cluster: %s. error: %v", clusterId, err)
 						}
