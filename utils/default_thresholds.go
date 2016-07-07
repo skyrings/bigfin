@@ -2,49 +2,53 @@ package utils
 
 import (
 	"github.com/skyrings/skyring-common/monitoring"
-	skyring_monitoring "github.com/skyrings/skyring-common/monitoring"
 )
 
 func GetProviderSpecificDefaultThresholdValues() (plugins []monitoring.Plugin) {
-	return []skyring_monitoring.Plugin{
+	return []monitoring.Plugin{
 		{
-			Name:   skyring_monitoring.SLU_UTILIZATION,
-			Enable: true,
+			Name:        monitoring.SLU_UTILIZATION,
+			Description: "OSD Utilization",
+			Enable:      true,
 			Configs: []monitoring.PluginConfig{
-				{Category: monitoring.THRESHOLD, Type: skyring_monitoring.CRITICAL, Value: "95"},
-				{Category: monitoring.THRESHOLD, Type: skyring_monitoring.WARNING, Value: "85"},
+				{Category: monitoring.THRESHOLD, Type: monitoring.CRITICAL, Value: "95"},
+				{Category: monitoring.THRESHOLD, Type: monitoring.WARNING, Value: "85"},
 			},
 		},
 		{
-			Name:   skyring_monitoring.STORAGE_UTILIZATION,
-			Enable: true,
+			Name:        monitoring.STORAGE_UTILIZATION,
+			Description: "Storage Utilization",
+			Enable:      true,
 			Configs: []monitoring.PluginConfig{
-				{Category: monitoring.THRESHOLD, Type: skyring_monitoring.CRITICAL, Value: "90"},
-				{Category: monitoring.THRESHOLD, Type: skyring_monitoring.WARNING, Value: "75"},
+				{Category: monitoring.THRESHOLD, Type: monitoring.CRITICAL, Value: "90"},
+				{Category: monitoring.THRESHOLD, Type: monitoring.WARNING, Value: "75"},
 			},
 		},
 		{
-			Name:   skyring_monitoring.CLUSTER_UTILIZATION,
-			Enable: true,
+			Name:        monitoring.CLUSTER_UTILIZATION,
+			Description: "Cluster",
+			Enable:      true,
 			Configs: []monitoring.PluginConfig{
-				{Category: monitoring.THRESHOLD, Type: skyring_monitoring.CRITICAL, Value: "90"},
-				{Category: monitoring.THRESHOLD, Type: skyring_monitoring.WARNING, Value: "75"},
+				{Category: monitoring.THRESHOLD, Type: monitoring.CRITICAL, Value: "90"},
+				{Category: monitoring.THRESHOLD, Type: monitoring.WARNING, Value: "75"},
 			},
 		},
 		{
-			Name:   skyring_monitoring.STORAGE_PROFILE_UTILIZATION,
-			Enable: true,
+			Name:        monitoring.STORAGE_PROFILE_UTILIZATION,
+			Description: "Storage Profile",
+			Enable:      true,
 			Configs: []monitoring.PluginConfig{
-				{Category: monitoring.THRESHOLD, Type: skyring_monitoring.CRITICAL, Value: "85"},
-				{Category: monitoring.THRESHOLD, Type: skyring_monitoring.WARNING, Value: "65"},
+				{Category: monitoring.THRESHOLD, Type: monitoring.CRITICAL, Value: "85"},
+				{Category: monitoring.THRESHOLD, Type: monitoring.WARNING, Value: "65"},
 			},
 		},
 		{
-			Name:   skyring_monitoring.BLOCK_DEVICE_UTILIZATION,
-			Enable: true,
+			Name:        monitoring.BLOCK_DEVICE_UTILIZATION,
+			Description: "Block Device Utilization",
+			Enable:      true,
 			Configs: []monitoring.PluginConfig{
-				{Category: monitoring.THRESHOLD, Type: skyring_monitoring.CRITICAL, Value: "85"},
-				{Category: monitoring.THRESHOLD, Type: skyring_monitoring.WARNING, Value: "65"},
+				{Category: monitoring.THRESHOLD, Type: monitoring.CRITICAL, Value: "85"},
+				{Category: monitoring.THRESHOLD, Type: monitoring.WARNING, Value: "65"},
 			},
 		},
 	}
