@@ -1,0 +1,90 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_c0b90817",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 8,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-07T15:15:53Z",
+      "side": 1,
+      "message": "Add Bug-URL here",
+      "revId": "ee35d5fcfae8b021c4946922dc8fd6fc2bc26dbe",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_803ae096",
+        "filename": "utils/default_notifications.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-07T15:15:53Z",
+      "side": 1,
+      "message": "Why blank for few ? they might be used in future may be :)",
+      "range": {
+        "startLine": 12,
+        "startChar": 16,
+        "endLine": 12,
+        "endChar": 19
+      },
+      "revId": "ee35d5fcfae8b021c4946922dc8fd6fc2bc26dbe",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_60411c0b",
+        "filename": "utils/default_thresholds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 11,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-07T15:15:53Z",
+      "side": 1,
+      "message": "No underscores in description",
+      "range": {
+        "startLine": 11,
+        "startChar": 17,
+        "endLine": 11,
+        "endChar": 32
+      },
+      "revId": "ee35d5fcfae8b021c4946922dc8fd6fc2bc26dbe",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_4044d819",
+        "filename": "utils/default_thresholds.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 38,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-07T15:15:53Z",
+      "side": 1,
+      "message": "Same as above",
+      "range": {
+        "startLine": 38,
+        "startChar": 17,
+        "endLine": 38,
+        "endChar": 32
+      },
+      "revId": "ee35d5fcfae8b021c4946922dc8fd6fc2bc26dbe",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
