@@ -47,13 +47,6 @@ type CrushInfo struct {
 	CrushNodeId int
 }
 
-var NOTIFICATIONS_SUPPORTED = []string{
-	MONITOR_AVAILABILTY,
-	OSD_AVAILABILITY,
-}
-
-var NOTIFICATIONS_UNSUPPORTED = []string{}
-
 type ECProfileDet struct {
 	Pool      string `json:"pool"`
 	PoolId    int    `json:"pool_id"`

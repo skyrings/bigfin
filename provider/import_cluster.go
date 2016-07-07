@@ -259,29 +259,11 @@ func (s *CephProvider) ImportCluster(req models.RpcRequest, resp *models.RpcResp
 		// Update the notification details
 		t.UpdateStatus("Creating notification subscription configuartions")
 		var bigfin_notifications []models.NotificationSubscription
-		for _, notification := range bigfin_models.NOTIFICATIONS_SUPPORTED {
-			bigfin_notifications = append(bigfin_notifications, models.NotificationSubscription{
-				Name:    notification,
-				Enabled: true,
-			})
+		for _, notification := range models.Notifications {
+			bigfin_notifications = append(bigfin_notifications, notification)
 		}
-		for _, notification := range bigfin_models.NOTIFICATIONS_UNSUPPORTED {
-			bigfin_notifications = append(bigfin_notifications, models.NotificationSubscription{
-				Name:    notification,
-				Enabled: false,
-			})
-		}
-		for _, notification := range models.NOTIFICATIONS_SUPPORTED {
-			bigfin_notifications = append(bigfin_notifications, models.NotificationSubscription{
-				Name:    notification,
-				Enabled: true,
-			})
-		}
-		for _, notification := range models.NOTIFICATIONS_UNSUPPORTED {
-			bigfin_notifications = append(bigfin_notifications, models.NotificationSubscription{
-				Name:    notification,
-				Enabled: false,
-			})
+		for _, notification := range bigfin_models.Notifications {
+			bigfin_notifications = append(bigfin_notifications, notification)
 		}
 		sessionCopy := db.GetDatastore().Copy()
 		defer sessionCopy.Close()
