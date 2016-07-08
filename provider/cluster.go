@@ -16,6 +16,11 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net/http"
+	"strconv"
+	"strings"
+	"time"
+
 	"github.com/skyrings/bigfin/backend"
 	"github.com/skyrings/bigfin/bigfinmodels"
 	"github.com/skyrings/bigfin/utils"
@@ -29,10 +34,6 @@ import (
 	"github.com/skyrings/skyring-common/utils"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"net/http"
-	"strconv"
-	"strings"
-	"time"
 
 	bigfin_conf "github.com/skyrings/bigfin/conf"
 	bigfin_task "github.com/skyrings/bigfin/tools/task"
@@ -1315,6 +1316,17 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 						t)
 					return
 				}
+
+				monnode, err := GetCalamariMonNode(*cluster_id, ctxt)
+				if err != nil {
+					logger.Get().Error("%s-Unable to pick a random mon from cluster %v.Error: %v", ctxt, cluster.Name, err.Error())
+					*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unable to pick a random mon from cluster %v.Error: %v", cluster.Name, err.Error()))
+				} else {
+					initMonitoringRoutines(ctxt, cluster, (*monnode).Hostname, monitoringRoutines)
+					util.UpdateSluCountToSummaries(ctxt, cluster)
+					UpdateMonCountToSummaries(ctxt, cluster)
+				}
+
 				t.UpdateStatus("Success")
 				t.Done(models.TASK_STATUS_SUCCESS)
 				return
@@ -1747,6 +1759,12 @@ func (s *CephProvider) UpdateStorageLogicalUnitParams(req models.RpcRequest, res
 					utils.FailTask(fmt.Sprintf("Error updating the details for slu: %s.", slu.Name), fmt.Errorf("%s-%v", ctxt, err), t)
 					return
 				}
+				cluster, clusterFetchError := getCluster(*cluster_id)
+				if clusterFetchError != nil {
+					logger.Get().Error("%s - Failed to get cluster with id %v.Error %v", ctxt, cluster_id, err)
+				} else {
+					util.UpdateSluCountToSummaries(ctxt, cluster)
+				}
 				t.UpdateStatus("Success")
 				t.Done(models.TASK_STATUS_SUCCESS)
 				return
@@ -2080,6 +2098,7 @@ func SyncOsdStatus(clusterId uuid.UUID, ctxt string) error {
 		logger.Get().Error("%s-Error getting OSD details for cluster: %v. error: %v", ctxt, clusterId, err)
 		return err
 	}
+
 	pgSummary, err := cephapi_backend.GetPGSummary(monnode.Hostname, clusterId, ctxt)
 	if err != nil {
 		logger.Get().Error("%s-Error getting pg summary for cluster: %v. error: %v", ctxt, clusterId, err)
@@ -2135,7 +2154,6 @@ func SyncOsdStatus(clusterId uuid.UUID, ctxt string) error {
 			}
 		}
 	}
-
 	return nil
 }
 
