@@ -15,6 +15,8 @@ package provider
 import (
 	"encoding/json"
 	"fmt"
+	"net/http"
+
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/conf"
 	"github.com/skyrings/skyring-common/db"
@@ -23,7 +25,6 @@ import (
 	"github.com/skyrings/skyring-common/tools/task"
 	"github.com/skyrings/skyring-common/tools/uuid"
 	"gopkg.in/mgo.v2/bson"
-	"net/http"
 
 	bigfin_conf "github.com/skyrings/bigfin/conf"
 	bigfin_task "github.com/skyrings/bigfin/tools/task"
@@ -162,6 +163,13 @@ func createBlockStorage(
 			utils.FailTask(fmt.Sprintf("Error persisting block device entity for cluster: %s", clusterName), fmt.Errorf("%s - %v", ctxt, err), t)
 			return false
 		}
+		cluster, err := getCluster(clusterId)
+		if err != nil {
+			logger.Get().Error("Failed to get details of cluster: %s. error: %v", clusterId, err)
+		} else {
+			initMonitoringRoutines(ctxt, cluster, mon, []interface{}{FetchRBDStats, FetchObjectCount})
+			UpdateObjectCountToSummaries(ctxt, cluster)
+		}
 	}
 
 	return true
@@ -243,6 +251,8 @@ func (s *CephProvider) DeleteBlockDevice(req models.RpcRequest, resp *models.Rpc
 						return
 					}
 				}
+				initMonitoringRoutines(ctxt, cluster, monnode.Hostname, []interface{}{FetchObjectCount})
+				UpdateObjectCountToSummaries(ctxt, cluster)
 				t.UpdateStatus("Success")
 				t.Done(models.TASK_STATUS_SUCCESS)
 				return
@@ -352,6 +362,10 @@ func (s *CephProvider) ResizeBlockDevice(req models.RpcRequest, resp *models.Rpc
 						return
 					}
 				}
+
+				initMonitoringRoutines(ctxt, cluster, (*monnode).Hostname, []interface{}{FetchRBDStats, FetchObjectCount})
+				UpdateObjectCountToSummaries(ctxt, cluster)
+
 				t.UpdateStatus("Success")
 				t.Done(models.TASK_STATUS_SUCCESS)
 				return
