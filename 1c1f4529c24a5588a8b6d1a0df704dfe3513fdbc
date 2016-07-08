@@ -93,6 +93,30 @@
       "revId": "1c1f4529c24a5588a8b6d1a0df704dfe3513fdbc",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_edc5243d",
+        "filename": "utils/default_notifications.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-07-08T07:45:40Z",
+      "side": 1,
+      "message": "These are defined in bigfin/bigfinmodels/misc.go\n\nAs shubhendu said all these have \"_\".",
+      "parentUuid": "baa041b7_8d88d823",
+      "range": {
+        "startLine": 12,
+        "startChar": 17,
+        "endLine": 12,
+        "endChar": 48
+      },
+      "revId": "1c1f4529c24a5588a8b6d1a0df704dfe3513fdbc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
