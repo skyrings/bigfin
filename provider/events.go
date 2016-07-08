@@ -492,6 +492,9 @@ func osd_add_or_delete_handler(event models.AppEvent, osdname string, ctxt strin
 				err)
 			return event, err
 		} else {
+			if err := common_event.DismissAllEventsForEntity(event.EntityId, event, ctxt); err != nil {
+				logger.Get().Error("%s-Error while dismissing events for entity: %v. Error: %v", ctxt, event.EntityId, err)
+			}
 			return event, nil
 		}
 	}
@@ -861,6 +864,7 @@ func ceph_pool_add_handler(event models.AppEvent, ctxt string) (models.AppEvent,
 				ctxt,
 				storage.Name,
 				cluster.Name)
+			event.EntityId = storage.StorageId
 			return event, nil
 		} else {
 			logger.Get().Error("%s-Error reading storage info from DB. Error: %v", ctxt, err)
@@ -899,6 +903,26 @@ func ceph_rbd_delete_handler(event models.AppEvent, ctxt string) (models.AppEven
 
 	event.ClusterName = cluster.Name
 	rbdColl := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_BLOCK_DEVICES)
+	var rbd models.BlockDevice
+	if err := rbdColl.Find(
+		bson.M{
+			"clusterid": event.ClusterId,
+			"storageid": pool.StorageId,
+			"name":      event.Tags["rbdName"]}).One(&rbd); err != nil {
+		logger.Get().Error(
+			"%s-Error finding the block device: %s "+
+				"of pool: %s on cluster: %s. error: %v",
+			ctxt,
+			event.Tags["rbdName"],
+			pool.Name,
+			cluster.Name,
+			err)
+		return event, err
+	}
+	event.EntityId = rbd.Id
+	if err := common_event.DismissAllEventsForEntity(event.EntityId, event, ctxt); err != nil {
+		logger.Get().Error("%s-Error while dismissing events for entity: %v. Error: %v", ctxt, event.EntityId, err)
+	}
 	if err := rbdColl.Remove(
 		bson.M{
 			"clusterid": event.ClusterId,
@@ -997,6 +1021,7 @@ func ceph_rbd_create_handler(event models.AppEvent, ctxt string) (models.AppEven
 				)
 				event.Severity = models.ALARM_STATUS_CLEARED
 				event.Notify = false
+				event.EntityId = newDevice.Id
 				return event, nil
 			}
 		} else {
@@ -1164,7 +1189,7 @@ func ceph_pool_delete_handler(event models.AppEvent, ctxt string) (models.AppEve
 	event.Message = fmt.Sprintf("Detected deletion of pool %s from cluster %s", s.Name,
 		cluster.Name)
 	event.Description = fmt.Sprintf("%s. This pool will be removed from the DB", event.Message)
-
+	event.EntityId = s.StorageId
 	if err := coll.Remove(bson.M{"options.id": event.Tags["service_id"],
 		"clusterid": event.ClusterId}); err != nil {
 		logger.Get().Error(
@@ -1173,6 +1198,9 @@ func ceph_pool_delete_handler(event models.AppEvent, ctxt string) (models.AppEve
 			event.ClusterId,
 			err)
 		return event, err
+	}
+	if err := common_event.DismissAllEventsForEntity(s.StorageId, event, ctxt); err != nil {
+		logger.Get().Error("%s-Error while dismissing events for entity: %v. Error: %v", ctxt, event.EntityId, err)
 	}
 	return event, nil
 }
