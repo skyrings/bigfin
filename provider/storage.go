@@ -111,6 +111,13 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 					return
 				}
 
+				initMonitoringRoutines(ctxt, cluster, (*monnode).Hostname, []interface{}{FetchObjectCount})
+				_, cStats, err := updateClusterStats(ctxt, cluster, (*monnode).Hostname)
+				if err != nil {
+					updateStatsToPools(ctxt, cStats, cluster.ClusterId)
+					skyring_util.UpdateStorageCountToSummaries(ctxt, cluster)
+					skyring_util.UpdateObjectCountToSummaries(ctxt, cluster)
+				}
 				t.UpdateStatus("Success")
 				t.Done(models.TASK_STATUS_SUCCESS)
 				return
@@ -595,6 +602,9 @@ func (s *CephProvider) RemoveStorage(req models.RpcRequest, resp *models.RpcResp
 					return
 				}
 
+				skyring_util.UpdateStorageCountToSummaries(ctxt, cluster)
+				skyring_util.UpdateObjectCountToSummaries(ctxt, cluster)
+
 				t.UpdateStatus("Success")
 				t.Done(models.TASK_STATUS_SUCCESS)
 				return
@@ -816,6 +826,15 @@ func (s *CephProvider) UpdateStorage(req models.RpcRequest, resp *models.RpcResp
 						fmt.Errorf("%s-%v", ctxt, err),
 						t)
 				}
+
+				cluster, err := getCluster(*cluster_id)
+				if err != nil {
+					logger.Get().Error("%s - Failed to get details of cluster: %s. error: %v", ctxt, *cluster_id, err)
+				} else {
+					initMonitoringRoutines(ctxt, cluster, (*monnode).Hostname, []interface{}{FetchPGSummary})
+					UpdatePgNumToSummaries(cluster, ctxt)
+				}
+
 				t.UpdateStatus("Success")
 				t.Done(models.TASK_STATUS_SUCCESS)
 				return
