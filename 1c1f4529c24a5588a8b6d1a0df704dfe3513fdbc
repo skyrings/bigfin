@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_fb203db2",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 4
+      },
+      "lineNbr": 9,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-08T06:19:23Z",
+      "side": 1,
+      "message": "\"Bug-URL\" just for uniformity. Also remove the blank line below",
+      "range": {
+        "startLine": 9,
+        "startChar": 0,
+        "endLine": 9,
+        "endChar": 5
+      },
+      "revId": "1c1f4529c24a5588a8b6d1a0df704dfe3513fdbc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_db2fb99f",
+        "filename": "utils/default_notifications.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 12,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-08T06:19:23Z",
+      "side": 1,
+      "message": "If these values have underscores, better use hand written values without underscores. Just verify once.",
+      "range": {
+        "startLine": 12,
+        "startChar": 17,
+        "endLine": 12,
+        "endChar": 48
+      },
+      "revId": "1c1f4529c24a5588a8b6d1a0df704dfe3513fdbc",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
