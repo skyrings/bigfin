@@ -27,6 +27,7 @@ import (
 
 	bigfin_conf "github.com/skyrings/bigfin/conf"
 	bigfin_task "github.com/skyrings/bigfin/tools/task"
+	skyring_util "github.com/skyrings/skyring-common/utils"
 )
 
 func (s *CephProvider) CreateBlockDevice(req models.RpcRequest, resp *models.RpcResponse) error {
@@ -162,6 +163,13 @@ func createBlockStorage(
 			utils.FailTask(fmt.Sprintf("Error persisting block device entity for cluster: %s", clusterName), fmt.Errorf("%s - %v", ctxt, err), t)
 			return false
 		}
+		cluster, err := getCluster(clusterId)
+		if err != nil {
+			logger.Get().Error("Failed to get details of cluster: %s. error: %v", clusterId, err)
+		} else {
+			initMonitoringRoutines(ctxt, cluster, mon, []interface{}{FetchRBDStats, FetchObjectCount})
+			skyring_util.UpdateObjectCountToSummaries(ctxt, cluster)
+		}
 	}
 
 	return true
@@ -243,6 +251,7 @@ func (s *CephProvider) DeleteBlockDevice(req models.RpcRequest, resp *models.Rpc
 						return
 					}
 				}
+				skyring_util.UpdateObjectCountToSummaries(ctxt, cluster)
 				t.UpdateStatus("Success")
 				t.Done(models.TASK_STATUS_SUCCESS)
 				return
@@ -352,6 +361,10 @@ func (s *CephProvider) ResizeBlockDevice(req models.RpcRequest, resp *models.Rpc
 						return
 					}
 				}
+
+				initMonitoringRoutines(ctxt, cluster, (*monnode).Hostname, []interface{}{FetchRBDStats, FetchObjectCount})
+				skyring_util.UpdateObjectCountToSummaries(ctxt, cluster)
+
 				t.UpdateStatus("Success")
 				t.Done(models.TASK_STATUS_SUCCESS)
 				return
