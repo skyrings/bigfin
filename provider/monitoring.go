@@ -104,7 +104,7 @@ func InitMonitoringManager() error {
 	return nil
 }
 
-func initMonitoringRoutines(ctxt string, cluster models.Cluster, monName string) error {
+func initMonitoringRoutines(ctxt string, cluster models.Cluster, monName string, monitoringRoutines []interface{}) error {
 	/*
 		sync.WaitGroup can be used if it is required to do something after all go routines complete.
 		For ex: pushing to db can be done after all go-routines complete.
@@ -171,7 +171,7 @@ func (s *CephProvider) MonitorCluster(req models.RpcRequest, resp *models.RpcRes
 		return fmt.Errorf("Unable to pick a random mon from cluster %v.Error: %v", cluster.Name, err.Error())
 	}
 	monName := (*monnode).Hostname
-	err = initMonitoringRoutines(ctxt, cluster, monName)
+	err = initMonitoringRoutines(ctxt, cluster, monName, monitoringRoutines)
 	if err != nil {
 		logger.Get().Error("%s-Error: %v", ctxt, err.Error())
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error: %v", err.Error()))
@@ -226,29 +226,13 @@ func (s *CephProvider) GetClusterSummary(req models.RpcRequest, resp *models.Rpc
 	/*
 		Fetch pg count
 	*/
-	pgNum := make(map[string]uint64)
-	mon, monErr := GetCalamariMonNode(*clusterId, ctxt)
-	if monErr != nil {
-		err_str = err_str + fmt.Sprintf("%s - Failed to get the mon from cluster %v", ctxt, *clusterId)
+	if pgCount, err := ComputeClusterPGNum(cluster, ctxt); err == nil {
+		result["pgnum"] = pgCount
 	} else {
-		pgCount, pgCountError := cephapi_backend.GetPGCount((*mon).Hostname, *clusterId, ctxt)
-		if pgCountError != nil {
-			err_str = err_str + fmt.Sprintf("%s - Failed to fetch the number of pgs from cluster %v", ctxt, *clusterId)
-		} else {
-			for status, statusCount := range pgCount {
-				if status == skyring_monitoring.CRITICAL {
-					pgNum[models.STATUS_ERR] = statusCount
-				}
-				if status == models.STATUS_WARN {
-					pgNum[models.STATUS_WARN] = statusCount
-				}
-				pgNum[models.TOTAL] = pgNum[models.TOTAL] + statusCount
-			}
-		}
-		result["pgnum"] = pgNum
+		err_str = err_str + fmt.Sprintf("%s", err.Error())
 	}
 
-	result[bigfin_models.OBJECTS] = map[string]interface{}{bigfin_models.NUMBER_OF_OBJECTS: cluster.ObjectCount[bigfin_models.NUMBER_OF_OBJECTS], bigfin_models.NUMBER_OF_DEGRADED_OBJECTS: cluster.ObjectCount[bigfin_models.NUMBER_OF_DEGRADED_OBJECTS]}
+	result[bigfin_models.OBJECTS] = ComputeClusterObjectCount(cluster)
 
 	if err_str != "" {
 		if len(result) != 0 {
@@ -266,6 +250,115 @@ func (s *CephProvider) GetClusterSummary(req models.RpcRequest, resp *models.Rpc
 	}
 	*resp = utils.WriteResponseWithData(httpStatusCode, err_str, bytes)
 	return nil
+}
+
+func ComputeMonCount(selectCriteria bson.M) (map[string]int, error) {
+	mon_down_count := 0
+	monCriticalAlertsCount := 0
+	mons, monErr := GetMons(selectCriteria)
+	if monErr != nil {
+		return map[string]int{skyring_monitoring.TOTAL: len(mons), models.STATUS_DOWN: mon_down_count, "criticalAlerts": monCriticalAlertsCount}, monErr
+	}
+	for _, mon := range mons {
+		monCriticalAlertsCount = monCriticalAlertsCount + mon.AlmCritCount
+		if mon.Status == models.NODE_STATUS_ERROR {
+			mon_down_count = mon_down_count + 1
+		}
+	}
+	return map[string]int{skyring_monitoring.TOTAL: len(mons), models.STATUS_DOWN: mon_down_count, "criticalAlerts": monCriticalAlertsCount}, monErr
+}
+
+func UpdateMonCountToSummaries(ctxt string, cluster models.Cluster) {
+	monCnt, monErr := ComputeMonCount(bson.M{"clusterid": cluster.ClusterId})
+	if monErr != nil {
+		logger.Get().Error("%s - Failed to get mon count for cluster %v.Error %v", ctxt, cluster.Name, monErr)
+	} else {
+		updateField := fmt.Sprintf("providermonitoringdetails.%s.monitor", cluster.Type)
+		skyring_utils.UpdateDb(bson.M{"clusterid": cluster.ClusterId}, bson.M{updateField: monCnt}, models.COLL_NAME_CLUSTER_SUMMARY, ctxt)
+		monCnt, monErr := ComputeMonCount(nil)
+		if monErr != nil {
+			logger.Get().Error("%s - Failed to upadte system mon count.Error %v", ctxt, monErr)
+		}
+		skyring_utils.UpdateDb(bson.M{"clusterid": cluster.ClusterId}, bson.M{updateField: monCnt}, models.COLL_NAME_CLUSTER_SUMMARY, ctxt)
+	}
+}
+
+func ComputeClusterObjectCount(cluster models.Cluster) map[string]interface{} {
+	return map[string]interface{}{
+		bigfin_models.NUMBER_OF_OBJECTS:          cluster.ObjectCount[bigfin_models.NUMBER_OF_OBJECTS],
+		bigfin_models.NUMBER_OF_DEGRADED_OBJECTS: cluster.ObjectCount[bigfin_models.NUMBER_OF_DEGRADED_OBJECTS],
+	}
+}
+
+func ComputeClusterPGNum(cluster models.Cluster, ctxt string) (map[string]uint64, error) {
+	pgNum := make(map[string]uint64)
+	mon, monErr := GetCalamariMonNode(cluster.ClusterId, ctxt)
+	if monErr != nil {
+		return pgNum, fmt.Errorf("Failed to get the mon from cluster %v", cluster.ClusterId)
+	} else {
+		pgCount, pgCountError := cephapi_backend.GetPGCount((*mon).Hostname, cluster.ClusterId, ctxt)
+		if pgCountError != nil {
+			return nil, fmt.Errorf("Failed to fetch the number of pgs from cluster %v", cluster.Name)
+		} else {
+			for status, statusCount := range pgCount {
+				if status == skyring_monitoring.CRITICAL {
+					pgNum[models.STATUS_ERR] = statusCount
+				}
+				if status == models.STATUS_WARN {
+					pgNum[models.STATUS_WARN] = statusCount
+				}
+				pgNum[models.TOTAL] = pgNum[models.TOTAL] + statusCount
+			}
+		}
+	}
+	return pgNum, nil
+}
+
+func UpdatePgNumToSummaries(cluster models.Cluster, ctxt string) {
+	cPgNum, err := ComputeClusterPGNum(cluster, ctxt)
+	if err != nil {
+		logger.Get().Error("%s - Failed to fetch pg summary for cluster %v. Error %v", ctxt, cluster.Name, err)
+		return
+	} else {
+		updateField := fmt.Sprintf("providermonitoringdetails.%s.pgnum", cluster.Type)
+		skyring_utils.UpdateDb(bson.M{"clusterid": cluster.ClusterId}, bson.M{updateField: cPgNum}, models.COLL_NAME_CLUSTER_SUMMARY, ctxt)
+		sPgNum, err := ComputeSystemPGNum()
+		if err != nil {
+			logger.Get().Error("%s - Failed to update pg summary to system summary.Error %v", ctxt, err)
+		} else {
+			skyring_utils.UpdateDb(bson.M{"name": skyring_monitoring.SYSTEM}, bson.M{updateField: sPgNum}, models.COLL_NAME_SKYRING_UTILIZATION, ctxt)
+		}
+	}
+}
+
+func ComputeSystemPGNum() (map[string]uint64, error) {
+	var err_str string
+	pgNum := make(map[string]uint64)
+	clusterSummaries, clusterSummariesFetchErr := skyring_utils.GetClusterSummaries(bson.M{"type": bigfin_models.CLUSTER_TYPE})
+	if clusterSummariesFetchErr != nil {
+		if system, systemFetchErr := skyring_utils.GetSystem(); systemFetchErr == nil {
+			if providerDetails, ok := system.ProviderMonitoringDetails[bigfin_models.CLUSTER_TYPE]; ok {
+				if pgNum, pgNumOk := providerDetails["pgnum"]; pgNumOk {
+					return pgNum.(map[string]uint64), clusterSummariesFetchErr
+				}
+			}
+		}
+		return pgNum, fmt.Errorf("Unable to fetch clusters of type %v. Err %v", bigfin_models.CLUSTER_TYPE, clusterSummariesFetchErr)
+	}
+	for _, clusterSummary := range clusterSummaries {
+		if pgnum, ok := clusterSummary.ProviderMonitoringDetails[bigfin_models.CLUSTER_TYPE]["pgnum"].(map[string]interface{}); ok {
+			if errorCnt, errorCntOk := pgnum["error"].(float64); errorCntOk {
+				pgNum["error"] = pgNum["error"] + uint64(errorCnt)
+			}
+			if warnCnt, warnCntOk := pgnum["warning"].(float64); warnCntOk {
+				pgNum["warning"] = pgNum["warning"] + uint64(warnCnt)
+			}
+			if totalCnt, totalCntOk := pgnum["total"].(float64); totalCntOk {
+				pgNum["total"] = pgNum["total"] + uint64(totalCnt)
+			}
+		}
+	}
+	return pgNum, fmt.Errorf("%s", err_str)
 }
 
 func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcResponse) error {
@@ -291,46 +384,10 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 		result[models.Monitor] = map[string]int{skyring_monitoring.TOTAL: len(mons), models.STATUS_DOWN: mon_down_count, "criticalAlerts": monCriticalAlertsCount}
 	}
 
-	clusters, clustersFetchErr := getClustersByType(bigfin_models.CLUSTER_TYPE)
-	if clustersFetchErr != nil {
-		logger.Get().Error("%s - Unable to fetch clusters of type %v. Err %v", ctxt, bigfin_models.CLUSTER_TYPE, clustersFetchErr)
-		return fmt.Errorf("%s - Unable to fetch clusters of type %v. Err %v", ctxt, bigfin_models.CLUSTER_TYPE, clustersFetchErr)
-	}
+	var err error
 
-	var objectCount int64
-	var degradedObjectCount int64
-
-	pgNum := make(map[string]uint64)
-
-	for _, cluster := range clusters {
-		/*
-			Fetch object count
-		*/
-		objectCount = objectCount + cluster.ObjectCount[bigfin_models.NUMBER_OF_OBJECTS]
-		degradedObjectCount = degradedObjectCount + cluster.ObjectCount[bigfin_models.NUMBER_OF_DEGRADED_OBJECTS]
-
-		mon, monErr := GetCalamariMonNode(cluster.ClusterId, ctxt)
-		if monErr != nil {
-			err_str = err_str + fmt.Sprintf("%s - Failed to get the mon from cluster %v.Error %v", ctxt, cluster.ClusterId, monErr)
-		} else {
-			pgCount, pgCountError := cephapi_backend.GetPGCount((*mon).Hostname, cluster.ClusterId, ctxt)
-			if pgCountError != nil {
-				err_str = err_str + fmt.Sprintf("%s - Failed to fetch the number of pgs from cluster %v. Error %v", ctxt, cluster.ClusterId, pgCountError)
-			} else {
-				for status, statusCount := range pgCount {
-					if status == skyring_monitoring.CRITICAL {
-						pgNum[models.STATUS_ERR] = pgNum[models.STATUS_ERR] + statusCount
-					}
-					if status == models.STATUS_WARN {
-						pgNum[models.STATUS_WARN] = pgNum[models.STATUS_WARN] + statusCount
-					}
-					pgNum[models.TOTAL] = pgNum[models.TOTAL] + statusCount
-				}
-			}
-		}
-		result["pgnum"] = pgNum
-	}
-	result[bigfin_models.OBJECTS] = map[string]interface{}{bigfin_models.NUMBER_OF_OBJECTS: objectCount, bigfin_models.NUMBER_OF_DEGRADED_OBJECTS: degradedObjectCount}
+	result["pgnum"], err = ComputeSystemPGNum()
+	err_str = err_str + fmt.Sprintf("%s", err)
 
 	if err_str != "" {
 		if len(result) != 0 {
@@ -339,6 +396,11 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 			httpStatusCode = http.StatusInternalServerError
 		}
 	}
+	objCount, err = util.ComputeObjectCount(nil)
+	if err != nil {
+		logger.Get().Error("%s - Error fetching the object count. Error %v", ctxt, err)
+	}
+	result["objects"] = objCount
 	bytes, marshalErr := json.Marshal(result)
 	if marshalErr != nil {
 		*resp = utils.WriteResponseWithData(http.StatusInternalServerError, fmt.Sprintf("%s-%s", ctxt, err_str), []byte{})
@@ -347,6 +409,18 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 	}
 	*resp = utils.WriteResponseWithData(httpStatusCode, err_str, bytes)
 	return nil
+}
+
+func ComputeObjectCount(selectCriteria bson.M) (map[string]int64, error) {
+	clusters, err := GetClusters(selectCriteria)
+	var objectCount int64
+	var degradedObjectCount int64
+
+	for _, cluster := range clusters {
+		objectCount = objectCount + cluster.ObjectCount[models.NUMBER_OF_OBJECTS]
+		degradedObjectCount = degradedObjectCount + cluster.ObjectCount[models.NUMBER_OF_DEGRADED_OBJECTS]
+	}
+	return map[string]int64{bigfin_models.NUMBER_OF_OBJECTS: objectCount, bigfin_models.NUMBER_OF_DEGRADED_OBJECTS: degradedObjectCount}, err
 }
 
 func FetchOSDStats(ctxt string, cluster models.Cluster, monName string) (map[string]map[string]string, error) {
@@ -555,6 +629,7 @@ func FetchStorageProfileUtilizations(ctxt string, osdDetails OSDStats, cluster m
 			storageProfileEvents = append(storageProfileEvents, event)
 		}
 	}
+
 	if err := updateDB(
 		bson.M{"clusterid": cluster.ClusterId},
 		bson.M{"$set": bson.M{"storageprofileusage": cluster.StorageProfileUsage}},
@@ -586,20 +661,22 @@ func getOsds(clusterId uuid.UUID) (slus []models.StorageLogicalUnit, err error) 
 	return slus, nil
 }
 
-func FetchRBDStats(ctxt string, cluster models.Cluster, monName string) (map[string]map[string]string, error) {
+func updateRBDStats(ctxt string, cluster models.Cluster, monName string) (map[string]map[string]string, []RBDStats, error) {
+	var err_str string
+	var rbdStats []RBDStats
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	collection := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
 	var pools []models.Storage
 	if err := collection.Find(bson.M{"clusterid": cluster.ClusterId}).All(&pools); err != nil {
-		return nil, err
+		logger.Get().Error("%s - Failed to fetch rbd stats for cluster %v.Error %v", ctxt, cluster.Name, err)
+		return nil, rbdStats, err
 	}
 	metrics := make(map[string]map[string]string)
-	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
-	var err_str string
 	currentTimeStamp := strconv.FormatInt(time.Now().Unix(), 10)
-	var statistics RBDStats
+	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
 	for _, pool := range pools {
+		var statistics RBDStats
 		metric_name := fmt.Sprintf("%s.%s.%s.%s.", monitoringConfig.CollectionName, strings.Replace(cluster.Name, ".", "_", -1), strings.Replace(pool.Name, ".", "_", -1), models.COLL_NAME_BLOCK_DEVICES)
 		response, isSuccess := getStatsFromCalamariApi(ctxt,
 			monName,
@@ -617,7 +694,8 @@ func FetchRBDStats(ctxt string, cluster models.Cluster, monName string) (map[str
 		}
 
 		if err := json.Unmarshal([]byte(response), &statistics); err != nil {
-			return nil, fmt.Errorf("%s - Failed to fetch rbd stats from pool %v, cluster %v.Could not unmarshal %v.Error %v", ctxt, pool.Name, cluster.Name, response, err)
+			err_str = fmt.Sprintf("%s. Failed to fetch rbd stats from pool %v, cluster %v.Could not unmarshal %v.Error %v", err_str, pool.Name, cluster.Name, response, err)
+			continue
 		}
 
 		rbdColl := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_BLOCK_DEVICES)
@@ -635,32 +713,42 @@ func FetchRBDStats(ctxt string, cluster models.Cluster, monName string) (map[str
 				err_str = fmt.Sprintf("%s.Unable to update rbd stats of rbd %v from mon %v of pool %v, cluster %v.Error: %v",
 					err_str, rbdStat.Name, monName, pool.Name, cluster.Name, err)
 			}
+			metrics[metric_name+skyring_monitoring.USED_SPACE] = map[string]string{currentTimeStamp: fmt.Sprintf("%v", rbdStat.Used)}
+			metrics[metric_name+skyring_monitoring.TOTAL_SPACE] = map[string]string{currentTimeStamp: fmt.Sprintf("%v", rbdStat.Total)}
+			metrics[metric_name+skyring_monitoring.PERCENT_USED] = map[string]string{currentTimeStamp: fmt.Sprintf("%v", percent_used)}
+		}
+		rbdStats = append(rbdStats, statistics)
+	}
+	return metrics, rbdStats, fmt.Errorf("%v", err_str)
+}
 
+func FetchRBDStats(ctxt string, cluster models.Cluster, monName string) (map[string]map[string]string, error) {
+	metrics, statistics, statsErr := updateRBDStats(ctxt, cluster, monName)
+
+	for _, stat := range statistics {
+		for _, rbdStat := range stat.RBDs {
+			var percent_used float64
+			if rbdStat.Total > 0 {
+				percent_used = float64(rbdStat.Used*100) / float64(rbdStat.Total)
+			}
 			event, isRaiseEvent, err := skyring_utils.AnalyseThresholdBreach(ctxt, skyring_monitoring.BLOCK_DEVICE_UTILIZATION, rbdStat.Name, percent_used, cluster)
 			if err != nil {
-				logger.Get().Error("%s - Failed to analyse threshold breach for utilization of rbd %v of pool %v from cluster %v.Error %v", ctxt, rbdStat.Name, pool.Name, cluster.Name, err)
+				logger.Get().Error("%s - Failed to analyse threshold breach for utilization of rbd %v from cluster %v.Error %v", ctxt, rbdStat.Name, cluster.Name, err)
 			}
 			if isRaiseEvent {
 				if err, _ := HandleEvent(event, ctxt); err != nil {
 					logger.Get().Error("%s - Threshold: %v.Error %v", ctxt, event, err)
 				}
 			}
-
-			metrics[metric_name+skyring_monitoring.USED_SPACE] = map[string]string{currentTimeStamp: fmt.Sprintf("%v", rbdStat.Used)}
-			metrics[metric_name+skyring_monitoring.TOTAL_SPACE] = map[string]string{currentTimeStamp: fmt.Sprintf("%v", rbdStat.Total)}
-			metrics[metric_name+skyring_monitoring.PERCENT_USED] = map[string]string{currentTimeStamp: fmt.Sprintf("%v", percent_used)}
 		}
 	}
-	if err_str == "" {
-		return metrics, nil
-	} else {
-		return metrics, fmt.Errorf("%v", err_str)
-	}
+	return metrics, statsErr
 }
 
-func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map[string]map[string]string, error) {
+func updateClusterStats(ctxt string, cluster models.Cluster, monName string) (map[string]map[string]string, ClusterStats, error) {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
+	percentUsed := 0.0
 
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
 
@@ -677,11 +765,11 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 			So just a return from this function is required here.
 		*/
 
-		return nil, nil
+		return nil, statistics, nil
 	}
 
 	if err := json.Unmarshal([]byte(response), &statistics); err != nil {
-		return nil, fmt.Errorf("%s - Failed to fetch cluster stats from cluster %v.Could not unmarshal %v.Error %v", ctxt, cluster.Name, response, err)
+		return nil, statistics, fmt.Errorf("Failed to fetch cluster stats from cluster %v.Could not unmarshal %v.Error %v", cluster.Name, response, err)
 	}
 
 	metrics := make(map[string]map[string]string)
@@ -693,7 +781,6 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 	metrics[metric_name+skyring_monitoring.FREE_SPACE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", statistics.Stats.Available)}
 	metrics[metric_name+skyring_monitoring.TOTAL_SPACE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", statistics.Stats.Total)}
 
-	percentUsed := 0.0
 	if statistics.Stats.Total != 0 {
 		percentUsed = (float64(statistics.Stats.Used*100) / float64(statistics.Stats.Total))
 	}
@@ -708,9 +795,43 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 					PercentUsed: percentUsed,
 					UpdatedAt:   time.Now().String()}}},
 		models.COLL_NAME_STORAGE_CLUSTERS); err != nil {
-		logger.Get().Error("%s-Updating the cluster statistics to db for the cluster %v failed.Error %v", ctxt, cluster.Name, err.Error())
+		return metrics, statistics, fmt.Errorf("Updating the cluster statistics to db for the cluster %v failed.Error %v", cluster.Name, err.Error())
+	}
+	return metrics, statistics, nil
+}
+
+func updateStatsToPools(ctxt string, statistics ClusterStats, clusterId uuid.UUID) {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	collection := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+	for _, poolStat := range statistics.Pools {
+		used := poolStat.PoolUtilization.Used
+		total := poolStat.PoolUtilization.Available
+		percentUsed := 0.0
+		if total != 0 {
+			percentUsed = (float64(used*100) / float64(total))
+		}
+		dbUpdateError := collection.Update(bson.M{"clusterid": clusterId, "name": poolStat.Name}, bson.M{"$set": bson.M{"usage": models.Utilization{
+			Used:        used,
+			Total:       total,
+			PercentUsed: percentUsed,
+			UpdatedAt:   time.Now().String()}}})
+		if dbUpdateError != nil {
+			logger.Get().Error("%s-Failed to update utilization of pool %v of cluster %v to db.Error %v", ctxt, poolStat.Name, clusterId, dbUpdateError)
+		}
 	}
 
+}
+
+func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map[string]map[string]string, error) {
+	metrics, statistics, err := updateClusterStats(ctxt, cluster, monName)
+	percentUsed := 0.0
+	if err != nil {
+		logger.Get().Error("%s - Failed to fetch cluster usage statistics.Error %v", ctxt, err)
+	}
+	if statistics.Stats.Total != 0 {
+		percentUsed = (float64(statistics.Stats.Used*100) / float64(statistics.Stats.Total))
+	}
 	event, isRaiseEvent, err := skyring_utils.AnalyseThresholdBreach(ctxt, skyring_monitoring.CLUSTER_UTILIZATION, cluster.Name, percentUsed, cluster)
 	if err != nil {
 		logger.Get().Error("%s - Failed to analyse threshold breach for cluster utilization of %v.Error %v", ctxt, cluster.Name, err)
@@ -720,12 +841,11 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 			logger.Get().Error("%s - Threshold: %v.Error %v", ctxt, event, err)
 		}
 	}
-
-	collection := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+	updateStatsToPools(ctxt, statistics, cluster.ClusterId)
 	for _, poolStat := range statistics.Pools {
-		used := poolStat.PoolUtilization.Used
-		total := poolStat.PoolUtilization.Used + poolStat.PoolUtilization.Available
 		percentUsed := 0.0
+		used := poolStat.PoolUtilization.Used
+		total := poolStat.PoolUtilization.Available
 		if total != 0 {
 			percentUsed = (float64(used*100) / float64(total))
 			event, isRaiseEvent, err := skyring_utils.AnalyseThresholdBreach(ctxt, skyring_monitoring.STORAGE_UTILIZATION, poolStat.Name, percentUsed, cluster)
@@ -739,16 +859,7 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 				}
 			}
 		}
-		dbUpdateError := collection.Update(bson.M{"clusterid": cluster.ClusterId, "name": poolStat.Name}, bson.M{"$set": bson.M{"usage": models.Utilization{
-			Used:        used,
-			Total:       total,
-			PercentUsed: percentUsed,
-			UpdatedAt:   time.Now().String()}}})
-		if dbUpdateError != nil {
-			logger.Get().Error("%s-Failed to update utilization of pool %v of cluster %v to db.Error %v", ctxt, poolStat.Name, cluster.Name, dbUpdateError)
-		}
 	}
-
 	return metrics, nil
 }
 

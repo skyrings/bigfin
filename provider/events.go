@@ -615,6 +615,7 @@ func ceph_osd_property_changed_handler(event models.AppEvent, ctxt string) (mode
 		}
 	}
 
+	util.UpdateSluCountToSummaries(ctxt, cluster)
 	return event, nil
 }
 
@@ -667,6 +668,10 @@ func ceph_mon_property_changed_handler(event models.AppEvent, ctxt string) (mode
 		return event, err
 	}
 
+	cluster, clusterErr := getCluster(event.ClusterId)
+	if clusterErr == nil {
+		UpdateMonCountToSummaries(ctxt, cluster)
+	}
 	return event, nil
 }
 
@@ -731,6 +736,7 @@ func ceph_cluster_health_changed(event models.AppEvent, ctxt string) (models.App
 			" event:%v .Error: %v", ctxt, event.EventId, err)
 		return event, err
 	}
+	util.UpdateClusterStateWiseCount(ctxt)
 	return event, nil
 }
 
@@ -865,6 +871,11 @@ func ceph_pool_add_handler(event models.AppEvent, ctxt string) (models.AppEvent,
 				storage.Name,
 				cluster.Name)
 			event.EntityId = storage.StorageId
+			_, cStats, err := updateClusterStats(ctxt, cluster, (*monnode).Hostname)
+			if err != nil {
+				updateStatsToPools(ctxt, cStats, cluster.ClusterId)
+				util.UpdateStorageCountToSummaries(ctxt, cluster)
+			}
 			return event, nil
 		} else {
 			logger.Get().Error("%s-Error reading storage info from DB. Error: %v", ctxt, err)
@@ -951,6 +962,17 @@ func ceph_rbd_delete_handler(event models.AppEvent, ctxt string) (models.AppEven
 		event.Tags["rbdName"],
 		pool.Name,
 		cluster.Name)
+	monnode, err := GetCalamariMonNode(event.ClusterId, ctxt)
+	if err != nil {
+		logger.Get().Error("%s - Failed to fetch mon node from cluster %v to update rbd utilization to db.Error %v", ctxt, cluster.Name, err)
+	} else {
+		initMonitoringRoutines(ctxt, cluster, (*monnode).Hostname, []interface{}{FetchObjectCount})
+		if _, _, err := updateRBDStats(ctxt, cluster, (*monnode).Hostname); err != nil {
+			logger.Get().Error("%s - Failed to fetch rbd stats for cluster %v.Error %v", ctxt, cluster.Name, err)
+		} else {
+			util.UpdateObjectCountToSummaries(ctxt, cluster)
+		}
+	}
 	return event, nil
 }
 
@@ -1009,6 +1031,17 @@ func ceph_rbd_create_handler(event models.AppEvent, ctxt string) (models.AppEven
 					err)
 				return event, err
 			} else {
+				monnode, err := GetCalamariMonNode(event.ClusterId, ctxt)
+				if err != nil {
+					logger.Get().Error("%s - Failed to fetch mon node from cluster %v to update rbd utilization to db.Error %v", ctxt, cluster.Name, err)
+				} else {
+					initMonitoringRoutines(ctxt, cluster, (*monnode).Hostname, []interface{}{FetchObjectCount})
+					if _, _, err := updateRBDStats(ctxt, cluster, (*monnode).Hostname); err != nil {
+						logger.Get().Error("%s - Failed to fetch rbd stats for cluster %v.Error %v", ctxt, cluster.Name, err)
+					} else {
+						util.UpdateObjectCountToSummaries(ctxt, cluster)
+					}
+				}
 				logger.Get().Info(
 					"%s-Added new block device: %s of pool: %s on cluster: %s",
 					ctxt,
@@ -1132,6 +1165,15 @@ func ceph_rbd_resize_handler(event models.AppEvent, ctxt string) (models.AppEven
 			err)
 		return event, err
 	}
+
+	monnode, err := GetCalamariMonNode(event.ClusterId, ctxt)
+	if err != nil {
+		logger.Get().Error("%s - Failed to fetch mon node from cluster %v to update rbd utilization to db.Error %v", ctxt, cluster.Name, err)
+	} else {
+		if _, _, err := updateRBDStats(ctxt, cluster, (*monnode).Hostname); err != nil {
+			logger.Get().Error("%s - Faield to fetch rbs stats for cluster %s.Error %v", ctxt, cluster.Name, err)
+		}
+	}
 	event.Message = fmt.Sprintf("RBD %s on %s pool has been resized to %s",
 		event.Tags["rbdName"],
 		event.Tags["poolName"],
@@ -1202,6 +1244,7 @@ func ceph_pool_delete_handler(event models.AppEvent, ctxt string) (models.AppEve
 	if err := common_event.DismissAllEventsForEntity(s.StorageId, event, ctxt); err != nil {
 		logger.Get().Error("%s-Error while dismissing events for entity: %v. Error: %v", ctxt, event.EntityId, err)
 	}
+	util.UpdateStorageCountToSummaries(ctxt, cluster)
 	return event, nil
 }
 
