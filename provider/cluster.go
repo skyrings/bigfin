@@ -1333,6 +1333,17 @@ func (s *CephProvider) ExpandCluster(req models.RpcRequest, resp *models.RpcResp
 						t)
 					return
 				}
+
+				monnode, err := GetCalamariMonNode(*cluster_id, ctxt)
+				if err != nil {
+					logger.Get().Error("%s-Unable to pick a random mon from cluster %v.Error: %v", ctxt, cluster.Name, err.Error())
+					*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Unable to pick a random mon from cluster %v.Error: %v", cluster.Name, err.Error()))
+				} else {
+					initMonitoringRoutines(ctxt, cluster, (*monnode).Hostname, monitoringRoutines)
+					util.UpdateSluCountToSummaries(ctxt, cluster)
+					UpdateMonCountToSummaries(ctxt, cluster)
+				}
+
 				t.UpdateStatus("Success")
 				t.Done(models.TASK_STATUS_SUCCESS)
 				return

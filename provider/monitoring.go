@@ -104,7 +104,7 @@ func InitMonitoringManager() error {
 	return nil
 }
 
-func initMonitoringRoutines(ctxt string, cluster models.Cluster, monName string) error {
+func initMonitoringRoutines(ctxt string, cluster models.Cluster, monName string, monitoringRoutines []interface{}) error {
 	/*
 		sync.WaitGroup can be used if it is required to do something after all go routines complete.
 		For ex: pushing to db can be done after all go-routines complete.
@@ -171,7 +171,7 @@ func (s *CephProvider) MonitorCluster(req models.RpcRequest, resp *models.RpcRes
 		return fmt.Errorf("Unable to pick a random mon from cluster %v.Error: %v", cluster.Name, err.Error())
 	}
 	monName := (*monnode).Hostname
-	err = initMonitoringRoutines(ctxt, cluster, monName)
+	err = initMonitoringRoutines(ctxt, cluster, monName, monitoringRoutines)
 	if err != nil {
 		logger.Get().Error("%s-Error: %v", ctxt, err.Error())
 		*resp = utils.WriteResponse(http.StatusBadRequest, fmt.Sprintf("Error: %v", err.Error()))
@@ -226,29 +226,13 @@ func (s *CephProvider) GetClusterSummary(req models.RpcRequest, resp *models.Rpc
 	/*
 		Fetch pg count
 	*/
-	pgNum := make(map[string]uint64)
-	mon, monErr := GetCalamariMonNode(*clusterId, ctxt)
-	if monErr != nil {
-		err_str = err_str + fmt.Sprintf("%s - Failed to get the mon from cluster %v", ctxt, *clusterId)
+	if pgCount, err := ComputeClusterPGNum(cluster, ctxt); err == nil {
+		result["pgnum"] = pgCount
 	} else {
-		pgCount, pgCountError := cephapi_backend.GetPGCount((*mon).Hostname, *clusterId, ctxt)
-		if pgCountError != nil {
-			err_str = err_str + fmt.Sprintf("%s - Failed to fetch the number of pgs from cluster %v", ctxt, *clusterId)
-		} else {
-			for status, statusCount := range pgCount {
-				if status == skyring_monitoring.CRITICAL {
-					pgNum[models.STATUS_ERR] = statusCount
-				}
-				if status == models.STATUS_WARN {
-					pgNum[models.STATUS_WARN] = statusCount
-				}
-				pgNum[models.TOTAL] = pgNum[models.TOTAL] + statusCount
-			}
-		}
-		result["pgnum"] = pgNum
+		err_str = err_str + fmt.Sprintf("%s", err.Error())
 	}
 
-	result[bigfin_models.OBJECTS] = map[string]interface{}{bigfin_models.NUMBER_OF_OBJECTS: cluster.ObjectCount[bigfin_models.NUMBER_OF_OBJECTS], bigfin_models.NUMBER_OF_DEGRADED_OBJECTS: cluster.ObjectCount[bigfin_models.NUMBER_OF_DEGRADED_OBJECTS]}
+	result[bigfin_models.OBJECTS] = ComputeClusterObjectCount(cluster)
 
 	if err_str != "" {
 		if len(result) != 0 {
@@ -266,6 +250,115 @@ func (s *CephProvider) GetClusterSummary(req models.RpcRequest, resp *models.Rpc
 	}
 	*resp = utils.WriteResponseWithData(httpStatusCode, err_str, bytes)
 	return nil
+}
+
+func ComputeMonCount(selectCriteria bson.M) (map[string]int, error) {
+	mon_down_count := 0
+	monCriticalAlertsCount := 0
+	mons, monErr := GetMons(selectCriteria)
+	if monErr != nil {
+		return map[string]int{skyring_monitoring.TOTAL: len(mons), models.STATUS_DOWN: mon_down_count, "criticalAlerts": monCriticalAlertsCount}, monErr
+	}
+	for _, mon := range mons {
+		monCriticalAlertsCount = monCriticalAlertsCount + mon.AlmCritCount
+		if mon.Status == models.NODE_STATUS_ERROR {
+			mon_down_count = mon_down_count + 1
+		}
+	}
+	return map[string]int{skyring_monitoring.TOTAL: len(mons), models.STATUS_DOWN: mon_down_count, "criticalAlerts": monCriticalAlertsCount}, monErr
+}
+
+func UpdateMonCountToSummaries(ctxt string, cluster models.Cluster) {
+	monCnt, monErr := ComputeMonCount(bson.M{"clusterid": cluster.ClusterId})
+	if monErr != nil {
+		logger.Get().Error("%s - Failed to get mon count for cluster %v.Error %v", ctxt, cluster.Name, monErr)
+	} else {
+		updateField := fmt.Sprintf("providermonitoringdetails.%s.monitor", cluster.Type)
+		skyring_utils.UpdateDb(bson.M{"clusterid": cluster.ClusterId}, bson.M{updateField: monCnt}, models.COLL_NAME_CLUSTER_SUMMARY, ctxt)
+		monCnt, monErr := ComputeMonCount(nil)
+		if monErr != nil {
+			logger.Get().Error("%s - Failed to upadte system mon count.Error %v", ctxt, monErr)
+		}
+		skyring_utils.UpdateDb(bson.M{"clusterid": cluster.ClusterId}, bson.M{updateField: monCnt}, models.COLL_NAME_CLUSTER_SUMMARY, ctxt)
+	}
+}
+
+func ComputeClusterObjectCount(cluster models.Cluster) map[string]interface{} {
+	return map[string]interface{}{
+		bigfin_models.NUMBER_OF_OBJECTS:          cluster.ObjectCount[bigfin_models.NUMBER_OF_OBJECTS],
+		bigfin_models.NUMBER_OF_DEGRADED_OBJECTS: cluster.ObjectCount[bigfin_models.NUMBER_OF_DEGRADED_OBJECTS],
+	}
+}
+
+func ComputeClusterPGNum(cluster models.Cluster, ctxt string) (map[string]uint64, error) {
+	pgNum := make(map[string]uint64)
+	mon, monErr := GetCalamariMonNode(cluster.ClusterId, ctxt)
+	if monErr != nil {
+		return pgNum, fmt.Errorf("Failed to get the mon from cluster %v", cluster.ClusterId)
+	} else {
+		pgCount, pgCountError := cephapi_backend.GetPGCount((*mon).Hostname, cluster.ClusterId, ctxt)
+		if pgCountError != nil {
+			return nil, fmt.Errorf("Failed to fetch the number of pgs from cluster %v", cluster.Name)
+		} else {
+			for status, statusCount := range pgCount {
+				if status == skyring_monitoring.CRITICAL {
+					pgNum[models.STATUS_ERR] = statusCount
+				}
+				if status == models.STATUS_WARN {
+					pgNum[models.STATUS_WARN] = statusCount
+				}
+				pgNum[models.TOTAL] = pgNum[models.TOTAL] + statusCount
+			}
+		}
+	}
+	return pgNum, nil
+}
+
+func UpdatePgNumToSummaries(cluster models.Cluster, ctxt string) {
+	cPgNum, err := ComputeClusterPGNum(cluster, ctxt)
+	if err != nil {
+		logger.Get().Error("%s - Failed to fetch pg summary for cluster %v. Error %v", ctxt, cluster.Name, err)
+		return
+	} else {
+		updateField := fmt.Sprintf("providermonitoringdetails.%s.pgnum", cluster.Type)
+		skyring_utils.UpdateDb(bson.M{"clusterid": cluster.ClusterId}, bson.M{updateField: cPgNum}, models.COLL_NAME_CLUSTER_SUMMARY, ctxt)
+		sPgNum, err := ComputeSystemPGNum()
+		if err != nil {
+			logger.Get().Error("%s - Failed to update pg summary to system summary.Error %v", ctxt, err)
+		} else {
+			skyring_utils.UpdateDb(bson.M{"name": skyring_monitoring.SYSTEM}, bson.M{updateField: sPgNum}, models.COLL_NAME_SKYRING_UTILIZATION, ctxt)
+		}
+	}
+}
+
+func ComputeSystemPGNum() (map[string]uint64, error) {
+	var err_str string
+	pgNum := make(map[string]uint64)
+	clusterSummaries, clusterSummariesFetchErr := skyring_utils.GetClusterSummaries(bson.M{"type": bigfin_models.CLUSTER_TYPE})
+	if clusterSummariesFetchErr != nil {
+		if system, systemFetchErr := skyring_utils.GetSystem(); systemFetchErr == nil {
+			if providerDetails, ok := system.ProviderMonitoringDetails[bigfin_models.CLUSTER_TYPE]; ok {
+				if pgNum, pgNumOk := providerDetails["pgnum"]; pgNumOk {
+					return pgNum.(map[string]uint64), clusterSummariesFetchErr
+				}
+			}
+		}
+		return pgNum, fmt.Errorf("Unable to fetch clusters of type %v. Err %v", bigfin_models.CLUSTER_TYPE, clusterSummariesFetchErr)
+	}
+	for _, clusterSummary := range clusterSummaries {
+		if pgnum, ok := clusterSummary.ProviderMonitoringDetails[bigfin_models.CLUSTER_TYPE]["pgnum"].(map[string]interface{}); ok {
+			if errorCnt, errorCntOk := pgnum["error"].(int); errorCntOk {
+				pgNum["error"] = pgNum["error"] + uint64(errorCnt)
+			}
+			if warnCnt, warnCntOk := pgnum["warning"].(int); warnCntOk {
+				pgNum["warning"] = pgNum["warning"] + uint64(warnCnt)
+			}
+			if totalCnt, totalCntOk := pgnum["total"].(int); totalCntOk {
+				pgNum["total"] = pgNum["total"] + uint64(totalCnt)
+			}
+		}
+	}
+	return pgNum, fmt.Errorf("%s", err_str)
 }
 
 func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcResponse) error {
@@ -291,46 +384,10 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 		result[models.Monitor] = map[string]int{skyring_monitoring.TOTAL: len(mons), models.STATUS_DOWN: mon_down_count, "criticalAlerts": monCriticalAlertsCount}
 	}
 
-	clusters, clustersFetchErr := getClustersByType(bigfin_models.CLUSTER_TYPE)
-	if clustersFetchErr != nil {
-		logger.Get().Error("%s - Unable to fetch clusters of type %v. Err %v", ctxt, bigfin_models.CLUSTER_TYPE, clustersFetchErr)
-		return fmt.Errorf("%s - Unable to fetch clusters of type %v. Err %v", ctxt, bigfin_models.CLUSTER_TYPE, clustersFetchErr)
-	}
+	var err error
 
-	var objectCount int64
-	var degradedObjectCount int64
-
-	pgNum := make(map[string]uint64)
-
-	for _, cluster := range clusters {
-		/*
-			Fetch object count
-		*/
-		objectCount = objectCount + cluster.ObjectCount[bigfin_models.NUMBER_OF_OBJECTS]
-		degradedObjectCount = degradedObjectCount + cluster.ObjectCount[bigfin_models.NUMBER_OF_DEGRADED_OBJECTS]
-
-		mon, monErr := GetCalamariMonNode(cluster.ClusterId, ctxt)
-		if monErr != nil {
-			err_str = err_str + fmt.Sprintf("%s - Failed to get the mon from cluster %v.Error %v", ctxt, cluster.ClusterId, monErr)
-		} else {
-			pgCount, pgCountError := cephapi_backend.GetPGCount((*mon).Hostname, cluster.ClusterId, ctxt)
-			if pgCountError != nil {
-				err_str = err_str + fmt.Sprintf("%s - Failed to fetch the number of pgs from cluster %v. Error %v", ctxt, cluster.ClusterId, pgCountError)
-			} else {
-				for status, statusCount := range pgCount {
-					if status == skyring_monitoring.CRITICAL {
-						pgNum[models.STATUS_ERR] = pgNum[models.STATUS_ERR] + statusCount
-					}
-					if status == models.STATUS_WARN {
-						pgNum[models.STATUS_WARN] = pgNum[models.STATUS_WARN] + statusCount
-					}
-					pgNum[models.TOTAL] = pgNum[models.TOTAL] + statusCount
-				}
-			}
-		}
-		result["pgnum"] = pgNum
-	}
-	result[bigfin_models.OBJECTS] = map[string]interface{}{bigfin_models.NUMBER_OF_OBJECTS: objectCount, bigfin_models.NUMBER_OF_DEGRADED_OBJECTS: degradedObjectCount}
+	result["pgnum"], err = ComputeSystemPGNum()
+	err_str = err_str + fmt.Sprintf("%s", err)
 
 	if err_str != "" {
 		if len(result) != 0 {
@@ -641,7 +698,7 @@ func FetchRBDStats(ctxt string, cluster models.Cluster, monName string) (map[str
 				logger.Get().Error("%s - Failed to analyse threshold breach for utilization of rbd %v of pool %v from cluster %v.Error %v", ctxt, rbdStat.Name, pool.Name, cluster.Name, err)
 			}
 			if isRaiseEvent {
-				if err, _ := HandleEvent(event, ctxt); err != nil {
+				if _, err := ceph_rbd_utilization_threshold_changed(event, ctxt); err != nil {
 					logger.Get().Error("%s - Threshold: %v.Error %v", ctxt, event, err)
 				}
 			}
@@ -716,7 +773,7 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 		logger.Get().Error("%s - Failed to analyse threshold breach for cluster utilization of %v.Error %v", ctxt, cluster.Name, err)
 	}
 	if isRaiseEvent {
-		if err, _ := HandleEvent(event, ctxt); err != nil {
+		if _, err := ceph_cluster_utilization_threshold_changed(event, ctxt); err != nil {
 			logger.Get().Error("%s - Threshold: %v.Error %v", ctxt, event, err)
 		}
 	}
@@ -734,7 +791,7 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 				continue
 			}
 			if isRaiseEvent {
-				if err, _ := HandleEvent(event, ctxt); err != nil {
+				if _, err := ceph_storage_utilization_threshold_changed(event, ctxt); err != nil {
 					logger.Get().Error("%s - Threshold: %v.Error %v", ctxt, event, err)
 				}
 			}
