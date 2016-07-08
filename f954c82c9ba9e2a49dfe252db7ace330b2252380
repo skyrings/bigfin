@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_bb53d538",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 3
+      },
+      "lineNbr": 10,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-08T06:12:33Z",
+      "side": 1,
+      "message": "spelling",
+      "range": {
+        "startLine": 10,
+        "startChar": 32,
+        "endLine": 10,
+        "endChar": 39
+      },
+      "revId": "f954c82c9ba9e2a49dfe252db7ace330b2252380",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_7b342dfa",
+        "filename": "provider/cluster.go",
+        "patchSetId": 3
+      },
+      "lineNbr": 2233,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-08T06:12:33Z",
+      "side": 1,
+      "message": "Can you explain the logic a bit here?\nI am kind of getting lost here..",
+      "range": {
+        "startLine": 2233,
+        "startChar": 2,
+        "endLine": 2233,
+        "endChar": 41
+      },
+      "revId": "f954c82c9ba9e2a49dfe252db7ace330b2252380",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
