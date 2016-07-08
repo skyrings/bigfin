@@ -162,6 +162,8 @@ func createBlockStorage(
 			utils.FailTask(fmt.Sprintf("Error persisting block device entity for cluster: %s", clusterName), fmt.Errorf("%s - %v", ctxt, err), t)
 			return false
 		}
+		go FetchRBDStats(ctxt, cluster, mon)
+		go FetchObjectCount(ctxt, cluster, mon)
 	}
 
 	return true
@@ -352,6 +354,10 @@ func (s *CephProvider) ResizeBlockDevice(req models.RpcRequest, resp *models.Rpc
 						return
 					}
 				}
+
+				go FetchRBDStats(ctxt, cluster, monnode.Hostname)
+				go FetchObjectCount(ctxt, cluster, monnode.Hostname)
+
 				t.UpdateStatus("Success")
 				t.Done(models.TASK_STATUS_SUCCESS)
 				return

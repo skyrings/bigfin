@@ -111,6 +111,9 @@ func (s *CephProvider) CreateStorage(req models.RpcRequest, resp *models.RpcResp
 					return
 				}
 
+				go FetchClusterStats(ctxt, cluster, (*monnode).Hostname)
+				go FetchObjectCount(ctxt, cluster, (*monnode).Hostname)
+
 				t.UpdateStatus("Success")
 				t.Done(models.TASK_STATUS_SUCCESS)
 				return
@@ -816,6 +819,16 @@ func (s *CephProvider) UpdateStorage(req models.RpcRequest, resp *models.RpcResp
 						fmt.Errorf("%s-%v", ctxt, err),
 						t)
 				}
+
+				cluster, err := getCluster(clusterId)
+				if err != nil {
+					logger.Get().Error("Failed to get details of cluster: %s. error: %v", clusterId, err)
+					return err
+				} else {
+					go FetchClusterStats(ctxt, cluster, monnode.Hostname)
+					go FetchObjectCount(ctxt, cluster, monnode.Hostname)
+				}
+
 				t.UpdateStatus("Success")
 				t.Done(models.TASK_STATUS_SUCCESS)
 				return
