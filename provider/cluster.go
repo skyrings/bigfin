@@ -2112,9 +2112,11 @@ func SyncOsdStatus(clusterId uuid.UUID, ctxt string) error {
 
 		var journalDetail JournalDetail
 		if val, ok := slu.Options["journal"]; ok {
-			if jDet, jDetOk := val.(JournalDetail); jDetOk {
-				journalDetail = jDet
-			}
+			journal := val.(map[string]interface{})
+			journalDetail.Available = uint64(journal["available"].(int64))
+			journalDetail.JournalDisk = journal["journaldisk"].(string)
+			journalDetail.SSD = journal["ssd"].(bool)
+			journalDetail.Size = uint64(journal["size"].(int64))
 		}
 
 		journalDetail.OsdJournal = fetchedOSD.OsdJournal
@@ -2158,7 +2160,6 @@ func updateCrushMap(ctxt string, mon string, clusterId uuid.UUID) error {
 	var (
 		nodes     models.Nodes
 		sProfiles []models.StorageProfile
-		ruleSetId int = 1 //TODO need to change this when fix available fo BZ1341598
 	)
 	//Get Nodes in the cluster
 	if err := nodecoll.Find(bson.M{"clusterid": clusterId, "roles": OSD}).All(&nodes); err != nil {
@@ -2258,7 +2259,7 @@ func updateCrushMap(ctxt string, mon string, clusterId uuid.UUID) error {
 				continue
 			}
 
-			cRuleId, err = createCrushRule(ctxt, sprof.Name, ruleSetId, cRootNode.Name, cRootNodeId, mon, clusterId)
+			cRuleId, err = createCrushRule(ctxt, sprof.Name, cRootNode.Name, cRootNodeId, mon, clusterId)
 			if err != nil {
 				logger.Get().Error("Failed to create Crush rule for cluster: %s. error: %v", clusterId, err)
 				continue
@@ -2266,7 +2267,6 @@ func updateCrushMap(ctxt string, mon string, clusterId uuid.UUID) error {
 		}
 		ruleInfo := bigfinmodels.CrushInfo{RuleSetId: cRuleId, CrushNodeId: cRootNodeId}
 		ruleSets[sprof.Name] = ruleInfo
-		ruleSetId++ //TODO need to change this when fix available fo BZ1341598
 	}
 	//update the cluster with this rulesets
 	cluster, err := getCluster(clusterId)
@@ -2474,13 +2474,7 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID, sluList map[string]m
 						continue
 					}
 
-					//Create the crush rule
-					cRules, err := cephapi_backend.GetCrushRules(monnode.Hostname, clusterId, ctxt)
-					if err != nil {
-						logger.Get().Error("Failed to retrieve Crush nodes for cluster: %s. error: %v", clusterId, err)
-						return err
-					}
-					cRuleId, err := createCrushRule(ctxt, sprof.Name, len(cRules), nNode.Name, nNodeId, monnode.Hostname, clusterId)
+					cRuleId, err := createCrushRule(ctxt, sprof.Name, nNode.Name, nNodeId, monnode.Hostname, clusterId)
 					if err != nil {
 						logger.Get().Error("Failed to create Crush rule for cluster: %s. error: %v", clusterId, err)
 						continue
@@ -2512,7 +2506,7 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID, sluList map[string]m
 	return nil
 }
 
-func createCrushRule(ctxt string, name string, ruleset int, cnodeName string, cNodeId int, monnode string, clusterId uuid.UUID) (int, error) {
+func createCrushRule(ctxt string, name string, cnodeName string, cNodeId int, monnode string, clusterId uuid.UUID) (int, error) {
 	cRule := backend.CrushRuleRequest{Name: name, Type: models.STORAGE_TYPE_REPLICATED, MinSize: MINSIZE, MaxSize: MAXSIZE}
 	step_take := make(map[string]interface{})
 	step_take["item_name"] = cnodeName
