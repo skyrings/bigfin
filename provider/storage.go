@@ -141,7 +141,7 @@ func createBlockDevices(
 	request models.AddStorageRequest,
 	t *task.Task) {
 
-	t.UpdateStatus("Creating bolck devices")
+	t.UpdateStatus("Creating block devices")
 	var failedBlkDevices []string
 	for _, entry := range request.BlockDevices {
 		blockDevice := models.BlockDevice{
