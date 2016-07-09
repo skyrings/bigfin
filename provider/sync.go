@@ -436,7 +436,8 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 
 			newSlu.StorageDeviceId = deviceDetails.Uuid
 			newSlu.StorageDeviceSize = deviceDetails.Size
-			newSlu.StorageProfile = get_disk_profile(node.StorageDisks, deviceDetails.PartName)
+			//newSlu.StorageProfile = get_disk_profile(node.StorageDisks, deviceDetails.PartName)
+			newSlu.StorageProfile = "default"
 			var options = make(map[string]interface{})
 			options["in"] = strconv.FormatBool(osd.In)
 			options["up"] = strconv.FormatBool(osd.Up)

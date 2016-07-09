@@ -16,8 +16,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/skyrings/bigfin/backend/cephapi"
-	"github.com/skyrings/bigfin/backend/cephapi/handler"
-	cephapi_models "github.com/skyrings/bigfin/backend/cephapi/models"
+	//"github.com/skyrings/bigfin/backend/cephapi/handler"
+	//cephapi_models "github.com/skyrings/bigfin/backend/cephapi/models"
 	"github.com/skyrings/bigfin/backend/salt"
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/conf"
@@ -27,9 +27,9 @@ import (
 	"github.com/skyrings/skyring-common/provisioner"
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/uuid"
-	"gopkg.in/mgo.v2"
+	//"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
-	"time"
+	//"time"
 
 	bigfin_conf "github.com/skyrings/bigfin/conf"
 )
@@ -91,6 +91,9 @@ func GetCalamariMonNode(clusterId uuid.UUID, ctxt string) (*models.Node, error) 
 			"options.mon":      models.Yes,
 			"options.calamari": models.Yes}).One(&calamariMonNode)
 	if err == nil {
+		return &calamariMonNode, nil
+	}
+	/*if err == nil {
 		// Check availability of calamari
 		dummyUrl := fmt.Sprintf(
 			"https://%s:%d/%s/v%d/",
@@ -102,19 +105,14 @@ func GetCalamariMonNode(clusterId uuid.UUID, ctxt string) (*models.Node, error) 
 		if resp != nil {
 			resp.Body.Close()
 		}
-		if err != nil {
-			// Not a valid calamari. start another one
-			if err := coll.Update(
-				bson.M{"clusterid": clusterId, "hostname": calamariMonNode.Hostname},
-				bson.M{"$set": bson.M{"options.calamari": "N"}}); err != nil {
-				return nil, fmt.Errorf("Error disabling invalid calamari node: %s. error: %v", calamariMonNode.Hostname, err)
-			}
-		} else {
+		if err == nil {
 			return &calamariMonNode, nil
 		}
 	} else if err != mgo.ErrNotFound {
 		return nil, err
 	}
+
+	//calamari is not active on the server, so start on another node
 
 	var monNodes models.Nodes
 	if err := coll.Find(
@@ -124,7 +122,6 @@ func GetCalamariMonNode(clusterId uuid.UUID, ctxt string) (*models.Node, error) 
 			"options.calamari": "N"}).All(&monNodes); err != nil {
 		return nil, err
 	}
-	logger.Get().Error("Mon length: %d", len(monNodes))
 
 	for _, monNode := range monNodes {
 		if err := salt_backend.StartCalamari(monNode.Hostname, ctxt); err != nil {
@@ -155,8 +152,14 @@ func GetCalamariMonNode(clusterId uuid.UUID, ctxt string) (*models.Node, error) 
 			}
 			continue
 		}
+		// Now the MON is started, so update the old mon's status in DB
+		if err := coll.Update(
+			bson.M{"clusterid": clusterId, "hostname": calamariMonNode.Hostname},
+			bson.M{"$set": bson.M{"options.calamari": "N"}}); err != nil {
+			return nil, fmt.Errorf("Error disabling invalid calamari node: %s. error: %v", calamariMonNode.Hostname, err)
+		}
 		return &monNode, nil
-	}
+	}*/
 
 	return nil, fmt.Errorf("No valid active calamari mon node found")
 }
