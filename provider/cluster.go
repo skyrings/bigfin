@@ -2112,9 +2112,11 @@ func SyncOsdStatus(clusterId uuid.UUID, ctxt string) error {
 
 		var journalDetail JournalDetail
 		if val, ok := slu.Options["journal"]; ok {
-			if jDet, jDetOk := val.(JournalDetail); jDetOk {
-				journalDetail = jDet
-			}
+			journal := val.(map[string]interface{})
+			journalDetail.Available = journal["available"].(uint64)
+			journalDetail.JournalDisk = journal["journaldisk"].(string)
+			journalDetail.SSD = journal["ssd"].(bool)
+			journalDetail.Size = journal["size"].(uint64)
 		}
 
 		journalDetail.OsdJournal = fetchedOSD.OsdJournal
