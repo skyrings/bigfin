@@ -1952,6 +1952,14 @@ func RecalculatePgnum(ctxt string, clusterId uuid.UUID, t *task.Task) bool {
 			logger.Get().Error("%s-Error updating pgnum/pgnum of pool: %s for cluster: %v. error: %v", ctxt, storage.Name, clusterId, err)
 			t.UpdateStatus(fmt.Sprintf("Could not update pgnum/pgnum for pool: %s of cluster: %v", storage.Name, clusterId))
 		}
+		//update the DB with updated value
+		storage.Options["pg_num"] = string(pgNum)
+		storage.Options["pgp_num"] = string(pgNum)
+		if err := coll.Update(
+			bson.M{"storageid": storage.StorageId},
+			bson.M{"$set": bson.M{"options": storage.Options}}); err != nil {
+			logger.Get().Error("%s-Error updating the pg num for storage: %s. error: %v", ctxt, storage.Name, err)
+		}
 	}
 	return true
 }
@@ -2112,9 +2120,11 @@ func SyncOsdStatus(clusterId uuid.UUID, ctxt string) error {
 
 		var journalDetail JournalDetail
 		if val, ok := slu.Options["journal"]; ok {
-			if jDet, jDetOk := val.(JournalDetail); jDetOk {
-				journalDetail = jDet
-			}
+			journal := val.(map[string]interface{})
+			journalDetail.Available = uint64(journal["available"].(int64))
+			journalDetail.JournalDisk = journal["journaldisk"].(string)
+			journalDetail.SSD = journal["ssd"].(bool)
+			journalDetail.Size = uint64(journal["size"].(int64))
 		}
 
 		journalDetail.OsdJournal = fetchedOSD.OsdJournal
@@ -2158,7 +2168,6 @@ func updateCrushMap(ctxt string, mon string, clusterId uuid.UUID) error {
 	var (
 		nodes     models.Nodes
 		sProfiles []models.StorageProfile
-		ruleSetId int = 1 //TODO need to change this when fix available fo BZ1341598
 	)
 	//Get Nodes in the cluster
 	if err := nodecoll.Find(bson.M{"clusterid": clusterId, "roles": OSD}).All(&nodes); err != nil {
@@ -2174,6 +2183,11 @@ func updateCrushMap(ctxt string, mon string, clusterId uuid.UUID) error {
 	}
 
 	for _, sprof := range sProfiles {
+		if sprof.Name == models.DefaultProfile3 {
+			ruleInfo := bigfinmodels.CrushInfo{RuleSetId: CRUSH_DEFAULT_RULE_ID, CrushNodeId: CRUSH_DEFAULT_ROOT_NODE_ID}
+			ruleSets[sprof.Name] = ruleInfo
+			continue
+		}
 		//Get the OSDs per storageprofiles
 		var slus []models.StorageLogicalUnit
 		if err := coll.Find(bson.M{"storageprofile": sprof.Name, "clusterid": clusterId}).All(&slus); err != nil {
@@ -2225,48 +2239,18 @@ func updateCrushMap(ctxt string, mon string, clusterId uuid.UUID) error {
 			cRootNode.Items = append(cRootNode.Items, ritem)
 			rpos++
 		}
-		var (
-			cRuleId     int
-			cRootNodeId int
-			err         error
-		)
-		if sprof.Name == models.DefaultProfile3 {
-			cRootNodeId = CRUSH_DEFAULT_ROOT_NODE_ID
-			cRuleId = CRUSH_DEFAULT_RULE_ID
+		cRootNodeId, err := cephapi_backend.CreateCrushNode(mon, clusterId, cRootNode, ctxt)
+		if err != nil {
+			logger.Get().Error("Failed to create Crush node for cluster: %s. error: %v", clusterId, err)
+			continue
+		}
 
-			cNode, err := cephapi_backend.GetCrushNode(mon, clusterId, cRootNodeId, ctxt)
-			if err != nil {
-				logger.Get().Error("Failed to retrieve Crush node:%v for cluster: %s. error: %v", cRootNodeId, clusterId, err)
-				return err
-			}
-			cNode.Items = append(cNode.Items, cRootNode.Items...)
-			params := map[string]interface{}{
-				"bucket_type": cRootNode.BucketType,
-				"name":        cRootNode.Name,
-				"items":       cNode.Items,
-			}
-			_, err = cephapi_backend.PatchCrushNode(mon, clusterId, cRootNodeId, params, ctxt)
-			if err != nil {
-				logger.Get().Error("Failed to update Crush node for cluster: %s. error: %v", clusterId, err)
-				continue
-			}
-
-		} else {
-			cRootNodeId, err = cephapi_backend.CreateCrushNode(mon, clusterId, cRootNode, ctxt)
-			if err != nil {
-				logger.Get().Error("Failed to create Crush node for cluster: %s. error: %v", clusterId, err)
-				continue
-			}
-
-			cRuleId, err = createCrushRule(ctxt, sprof.Name, ruleSetId, cRootNode.Name, cRootNodeId, mon, clusterId)
-			if err != nil {
-				logger.Get().Error("Failed to create Crush rule for cluster: %s. error: %v", clusterId, err)
-				continue
-			}
+		cRuleId, err := createCrushRule(ctxt, sprof.Name, cRootNode.Name, cRootNodeId, mon, clusterId)
+		if err != nil {
+			logger.Get().Error("Failed to create Crush rule for cluster: %s. error: %v", clusterId, err)
 		}
 		ruleInfo := bigfinmodels.CrushInfo{RuleSetId: cRuleId, CrushNodeId: cRootNodeId}
 		ruleSets[sprof.Name] = ruleInfo
-		ruleSetId++ //TODO need to change this when fix available fo BZ1341598
 	}
 	//update the cluster with this rulesets
 	cluster, err := getCluster(clusterId)
@@ -2409,6 +2393,9 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID, sluList map[string]m
 
 	for _, sprof := range sProfiles {
 
+		if sprof.Name == models.DefaultProfile3 {
+			continue
+		}
 		for _, node := range nodes {
 			nodeName := fmt.Sprintf("%s-%s", node.Hostname, sprof.Name)
 			cNode := backend.CrushNodeRequest{BucketType: "host", Name: nodeName}
@@ -2474,13 +2461,7 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID, sluList map[string]m
 						continue
 					}
 
-					//Create the crush rule
-					cRules, err := cephapi_backend.GetCrushRules(monnode.Hostname, clusterId, ctxt)
-					if err != nil {
-						logger.Get().Error("Failed to retrieve Crush nodes for cluster: %s. error: %v", clusterId, err)
-						return err
-					}
-					cRuleId, err := createCrushRule(ctxt, sprof.Name, len(cRules), nNode.Name, nNodeId, monnode.Hostname, clusterId)
+					cRuleId, err := createCrushRule(ctxt, sprof.Name, nNode.Name, nNodeId, monnode.Hostname, clusterId)
 					if err != nil {
 						logger.Get().Error("Failed to create Crush rule for cluster: %s. error: %v", clusterId, err)
 						continue
@@ -2512,7 +2493,7 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID, sluList map[string]m
 	return nil
 }
 
-func createCrushRule(ctxt string, name string, ruleset int, cnodeName string, cNodeId int, monnode string, clusterId uuid.UUID) (int, error) {
+func createCrushRule(ctxt string, name string, cnodeName string, cNodeId int, monnode string, clusterId uuid.UUID) (int, error) {
 	cRule := backend.CrushRuleRequest{Name: name, Type: models.STORAGE_TYPE_REPLICATED, MinSize: MINSIZE, MaxSize: MAXSIZE}
 	step_take := make(map[string]interface{})
 	step_take["item_name"] = cnodeName
