@@ -15,6 +15,7 @@ package provider
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/skyrings/bigfin/bigfinmodels"
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/conf"
 	"github.com/skyrings/skyring-common/db"
@@ -240,21 +241,11 @@ func (s *CephProvider) ImportCluster(req models.RpcRequest, resp *models.RpcResp
 			t.UpdateStatus("Could not create default EC profile")
 		}
 
-		//Update the CRUSH MAP
-		/*t.UpdateStatus("Updating the CRUSH Map")
-		if err := updateCrushMap(
-			ctxt,
-			request.BootstrapNode,
-			*cluster_uuid); err != nil {
-			logger.Get().Error(
-				"%s-Error updating the Crush map for cluster: %s. error: %v",
-				ctxt,
-				clusterName,
-				err)
+		//Populate the CRUSH Details
+		t.UpdateStatus("Setting up the CRUSH Map")
+		if err := poplateCrushDetails(request.BootstrapNode, *cluster_uuid, ctxt); err != nil {
 			t.UpdateStatus("Failed to update Crush map")
-			t.Done(models.TASK_STATUS_SUCCESS)
-			return
-		}*/
+		}
 
 		// Update the notification details
 		t.UpdateStatus("Creating notification subscription configuartions")
@@ -540,6 +531,31 @@ func PopulateBlockDevices(bootstrapNode string, clusterId uuid.UUID, ctxt string
 			ctxt,
 			clusterId,
 			err)
+	}
+	return nil
+}
+
+func poplateCrushDetails(bootstrapNode string, clusterId uuid.UUID, ctxt string) error {
+	//Right now, handle on the 'dafault' rule
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	ruleSets := make(map[string]interface{})
+
+	ruleInfo := bigfinmodels.CrushInfo{RuleSetId: CRUSH_DEFAULT_RULE_ID, CrushNodeId: CRUSH_DEFAULT_ROOT_NODE_ID}
+	ruleSets[models.DefaultProfile3] = ruleInfo
+
+	cluster, err := getCluster(clusterId)
+	if err != nil {
+		logger.Get().Error("Failed to get details of cluster: %s. error: %v", clusterId, err)
+		return err
+	}
+	cluster.Options["rulesetmap"] = ruleSets
+	ccoll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+	if err := ccoll.Update(
+		bson.M{"clusterid": clusterId}, bson.M{"$set": bson.M{"options": cluster.Options}}); err != nil {
+		logger.Get().Error("%s-Error updating the cluster: %s. error: %v", ctxt, clusterId, err)
+		return err
+
 	}
 	return nil
 }
