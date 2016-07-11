@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_93eb4edc",
+        "filename": "provider/provider.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 111,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-11T08:58:29Z",
+      "side": 0,
+      "message": "Correct. movinf this logic down makes sure that just failed node would not be considered for starting calamari.",
+      "range": {
+        "startLine": 106,
+        "startChar": 4,
+        "endLine": 111,
+        "endChar": 4
+      },
+      "revId": "8411f5a324e3c7161eddaf8eeb0379f6ec2164ba",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
