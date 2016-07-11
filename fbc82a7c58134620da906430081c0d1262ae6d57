@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_b069a88e",
+        "filename": "utils/default_thresholds.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 20,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-11T05:51:15Z",
+      "side": 1,
+      "message": "Why not hardcoded value here?",
+      "range": {
+        "startLine": 20,
+        "startChar": 16,
+        "endLine": 20,
+        "endChar": 47
+      },
+      "revId": "fbc82a7c58134620da906430081c0d1262ae6d57",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_9066a4b9",
+        "filename": "utils/default_thresholds.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 47,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-11T05:51:15Z",
+      "side": 1,
+      "message": "Same as above. I feel all the places make it hardcoded only in this source..",
+      "range": {
+        "startLine": 47,
+        "startChar": 16,
+        "endLine": 47,
+        "endChar": 52
+      },
+      "revId": "fbc82a7c58134620da906430081c0d1262ae6d57",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
