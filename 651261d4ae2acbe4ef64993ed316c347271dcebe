@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_901a24c5",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-11T07:19:10Z",
+      "side": 1,
+      "message": "I feel Anmol has added list of entities being taken in skyring core patch commit-msg",
+      "parentUuid": "baa041b7_5c2f1c3e",
+      "range": {
+        "startLine": 7,
+        "startChar": 1,
+        "endLine": 7,
+        "endChar": 42
+      },
+      "revId": "651261d4ae2acbe4ef64993ed316c347271dcebe",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_7c2c204a",
         "filename": "provider/storage.go",
         "patchSetId": 2
