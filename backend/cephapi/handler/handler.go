@@ -28,8 +28,6 @@ import (
 	"regexp"
 )
 
-var loggedIn bool
-
 func HttpGet(mon, url string) (*http.Response, error) {
 	session := client.GetCephApiSession()
 
@@ -39,12 +37,6 @@ func HttpGet(mon, url string) (*http.Response, error) {
 		models.CEPH_API_PORT,
 		models.CEPH_API_DEFAULT_PREFIX,
 		models.CEPH_API_DEFAULT_VERSION)
-
-	if !loggedIn {
-		if err := login(session, mon, loginUrl); err != nil {
-			return nil, fmt.Errorf("Failed to login: %v", err)
-		}
-	}
 
 	csrf_token := csrfTokenFromSession(session, loginUrl)
 
@@ -59,9 +51,12 @@ func HttpGet(mon, url string) (*http.Response, error) {
 		return resp, fmt.Errorf("Error executing request: %v", err)
 	}
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
+	if resp.StatusCode != http.StatusOK &&
+		resp.StatusCode != http.StatusAccepted &&
+		resp.StatusCode != http.StatusForbidden {
 		return resp, fmt.Errorf(resp.Status)
-	} else if resp.StatusCode == http.StatusForbidden {
+	}
+	if resp.StatusCode == http.StatusForbidden {
 		logger.Get().Warning("Session seems invalidated. Trying to login again.")
 		if err := login(session, mon, loginUrl); err != nil {
 			return resp, fmt.Errorf("Failed to relogin")
@@ -82,12 +77,6 @@ func invokeUpdateRestApi(method string, mon string, url string, contentType stri
 
 	session := client.GetCephApiSession()
 
-	if !loggedIn {
-		if err := login(session, mon, loginUrl); err != nil {
-			return nil, fmt.Errorf("Failed to login: %v", err)
-		}
-	}
-
 	csrf_token := csrfTokenFromSession(session, loginUrl)
 
 	resp, err := doRequest(
@@ -101,9 +90,12 @@ func invokeUpdateRestApi(method string, mon string, url string, contentType stri
 		return resp, fmt.Errorf("Error executing request: %v", err)
 	}
 
-	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted {
+	if resp.StatusCode != http.StatusOK &&
+		resp.StatusCode != http.StatusAccepted &&
+		resp.StatusCode != http.StatusForbidden {
 		return resp, errors.New("Failed" + resp.Status)
-	} else if resp.StatusCode == http.StatusForbidden {
+	}
+	if resp.StatusCode == http.StatusForbidden {
 		logger.Get().Warning("Session seems invalidated. Trying to login again.")
 		if err := login(session, mon, loginUrl); err != nil {
 			return resp, fmt.Errorf("Failed to relogin")
@@ -205,7 +197,6 @@ func login(session *http.Client, mon string, loginUrl string) error {
 		return fmt.Errorf("Error logging in: %v", err1)
 	}
 
-	loggedIn = true
 	return nil
 }
 
