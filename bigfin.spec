@@ -1,6 +1,6 @@
 Summary: SKYRING ceph provider
 Name: bigfin
-Version: 0.0.31
+Version: 0.0.32
 Release: 1%{?dist}
 Source0: %{name}-%{version}.tar.gz
 License: ASL 2.0
