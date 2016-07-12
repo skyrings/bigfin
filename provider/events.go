@@ -1214,7 +1214,7 @@ func node_down_handler(event models.AppEvent, ctxt string) (models.AppEvent, err
 			"clusterid": event.ClusterId,
 			"nodeid":    event.NodeId}).One(&calamariMonNode)
 	if err == nil {
-		if calamariMonNode.Options["calamari"] != models.Yes {
+		if val, ok := calamariMonNode.Options["calamari"]; val != models.Yes || !ok {
 			return event, fmt.Errorf("This node does not have calamari server running. Hence node down event is being ignored")
 		}
 
