@@ -28,7 +28,7 @@ import (
 	"regexp"
 )
 
-var loggedIn bool
+var monStartedMap = make(map[string]bool)
 
 func HttpGet(mon, url string) (*http.Response, error) {
 	session := client.GetCephApiSession()
@@ -40,7 +40,7 @@ func HttpGet(mon, url string) (*http.Response, error) {
 		models.CEPH_API_DEFAULT_PREFIX,
 		models.CEPH_API_DEFAULT_VERSION)
 
-	if !loggedIn {
+	if val, ok := monStartedMap[mon]; !ok || !val {
 		if err := login(session, mon, loginUrl); err != nil {
 			return nil, fmt.Errorf("Failed to login: %v", err)
 		}
@@ -82,7 +82,7 @@ func invokeUpdateRestApi(method string, mon string, url string, contentType stri
 
 	session := client.GetCephApiSession()
 
-	if !loggedIn {
+	if val, ok := monStartedMap[mon]; !ok || !val {
 		if err := login(session, mon, loginUrl); err != nil {
 			return nil, fmt.Errorf("Failed to login: %v", err)
 		}
@@ -205,7 +205,13 @@ func login(session *http.Client, mon string, loginUrl string) error {
 		return fmt.Errorf("Error logging in: %v", err1)
 	}
 
-	loggedIn = true
+	for key := range monStartedMap {
+		if key == mon {
+			monStartedMap[mon] = true
+		} else {
+			monStartedMap[key] = false
+		}
+	}
 	return nil
 }
 
