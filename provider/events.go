@@ -17,6 +17,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/skyrings/bigfin/backend"
+	"github.com/skyrings/bigfin/backend/cephapi/handler"
+	cephapi_models "github.com/skyrings/bigfin/backend/cephapi/models"
 	"github.com/skyrings/bigfin/bigfinmodels"
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/conf"
@@ -51,6 +53,7 @@ var (
 		"skyring/ceph/cluster/*/threshold/cluster_utilization/*":         ceph_cluster_utilization_threshold_changed,
 		"skyring/ceph/cluster/*/threshold/storage_utilization/*":         ceph_storage_utilization_threshold_changed,
 		"skyring/ceph/cluster/*/threshold/storage_profile_utilization/*": ceph_storage_profile_utilization_threshold_changed,
+		"Node connectivity changed":                                      node_down_handler,
 	}
 	cluster_status_in_enum = map[string]int{
 		"HEALTH_OK":   models.CLUSTER_STATUS_OK,
@@ -1199,6 +1202,107 @@ func HandleEvent(e models.Event, ctxt string) (err error, statusCode int) {
 		}
 	}
 	return fmt.Errorf("Handler not defined for event %s", e.Tag), http.StatusNotImplemented
+}
+
+func node_down_handler(event models.AppEvent, ctxt string) (models.AppEvent, error) {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	var calamariMonNode models.Node
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
+	err := coll.Find(
+		bson.M{
+			"clusterid": event.ClusterId,
+			"nodeid":    event.NodeId}).One(&calamariMonNode)
+	if err == nil {
+		if val, ok := calamariMonNode.Options["calamari"]; val != models.Yes || !ok {
+			return event, fmt.Errorf("This node does not have calamari server running. Hence node down event is being ignored")
+		}
+
+		// Check availability of calamari
+		dummyUrl := fmt.Sprintf(
+			"https://%s:%d/%s/v%d/",
+			calamariMonNode.Hostname,
+			cephapi_models.CEPH_API_PORT,
+			cephapi_models.CEPH_API_DEFAULT_PREFIX,
+			cephapi_models.CEPH_API_DEFAULT_VERSION)
+		resp, err := handler.HttpGet(calamariMonNode.Hostname, dummyUrl)
+		if resp != nil {
+			resp.Body.Close()
+		}
+		if err == nil {
+			return event, fmt.Errorf("Calamari is accessible from this node, so this event is ignored.")
+		}
+	} else if err != mgo.ErrNotFound {
+		return event, err
+	}
+
+	var monNodes models.Nodes
+	if err := coll.Find(
+		bson.M{
+			"clusterid":        event.ClusterId,
+			"options.mon":      models.Yes,
+			"options.calamari": "N"}).All(&monNodes); err != nil {
+		return event, err
+	}
+
+	for _, monNode := range monNodes {
+		if err := salt_backend.StartCalamari(monNode.Hostname, ctxt); err != nil {
+			logger.Get().Warning(
+				"%s-Could not start calamari on mon: %s. error: %v",
+				ctxt,
+				monNode.Hostname,
+				err)
+			continue
+		}
+		// Wait for calamari to start serving
+		time.Sleep(60 * time.Second)
+		if err := coll.Update(
+			bson.M{"clusterid": event.ClusterId, "hostname": monNode.Hostname},
+			bson.M{"$set": bson.M{
+				"options.calamari": "Y"}}); err != nil {
+			logger.Get().Warning(
+				"%s-Failed to update mon node: %s status as calamari",
+				ctxt,
+				monNode.Hostname)
+			// Stop calamari on the node and try on other one
+			if err := salt_backend.StopCalamari(monNode.Hostname, ctxt); err != nil {
+				logger.Get().Warning(
+					"%s-Could not stop calamari on mon node: %s. error: %v",
+					ctxt,
+					monNode.Hostname,
+					err)
+			}
+			continue
+		}
+		// Update that the old calamari server is no longer valid calamari server
+		if err := coll.Update(
+			bson.M{"clusterid": event.ClusterId, "hostname": calamariMonNode.Hostname},
+			bson.M{"$set": bson.M{"options.calamari": "N"}}); err != nil {
+			return event, fmt.Errorf("Error disabling invalid calamari node: %s. error: %v", calamariMonNode.Hostname, err)
+		}
+
+		// populating values for a new event which says about calamari server change
+		var calamariChangeEvent models.AppEvent
+		eventId, err := uuid.New()
+		if err != nil {
+			logger.Get().Error("%s-Uuid generation for the event failed: %s. error: %v", ctxt, err)
+			return event, err
+		}
+		calamariChangeEvent.EventId = *eventId
+		calamariChangeEvent.ClusterId = event.ClusterId
+		calamariChangeEvent.EntityId = monNode.NodeId
+		calamariChangeEvent.NodeId = monNode.NodeId
+		calamariChangeEvent.NodeName = monNode.Hostname
+		calamariChangeEvent.NotificationEntity = models.NOTIFICATION_ENTITY_HOST
+		calamariChangeEvent.Timestamp = time.Now()
+		calamariChangeEvent.Name = EventTypes["calamari_server_changed"]
+		calamariChangeEvent.Message = fmt.Sprintf("Calamari Server has been moved to %s", monNode.Hostname)
+		calamariChangeEvent.Description = fmt.Sprintf("%s. Because system has detected that old server: %s is down", calamariChangeEvent.Message, event.NodeName)
+		calamariChangeEvent.Severity = models.ALARM_STATUS_CLEARED
+		return calamariChangeEvent, nil
+	}
+
+	return event, fmt.Errorf("No valid active calamari mon node found")
 }
 
 func HandleCalamariEvent(e models.AppEvent, ctxt string) (err error, statusCode int) {
