@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"github.com/skyrings/bigfin/backend/cephapi"
 	"github.com/skyrings/bigfin/backend/salt"
+	bigfin_conf "github.com/skyrings/bigfin/conf"
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/conf"
 	"github.com/skyrings/skyring-common/db"
@@ -26,8 +27,6 @@ import (
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/uuid"
 	"gopkg.in/mgo.v2/bson"
-
-	bigfin_conf "github.com/skyrings/bigfin/conf"
 )
 
 var (
