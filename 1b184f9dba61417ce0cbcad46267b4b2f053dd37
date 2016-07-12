@@ -1,0 +1,142 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_8ad1cf59",
+        "filename": "provider/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1216,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-12T09:14:25Z",
+      "side": 1,
+      "message": "I feel we can fetch node with given clusterId and node id, and then check the option.calamari and options.mon fields. Just for more readability may be :)",
+      "range": {
+        "startLine": 1212,
+        "startChar": 1,
+        "endLine": 1216,
+        "endChar": 57
+      },
+      "revId": "1b184f9dba61417ce0cbcad46267b4b2f053dd37",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_eadbbb7a",
+        "filename": "provider/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1219,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-12T09:14:25Z",
+      "side": 1,
+      "message": "event?",
+      "range": {
+        "startLine": 1219,
+        "startChar": 84,
+        "endLine": 1219,
+        "endChar": 94
+      },
+      "revId": "1b184f9dba61417ce0cbcad46267b4b2f053dd37",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_4ac74798",
+        "filename": "provider/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1239,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-12T09:14:25Z",
+      "side": 1,
+      "message": "Check Nishanth\u0027s patch https://review.gerrithub.io/#/c/283390/ and do the needed changes, as this should be done in the last so that same node is not considered for trying restart of calamari again.",
+      "range": {
+        "startLine": 1234,
+        "startChar": 4,
+        "endLine": 1239,
+        "endChar": 4
+      },
+      "revId": "1b184f9dba61417ce0cbcad46267b4b2f053dd37",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_0ac6df99",
+        "filename": "provider/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1260,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-12T09:14:25Z",
+      "side": 1,
+      "message": "If above comment taken care, this might not be required..",
+      "range": {
+        "startLine": 1258,
+        "startChar": 2,
+        "endLine": 1260,
+        "endChar": 3
+      },
+      "revId": "1b184f9dba61417ce0cbcad46267b4b2f053dd37",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_aab81312",
+        "filename": "provider/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 1279,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-12T09:14:25Z",
+      "side": 1,
+      "message": "We have started calamari on other node already by this time and we are here we are just stopping on old node..",
+      "range": {
+        "startLine": 1279,
+        "startChar": 32,
+        "endLine": 1279,
+        "endChar": 52
+      },
+      "revId": "1b184f9dba61417ce0cbcad46267b4b2f053dd37",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_2a43e314",
+        "filename": "provider/provider.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 91,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-12T09:14:25Z",
+      "side": 1,
+      "message": "spelling",
+      "range": {
+        "startLine": 91,
+        "startChar": 25,
+        "endLine": 91,
+        "endChar": 30
+      },
+      "revId": "1b184f9dba61417ce0cbcad46267b4b2f053dd37",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
