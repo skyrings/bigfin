@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_e1b6393d",
+        "filename": "provider/cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 2620,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-13T14:52:05Z",
+      "side": 1,
+      "message": "better use another set of names as confusing with previous ones..",
+      "range": {
+        "startLine": 2620,
+        "startChar": 7,
+        "endLine": 2620,
+        "endChar": 14
+      },
+      "revId": "900c4741086e8b8705d581a938bd147fd4298cf0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
