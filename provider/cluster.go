@@ -2211,22 +2211,63 @@ func updateCrushMap(ctxt string, mon string, clusterId uuid.UUID) error {
 				nodeWeight += weight
 				pos++
 			}
+			logger.Get().Error("Creating the crush Node: %v", cNode)
 			cNodeId, err := cephapi_backend.CreateCrushNode(mon, clusterId, cNode, ctxt)
 			if err != nil {
-				logger.Get().Error("Failed to create Crush node for cluster: %s. error: %v", clusterId, err)
-				continue
+				logger.Get().Error("Failed to create Crush node: %v for cluster: %s. error: %v", cNode, clusterId, err)
+				//retry after few seconds
+				logger.Get().Error("Wait and check whether node is created")
+				time.Sleep(60 * time.Second)
+				for count := 0; count < 3; count++ {
+					if cNodeId, err = getCrushNodeByName(ctxt, mon, clusterId, cNode.Name); err != nil {
+						logger.Get().Error("try !!!")
+						time.Sleep(30 * time.Second)
+					} else {
+						logger.Get().Error("got it !!!")
+						break
+					}
+				}
+				if err != nil {
+					logger.Get().Error("Retry: Creating the crush Node: %v", cNode)
+					cNodeId, err = cephapi_backend.CreateCrushNode(mon, clusterId, cNode, ctxt)
+					if err != nil {
+						logger.Get().Error("Failed to create Crush node: %v for cluster: %s. error: %v", cNode, clusterId, err)
+						continue
+					}
+				}
+				logger.Get().Error("Successful !!!")
 			}
 			//Get the created crushnode and add to the root bucket
 			ritem := backend.CrushItem{Id: cNodeId, Pos: rpos, Weight: nodeWeight}
 			cRootNode.Items = append(cRootNode.Items, ritem)
 			rpos++
 		}
+		logger.Get().Error("Creating the crush Node: %v", cRootNode)
 		cRootNodeId, err := cephapi_backend.CreateCrushNode(mon, clusterId, cRootNode, ctxt)
 		if err != nil {
-			logger.Get().Error("Failed to create Crush node for cluster: %s. error: %v", clusterId, err)
-			continue
+			logger.Get().Error("Failed to create Crush node:%v for cluster: %s. error: %v", cRootNode, clusterId, err)
+			//retry after few seconds
+			logger.Get().Error("Wait and check whether node is created")
+			time.Sleep(60 * time.Second)
+			for count := 0; count < 3; count++ {
+				if cRootNodeId, err = getCrushNodeByName(ctxt, mon, clusterId, cRootNode.Name); err != nil {
+					logger.Get().Error("try 2 !!!")
+					time.Sleep(30 * time.Second)
+				} else {
+					logger.Get().Error("got it 2 !!!")
+					break
+				}
+			}
+			if err != nil {
+				logger.Get().Error("Retry: Creating the crush Node: %v", cRootNode)
+				cRootNodeId, err = cephapi_backend.CreateCrushNode(mon, clusterId, cRootNode, ctxt)
+				if err != nil {
+					logger.Get().Error("Failed to create Crush node:%v for cluster: %s. error: %v", cRootNode, clusterId, err)
+					continue
+				}
+			}
+			logger.Get().Error("Successful2 !!!")
 		}
-
 		cRuleId, err := createCrushRule(ctxt, sprof.Name, cRootNode.Name, cRootNodeId, mon, clusterId)
 		if err != nil {
 			logger.Get().Error("Failed to create Crush rule for cluster: %s. error: %v", clusterId, err)
@@ -2329,8 +2370,13 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID, sluList map[string]m
 			}
 			_, err := cephapi_backend.PatchCrushNode(monnode.Hostname, clusterId, cNode.Id, params, ctxt)
 			if err != nil {
-				logger.Get().Error("Failed to update Crush node for cluster: %s. error: %v", clusterId, err)
-				continue
+				logger.Get().Error("Failed to update Crush node:%v for cluster: %s. error: %v", params, clusterId, err)
+				logger.Get().Info("Retry: updating the crush Node: %v", params)
+				time.Sleep(60 * time.Second)
+				if _, err = cephapi_backend.PatchCrushNode(monnode.Hostname, clusterId, cNode.Id, params, ctxt); err != nil {
+					logger.Get().Error("Retry:Failed to update Crush node:%v for cluster: %s. error: %v", params, clusterId, err)
+					continue
+				}
 			}
 			err = setCrushRootWeight(ctxt, cNodes, rootNode, nodeWeight, cNode.Id, monnode.Hostname, clusterId)
 			if err != nil {
@@ -2403,8 +2449,26 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID, sluList map[string]m
 			if len(cNode.Items) > 0 {
 				cNodeId, err := cephapi_backend.CreateCrushNode(monnode.Hostname, clusterId, cNode, ctxt)
 				if err != nil {
-					logger.Get().Error("Failed to create Crush node for cluster: %s. error: %v", clusterId, err)
-					continue
+					logger.Get().Error("Failed to create Crush node:%v for cluster: %s. error: %v", cNode, clusterId, err)
+
+					//retry after few seconds
+					logger.Get().Info("Wait and check whether node is created")
+					time.Sleep(60 * time.Second)
+					for count := 0; count < 3; count++ {
+						if cNodeId, err = getCrushNodeByName(ctxt, monnode.Hostname, clusterId, cNode.Name); err != nil {
+							time.Sleep(30 * time.Second)
+						} else {
+							break
+						}
+					}
+					if err != nil {
+						logger.Get().Info("Retry: Creating the crush Node: %v", cNode)
+						cNodeId, err = cephapi_backend.CreateCrushNode(monnode.Hostname, clusterId, cNode, ctxt)
+						if err != nil {
+							logger.Get().Error("Failed to create Crush node:%v for cluster: %s. error: %v", cNode, clusterId, err)
+							continue
+						}
+					}
 				}
 				var rootNodeFound bool
 				for _, crNode := range cNodes {
@@ -2426,7 +2490,13 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID, sluList map[string]m
 						}
 						_, err = cephapi_backend.PatchCrushNode(monnode.Hostname, clusterId, cNodeLatest.Id, params, ctxt)
 						if err != nil {
-							logger.Get().Error("Failed to update Crush node for cluster: %s. error: %v", clusterId, err)
+							logger.Get().Error("Failed to update Crush node:%v for cluster: %s. error: %v", params, clusterId, err)
+							logger.Get().Info("Retry: updating the crush Node: %v", params)
+							time.Sleep(60 * time.Second)
+							if _, err = cephapi_backend.PatchCrushNode(monnode.Hostname, clusterId, cNodeLatest.Id, params, ctxt); err != nil {
+								logger.Get().Error("Retry:Failed to update Crush node:%v for cluster: %s. error: %v", params, clusterId, err)
+								continue
+							}
 						}
 						rootNodeFound = true
 						break
@@ -2439,8 +2509,25 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID, sluList map[string]m
 					nNode.Items = append(nNode.Items, item)
 					nNodeId, err := cephapi_backend.CreateCrushNode(monnode.Hostname, clusterId, nNode, ctxt)
 					if err != nil {
-						logger.Get().Error("Failed to create Crush node for cluster: %s. error: %v", clusterId, err)
-						continue
+						logger.Get().Error("Failed to create Crush node:%v for cluster: %s. error: %v", nNode, clusterId, err)
+						//retry after few seconds
+						logger.Get().Info("Wait and check whether node is created")
+						time.Sleep(60 * time.Second)
+						for count := 0; count < 3; count++ {
+							if nNodeId, err = getCrushNodeByName(ctxt, monnode.Hostname, clusterId, nNode.Name); err != nil {
+								time.Sleep(30 * time.Second)
+							} else {
+								break
+							}
+						}
+						if err != nil {
+							logger.Get().Info("Retry: Creating the crush Node: %v", nNode)
+							nNodeId, err = cephapi_backend.CreateCrushNode(monnode.Hostname, clusterId, nNode, ctxt)
+							if err != nil {
+								logger.Get().Error("Failed to create Crush node:%v for cluster: %s. error: %v", nNode, clusterId, err)
+								continue
+							}
+						}
 					}
 
 					cRuleId, err := createCrushRule(ctxt, sprof.Name, nNode.Name, nNodeId, monnode.Hostname, clusterId)
@@ -2490,10 +2577,30 @@ func createCrushRule(ctxt string, name string, cnodeName string, cNodeId int, mo
 	emit := make(map[string]interface{})
 	emit["op"] = "emit"
 	cRule.Steps = append(cRule.Steps, emit)
+	logger.Get().Error("Creating the crush Rule: %v", cRule)
 	cRuleId, err := cephapi_backend.CreateCrushRule(monnode, clusterId, cRule, ctxt)
 	if err != nil {
-		logger.Get().Error("Failed to create Crush rule for cluster: %s. error: %v", clusterId, err)
-		return cRuleId, err
+		logger.Get().Error("Failed to create Crush rule:%v for cluster: %s. error: %v", cRule, clusterId, err)
+		//retry after few seconds
+		logger.Get().Error("Wait and check")
+		time.Sleep(60 * time.Second)
+		for count := 0; count < 3; count++ {
+			if cRuleId, err = getCrushRuleByName(ctxt, monnode, clusterId, cRule.Name); err != nil {
+				logger.Get().Error("try 3 !!!")
+				time.Sleep(30 * time.Second)
+			} else {
+				logger.Get().Error("got it 3 !!!")
+				break
+			}
+		}
+		if err != nil {
+			logger.Get().Error("Retry: Creating the crush rule: %v", cRule)
+			cRuleId, err = cephapi_backend.CreateCrushRule(monnode, clusterId, cRule, ctxt)
+			if err != nil {
+				logger.Get().Error("Failed to create Crush rule:%v for cluster: %s. error: %v", cRule, clusterId, err)
+				return cRuleId, err
+			}
+		}
 	}
 	return cRuleId, err
 }
@@ -2514,8 +2621,13 @@ func setCrushRootWeight(ctxt string, cNodes []backend.CrushNode, rootNode string
 			}
 			_, err := cephapi_backend.PatchCrushNode(mon, clusterId, crNode.Id, params, ctxt)
 			if err != nil {
-				logger.Get().Error("%s-Failed to update Crush weight for cluster: %s. error: %v", ctxt, clusterId, err)
-				return err
+				logger.Get().Error("%s-Failed to update Crush weight:%v for cluster: %s. error: %v", ctxt, params, clusterId, err)
+				logger.Get().Info("Retry: update Crush weight for cluster: %v", params)
+				time.Sleep(60 * time.Second)
+				if _, err = cephapi_backend.PatchCrushNode(mon, clusterId, crNode.Id, params, ctxt); err != nil {
+					logger.Get().Error("%s-Retry:Failed to update Crush weight:%v for cluster: %s. error: %v", ctxt, params, clusterId, err)
+					return err
+				}
 			}
 			break
 		}
@@ -2529,4 +2641,41 @@ func calculateCrushRootWeight(ctxt string, cNode backend.CrushNode) float64 {
 		weight += item.Weight
 	}
 	return weight
+}
+
+func getCrushNodeByName(ctxt string, mon string, clusterId uuid.UUID, name string) (int, error) {
+	var cNodeId int
+	cNodes, err := cephapi_backend.GetCrushNodes(mon, clusterId, ctxt)
+	if err != nil {
+		logger.Get().Error("Failed to retrieve Crush nodes for cluster: %s. error: %v", clusterId, err)
+		return cNodeId, err
+	}
+	for _, cNode := range cNodes {
+		if cNode.Name == name {
+			return cNode.Id, nil
+		}
+	}
+	return cNodeId, errors.New("Not Found")
+}
+
+func getCrushRuleByName(ctxt string, mon string, clusterId uuid.UUID, name string) (int, error) {
+	var cRuleId int
+	cRules, err := cephapi_backend.GetCrushRules(mon, clusterId, ctxt)
+	if err != nil {
+		logger.Get().Error("Failed to retrieve Crush rules for cluster: %s. error: %v", clusterId, err)
+		return cRuleId, err
+	}
+	for _, cRule := range cRules {
+		if val, ok := cRule["name"]; ok {
+			if name == val.(string) {
+				if val, ok := cRule["ruleset"]; ok {
+					cRuleId = int(val.(float64))
+					return cRuleId, nil
+				}
+			}
+
+		}
+	}
+	return cRuleId, errors.New("Not Found")
+
 }

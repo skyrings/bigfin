@@ -661,7 +661,7 @@ func (c CephApi) CreateCrushNode(mon string, clusterId uuid.UUID, node backend.C
 	resp, err := route_request(route, mon, body)
 	defer closeRespBody(resp)
 	if err != nil || (resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusAccepted) {
-		return cNodeId, errors.New(fmt.Sprintf("Failed to create crush rule for cluster: %s. error: %v", clusterId.String(), err))
+		return cNodeId, errors.New(fmt.Sprintf("Failed to create crush node for cluster: %s. error: %v", clusterId.String(), err))
 	}
 	ok, err := syncRequestStatus(mon, resp)
 	if !ok {
