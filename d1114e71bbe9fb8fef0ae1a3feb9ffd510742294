@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_a2c03051",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 1
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-14T07:00:47Z",
+      "side": 1,
+      "message": "This is a good patch. Do we have a BZ as well for this? If so attach the reference here..",
+      "range": {
+        "startLine": 7,
+        "startChar": 9,
+        "endLine": 7,
+        "endChar": 62
+      },
+      "revId": "d1114e71bbe9fb8fef0ae1a3feb9ffd510742294",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_82b1ac03",
+        "filename": "provider/storage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 828,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-14T07:00:47Z",
+      "side": 1,
+      "message": "We should do this only if updates[\"name\"] is available, else if other attributes like quota params change, why update the rbd details.",
+      "range": {
+        "startLine": 819,
+        "startChar": 4,
+        "endLine": 828,
+        "endChar": 5
+      },
+      "revId": "d1114e71bbe9fb8fef0ae1a3feb9ffd510742294",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
