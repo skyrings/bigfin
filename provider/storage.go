@@ -836,6 +836,18 @@ func (s *CephProvider) UpdateStorage(req models.RpcRequest, resp *models.RpcResp
 					UpdatePgNumToSummaries(cluster, ctxt)
 				}
 
+				if _, ok := updates["name"]; ok {
+					coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_BLOCK_DEVICES)
+					if _, err := coll.UpdateAll(filter, bson.M{"$set": bson.M{"storagename": updates["name"]}}); err != nil && err != mgo.ErrNotFound {
+						utils.FailTask(
+							fmt.Sprintf(
+								"Storage name has changed for storage:%v. Error while updating this info for RBDs in cluster:%v",
+								*storage_id,
+								*cluster_id),
+							fmt.Errorf("%s-%v", ctxt, err),
+							t)
+					}
+				}
 				t.UpdateStatus("Success")
 				t.Done(models.TASK_STATUS_SUCCESS)
 				return
