@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_7db87e75",
+        "filename": "provider/storage.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 825,
+      "author": {
+        "id": 1006236
+      },
+      "writtenOn": "2016-07-18T07:28:41Z",
+      "side": 1,
+      "message": "This is not RBD id right ? so either rephrase the sentence or Drop this info.",
+      "range": {
+        "startLine": 825,
+        "startChar": 8,
+        "endLine": 825,
+        "endChar": 20
+      },
+      "revId": "17b4deb62e4bf704af69f58f0052b8c61cb8857a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
