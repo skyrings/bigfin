@@ -534,7 +534,12 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 	var (
 		failedOSDs []string
 		slus       = make(map[string]models.StorageLogicalUnit)
+		cephConf   = make(map[string]interface{})
+		globalConf = make(map[string]interface{})
 	)
+	//create global configuration
+	globalConf["osd crush update on start"] = false
+	cephConf["global"] = globalConf
 	// In case of expand cluster journal size to be taken from DB
 	if request.JournalSize == "" {
 		var cluster models.Cluster
@@ -636,6 +641,7 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 			osd["public_network"] = request.Networks.Public
 			osd["redhat_storage"] = conf.SystemConfig.Provisioners[bigfin_conf.ProviderName].RedhatStorage
 			osd["monitors"] = clusterMons
+			osd["conf"] = cephConf
 
 			if err := installer_backend.Configure(ctxt, t, OSD, osd); err != nil {
 				failedOSDs = append(failedOSDs, fmt.Sprintf("%v:%v", osd["host"].(string), osd["devices"]))
