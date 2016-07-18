@@ -534,7 +534,7 @@ def ListPool(monitor, cluster_name, ctxt=""):
 def RemovePool(monitor, cluster, pool, ctxt=""):
     local = salt.client.LocalClient()
     out = local.cmd(monitor, 'ceph.removePool', [cluster, pool])
-    if out.get(monitor, {}).get('retcode') == 0:
+   if out.get(monitor, 'Failed') == '':
         return True
 
     log.error("%s - Remove pool failed. error=%s" % (ctxt, out))
@@ -756,4 +756,16 @@ def StopCalamari(node, ctxt=""):
 def EmitRbdEvents(node, cluster, ctxt=""):
     local = salt.client.LocalClient()
     out = local.cmd(node, 'mon_remote.rbd_eventer', [cluster])
+    return True
+
+
+def AddOsdToCrush(monitor, clusterName, osdName, host, ctxt=""):
+    local = salt.client.LocalClient()
+    out = local.cmd(monitor, 'ceph.addOsdToCrush',
+                    [clusterName, osdName, host])
+
+    if out.get(monitor, 1) == 1:
+        log.error("%s-addOsdToCrush failed." % ctxt)
+        raise Exception("addOsdToCrush failed.")
+
     return True

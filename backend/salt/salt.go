@@ -42,6 +42,7 @@ var funcNames = [...]string{
 	"StartCalamari",
 	"StopCalamari",
 	"EmitRbdEvents",
+	"AddOsdToCrush",
 }
 
 var pyFuncs map[string]*gopy.PyFunction
@@ -396,4 +397,15 @@ func (c Salt) EmitRbdEvents(node string, cluster string, ctxt string) error {
 		return nil
 	}
 	return err
+}
+
+func (s Salt) AddOsdToCrush(mon string, clusterName string, osdName string, host string, ctxt string) (bool, error) {
+	mutex.Lock()
+	defer mutex.Unlock()
+	pyobj, err := pyFuncs["AddOsdToCrush"].Call(mon, clusterName, osdName, host, ctxt)
+	if err == nil {
+		return gopy.Bool(pyobj), nil
+	}
+
+	return false, err
 }
