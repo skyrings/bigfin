@@ -969,3 +969,7 @@ func closeRespBody(resp *http.Response) {
 		resp.Body.Close()
 	}
 }
+
+func (c CephApi) AddOsdToCrush(mon string, clusterName string, osdName string, host string, ctxt string) (bool, error) {
+	return true, nil
+}
