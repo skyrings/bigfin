@@ -46,6 +46,30 @@
       "revId": "17b4deb62e4bf704af69f58f0052b8c61cb8857a",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_787e4c6b",
+        "filename": "provider/storage.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 825,
+      "author": {
+        "id": 1006236
+      },
+      "writtenOn": "2016-07-18T08:29:24Z",
+      "side": 1,
+      "message": "Then have a message something like:\n\n\"Storage name has changed for storage:\u003cstorage_id\u003e. Error while updating this info for RBDs in cluster: \u003ccluster_id\u003e\"",
+      "parentUuid": "baa041b7_fd7b6ebc",
+      "range": {
+        "startLine": 825,
+        "startChar": 8,
+        "endLine": 825,
+        "endChar": 20
+      },
+      "revId": "17b4deb62e4bf704af69f58f0052b8c61cb8857a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
