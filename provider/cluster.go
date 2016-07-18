@@ -234,8 +234,10 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 					t.UpdateStatus("Error updating the cluster status")
 				}
 
-				// Delete the default created pool "rbd"
-				t.UpdateStatus("Removing default created pool \"rbd\"")
+				/*
+					// Delete the default created pool "rbd"
+					t.UpdateStatus("Removing default created pool \"rbd\"")*/
+
 				monnode, err := GetCalamariMonNode(*cluster_uuid, ctxt)
 				if err != nil {
 					logger.Get().Error("%s-Could not get random mon", ctxt)
@@ -243,17 +245,18 @@ func (s *CephProvider) CreateCluster(req models.RpcRequest, resp *models.RpcResp
 					t.Done(models.TASK_STATUS_SUCCESS)
 					return
 				}
-				// First pool in the cluster so poolid = 0
-				ok, err := cephapi_backend.RemovePool(monnode.Hostname, *cluster_uuid, request.Name, "rbd", 0, ctxt)
-				if err != nil || !ok {
-					// Wait and try once more
-					time.Sleep(10 * time.Second)
+				/*
+					// First pool in the cluster so poolid = 0
 					ok, err := cephapi_backend.RemovePool(monnode.Hostname, *cluster_uuid, request.Name, "rbd", 0, ctxt)
 					if err != nil || !ok {
-						logger.Get().Warning("%s - Could not delete the default create pool \"rbd\" for cluster: %s", ctxt, request.Name)
-						t.UpdateStatus("Could not delete the default create pool \"rbd\"")
-					}
-				}
+						// Wait and try once more
+						time.Sleep(10 * time.Second)
+						ok, err := cephapi_backend.RemovePool(monnode.Hostname, *cluster_uuid, request.Name, "rbd", 0, ctxt)
+						if err != nil || !ok {
+							logger.Get().Warning("%s - Could not delete the default create pool \"rbd\" for cluster: %s", ctxt, request.Name)
+							t.UpdateStatus("Could not delete the default create pool \"rbd\"")
+						}
+					}*/
 
 				// Create default EC profiles
 				t.UpdateStatus("Creating default EC profiles")
@@ -405,7 +408,13 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 	var (
 		clusterMons               []map[string]interface{}
 		failedMons, succeededMons []string
+		cephConf                  = make(map[string]interface{})
+		globalConf                = make(map[string]interface{})
 	)
+	//create global configuration
+	globalConf["osd crush update on start"] = false
+	cephConf["global"] = globalConf
+
 	t.UpdateStatus("Configuring the mons")
 
 	for _, req_node := range request.Nodes {
@@ -428,6 +437,7 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 			mon["cluster_network"] = request.Networks.Cluster
 			mon["public_network"] = request.Networks.Public
 			mon["redhat_storage"] = conf.SystemConfig.Provisioners[bigfin_conf.ProviderName].RedhatStorage
+			mon["conf"] = cephConf
 			if len(clusterMons) > 0 {
 				mon["monitors"] = clusterMons
 			}
@@ -461,6 +471,7 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_NODES)
 	t.UpdateStatus("Persisting mons")
 	var calamariStarted bool
+	var monNodeName string
 	for _, mon := range succeededMons {
 		if err := coll.Update(
 			bson.M{"hostname": mon},
@@ -490,12 +501,27 @@ func CreateClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 						"options.calamari": "Y"}}); err != nil {
 					return err
 				}
+				monNodeName = mon
 			}
 		}
 	}
 	if !calamariStarted {
 		t.UpdateStatus("Could not start calamari on any mons")
 		return fmt.Errorf("Could not start calamari on any mons")
+	}
+
+	// Delete the default created pool "rbd"
+	t.UpdateStatus("Removing default created pool \"rbd\"")
+	// First pool in the cluster so poolid = 0
+	ok, err := cephapi_backend.RemovePool(monNodeName, *cluster_uuid, request.Name, "rbd", 0, ctxt)
+	if err != nil || !ok {
+		// Wait and try once more
+		time.Sleep(10 * time.Second)
+		ok, err := cephapi_backend.RemovePool(monNodeName, *cluster_uuid, request.Name, "rbd", 0, ctxt)
+		if err != nil || !ok {
+			logger.Get().Warning("%s - Could not delete the default create pool \"rbd\" for cluster: %s", ctxt, request.Name)
+			t.UpdateStatus("Could not delete the default create pool \"rbd\"")
+		}
 	}
 
 	var osdPresent bool
@@ -534,7 +560,12 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 	var (
 		failedOSDs []string
 		slus       = make(map[string]models.StorageLogicalUnit)
+		cephConf   = make(map[string]interface{})
+		globalConf = make(map[string]interface{})
 	)
+	//create global configuration
+	globalConf["osd crush update on start"] = false
+	cephConf["global"] = globalConf
 	// In case of expand cluster journal size to be taken from DB
 	if request.JournalSize == "" {
 		var cluster models.Cluster
@@ -636,6 +667,7 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 			osd["public_network"] = request.Networks.Public
 			osd["redhat_storage"] = conf.SystemConfig.Provisioners[bigfin_conf.ProviderName].RedhatStorage
 			osd["monitors"] = clusterMons
+			osd["conf"] = cephConf
 
 			if err := installer_backend.Configure(ctxt, t, OSD, osd); err != nil {
 				failedOSDs = append(failedOSDs, fmt.Sprintf("%v:%v", osd["host"].(string), osd["devices"]))
@@ -2044,6 +2076,17 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 
 			logger.Get().Info("%s-Updated the slu: osd.%d on cluster: %v", ctxt, osd.Id, clusterId)
 			slusFound[fmt.Sprintf("%s:%s", node.NodeId.String(), deviceDetails.DevName)] = slu
+
+			//create the default CRUSH
+			cluster, err := getCluster(clusterId)
+			if err != nil {
+				logger.Get().Error("Unable to get the cluster details for cluster :%v", clusterId)
+				continue
+			}
+
+			if status, err := salt_backend.AddOsdToCrush(monnode.Hostname, cluster.Name, slu.Name, strings.Split(osd.Server, ".")[0], ctxt); err != nil || !status {
+				logger.Get().Error("Unable to create the default crush node for :%v", slu.Name)
+			}
 		}
 	}
 	//If some slus are remaining in the list, those should be deleted as it is not found in cluster
@@ -2194,7 +2237,7 @@ func updateCrushMap(ctxt string, mon string, clusterId uuid.UUID) error {
 			if len(cslus) == 0 {
 				continue
 			}
-			nodeName := fmt.Sprintf("%s-%s", node.Hostname, sprof.Name)
+			nodeName := fmt.Sprintf("%s-%s", strings.Split(node.Hostname, ".")[0], sprof.Name)
 			cNode := backend.CrushNodeRequest{BucketType: "host", Name: nodeName}
 			var (
 				pos        int
@@ -2419,7 +2462,7 @@ func UpdateCrushNodeItems(ctxt string, clusterId uuid.UUID, sluList map[string]m
 			continue
 		}
 		for _, node := range nodes {
-			nodeName := fmt.Sprintf("%s-%s", node.Hostname, sprof.Name)
+			nodeName := fmt.Sprintf("%s-%s", strings.Split(node.Hostname, ".")[0], sprof.Name)
 			cNode := backend.CrushNodeRequest{BucketType: "host", Name: nodeName}
 			var (
 				pos        int

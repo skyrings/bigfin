@@ -757,3 +757,15 @@ def EmitRbdEvents(node, cluster, ctxt=""):
     local = salt.client.LocalClient()
     out = local.cmd(node, 'mon_remote.rbd_eventer', [cluster])
     return True
+
+
+def AddOsdToCrush(monitor, clusterName, osdName, host, ctxt=""):
+    local = salt.client.LocalClient()
+    out = local.cmd(monitor, 'ceph.addOsdToCrush',
+                    [clusterName, osdName, host])
+
+    if out.get(monitor, 1) == 1:
+        log.error("%s-addOsdToCrush failed." % ctxt)
+        raise Exception("addOsdToCrush failed.")
+
+    return True
