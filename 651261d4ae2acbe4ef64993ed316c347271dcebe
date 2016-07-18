@@ -49,6 +49,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_bcc4e83f",
+        "filename": "/COMMIT_MSG",
+        "patchSetId": 2
+      },
+      "lineNbr": 7,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-07-18T20:01:14Z",
+      "side": 1,
+      "message": "Create/delete cluster --\u003e handled from skyring\n\nosd add/delete --\u003e Add goes through typical expand cluster so that\u0027s handled.\n\npool add --\u003e handled from skyring for system and cluster summaries but utilization handled in this patch.\n\nblock device add/delete --\u003e Utilization handled in this patch.Handled summaries from skyring",
+      "parentUuid": "baa041b7_5c2f1c3e",
+      "range": {
+        "startLine": 7,
+        "startChar": 1,
+        "endLine": 7,
+        "endChar": 42
+      },
+      "revId": "651261d4ae2acbe4ef64993ed316c347271dcebe",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_7c2c204a",
         "filename": "provider/storage.go",
         "patchSetId": 2
@@ -60,6 +84,30 @@
       "writtenOn": "2016-07-09T10:19:20Z",
       "side": 1,
       "message": "why this is required",
+      "range": {
+        "startLine": 823,
+        "startChar": 4,
+        "endLine": 829,
+        "endChar": 5
+      },
+      "revId": "651261d4ae2acbe4ef64993ed316c347271dcebe",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_7cdd4013",
+        "filename": "provider/storage.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 829,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-07-18T20:01:14Z",
+      "side": 1,
+      "message": "Ok I\u0027ll Trigger PGSummary fetch.",
+      "parentUuid": "baa041b7_7c2c204a",
       "range": {
         "startLine": 823,
         "startChar": 4,
