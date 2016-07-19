@@ -8,7 +8,7 @@ func GetProviderSpecificDefaultThresholdValues() (plugins []monitoring.Plugin) {
 	return []monitoring.Plugin{
 		{
 			Name:        monitoring.SLU_UTILIZATION,
-			Description: "OSD Utilization",
+			Description: "OSD",
 			Enable:      true,
 			Configs: []monitoring.PluginConfig{
 				{Category: monitoring.THRESHOLD, Type: monitoring.CRITICAL, Value: "95"},
@@ -17,7 +17,7 @@ func GetProviderSpecificDefaultThresholdValues() (plugins []monitoring.Plugin) {
 		},
 		{
 			Name:        monitoring.STORAGE_UTILIZATION,
-			Description: "Storage Utilization",
+			Description: "Storage",
 			Enable:      true,
 			Configs: []monitoring.PluginConfig{
 				{Category: monitoring.THRESHOLD, Type: monitoring.CRITICAL, Value: "90"},
@@ -44,7 +44,7 @@ func GetProviderSpecificDefaultThresholdValues() (plugins []monitoring.Plugin) {
 		},
 		{
 			Name:        monitoring.BLOCK_DEVICE_UTILIZATION,
-			Description: "Block Device Utilization",
+			Description: "Block Device",
 			Enable:      true,
 			Configs: []monitoring.PluginConfig{
 				{Category: monitoring.THRESHOLD, Type: monitoring.CRITICAL, Value: "85"},
