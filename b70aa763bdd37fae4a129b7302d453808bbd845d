@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_af836902",
+        "filename": "salt_module/ceph.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-19T07:35:25Z",
+      "side": 1,
+      "message": "I feel this reweight. should it always be 1.0?",
+      "range": {
+        "startLine": 108,
+        "startChar": 89,
+        "endLine": 108,
+        "endChar": 93
+      },
+      "revId": "b70aa763bdd37fae4a129b7302d453808bbd845d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_cf7ead1a",
+        "filename": "salt_module/ceph.py",
+        "patchSetId": 3
+      },
+      "lineNbr": 108,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-19T07:35:25Z",
+      "side": 1,
+      "message": "Cant we do this by execCmd() way of calamari?",
+      "range": {
+        "startLine": 108,
+        "startChar": 11,
+        "endLine": 108,
+        "endChar": 118
+      },
+      "revId": "b70aa763bdd37fae4a129b7302d453808bbd845d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
