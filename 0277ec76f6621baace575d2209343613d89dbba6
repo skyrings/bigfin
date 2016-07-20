@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_41fdccaf",
+        "filename": "backend/salt/python/bigfin/saltwrapper.py",
+        "patchSetId": 6
+      },
+      "lineNbr": 537,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-07-20T11:11:41Z",
+      "side": 1,
+      "message": "That\u0027s what I have seen, it doesn\u0027t return anything in case of success",
+      "parentUuid": "baa041b7_bba04743",
+      "range": {
+        "startLine": 537,
+        "startChar": 4,
+        "endLine": 537,
+        "endChar": 40
+      },
+      "revId": "0277ec76f6621baace575d2209343613d89dbba6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_9b8a23be",
         "filename": "provider/cluster.go",
         "patchSetId": 6
@@ -36,6 +60,30 @@
       "writtenOn": "2016-07-20T04:38:20Z",
       "side": 1,
       "message": "We can remove this code as added down.",
+      "range": {
+        "startLine": 237,
+        "startChar": 4,
+        "endLine": 259,
+        "endChar": 8
+      },
+      "revId": "0277ec76f6621baace575d2209343613d89dbba6",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_013224a7",
+        "filename": "provider/cluster.go",
+        "patchSetId": 6
+      },
+      "lineNbr": 259,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-07-20T11:11:41Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_9b8a23be",
       "range": {
         "startLine": 237,
         "startChar": 4,
