@@ -248,9 +248,9 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 					t)
 				return nil, false
 			}
-			pgNum = DerivePgNum(clusterId, request.Size, ec_pool_sizes[request.Options["ecprofile"]])
+			pgNum = DerivePgNum(clusterId, request.Size, ec_pool_sizes[request.Options["ecprofile"]], request.Profile)
 		} else {
-			pgNum = DerivePgNum(clusterId, request.Size, request.Replicas)
+			pgNum = DerivePgNum(clusterId, request.Size, request.Replicas, request.Profile)
 		}
 	}
 	rulesetmapval, ok := cluster.Options["rulesetmap"]
@@ -398,13 +398,13 @@ func validECProfile(ctxt string, mon string, cluster models.Cluster, ecprofile s
 //         Max Allocation Size = ((Average OSD Size * No of OSDs) / Replica Count) * Max Utilization Factor
 //         -- where Max Utilization Factor is set as 0.8
 //  Finally round this value of next 2's power
-func DerivePgNum(clusterId uuid.UUID, size string, replicaCount int) uint {
+func DerivePgNum(clusterId uuid.UUID, size string, replicaCount int, profile string) uint {
 	// Get the no of OSDs in the cluster
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
 	var slus []models.StorageLogicalUnit
-	if err := coll.Find(bson.M{"clusterid": clusterId, "type": models.CEPH_OSD}).All(&slus); err != nil {
+	if err := coll.Find(bson.M{"clusterid": clusterId, "type": models.CEPH_OSD, "storageprofile": profile}).All(&slus); err != nil {
 		return uint(DEFAULT_PG_NUM)
 	}
 	osdsNum := len(slus)
