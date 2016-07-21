@@ -1937,9 +1937,9 @@ func RecalculatePgnum(ctxt string, clusterId uuid.UUID, t *task.Task) bool {
 		}
 		var pgNum uint
 		if storage.Type == models.STORAGE_TYPE_ERASURE_CODED {
-			pgNum = DerivePgNum(clusterId, storage.Size, ec_pool_sizes[storage.Options["ecprofile"]])
+			pgNum = DerivePgNum(clusterId, storage.Size, ec_pool_sizes[storage.Options["ecprofile"]], storage.Profile)
 		} else {
-			pgNum = DerivePgNum(clusterId, storage.Size, storage.Replicas)
+			pgNum = DerivePgNum(clusterId, storage.Size, storage.Replicas, storage.Profile)
 		}
 		currentPgNum, err := strconv.Atoi(storage.Options["pg_num"])
 		if err != nil {

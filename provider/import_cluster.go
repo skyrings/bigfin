@@ -492,6 +492,16 @@ func PopulateStoragePools(bootstrapNode string, clusterId uuid.UUID, ctxt string
 			clusterId,
 			err)
 	}
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
+	if _, err := coll.UpdateAll(bson.M{"clusterid": clusterId}, bson.M{"$set": bson.M{"profile": "default1"}}); err != nil {
+		return fmt.Errorf(
+			"%s-Error populating profile for pools in cluster: %s. error: %v",
+			ctxt,
+			clusterId,
+			err)
+	}
 	return nil
 }
 
