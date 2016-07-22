@@ -2069,9 +2069,8 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 					"nodeid":         node.NodeId,
 					"clusterid":      clusterId,
 					"options.device": deviceDetails.DevName}, slu); err != nil {
-				logger.Get().Error("%s-Error updating the slu: %s. error: %v", ctxt, osd.Uuid.String(), err)
+				logger.Get().Error("%s-Error updating the slu: %v. error: %v", ctxt, slu, err)
 				slusFound[fmt.Sprintf("%s:%s", node.NodeId.String(), deviceDetails.DevName)] = slu
-				continue
 			}
 
 			logger.Get().Info("%s-Updated the slu: osd.%d on cluster: %v", ctxt, osd.Id, clusterId)
@@ -2083,8 +2082,8 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 				logger.Get().Error("Unable to get the cluster details for cluster :%v", clusterId)
 				continue
 			}
-
-			if status, err := salt_backend.AddOsdToCrush(monnode.Hostname, cluster.Name, slu.Name, strings.Split(osd.Server, ".")[0], ctxt); err != nil || !status {
+			weight := float64(slu.StorageDeviceSize) / BYTE_TO_TB
+			if status, err := salt_backend.AddOsdToCrush(monnode.Hostname, cluster.Name, slu.Name, weight, strings.Split(osd.Server, ".")[0], ctxt); err != nil || !status {
 				logger.Get().Error("Unable to create the default crush node for :%v", slu.Name)
 			}
 		}
@@ -2092,7 +2091,7 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 	//If some slus are remaining in the list, those should be deleted as it is not found in cluster
 	for key, slu := range slus {
 		if _, ok := slusFound[key]; !ok {
-			logger.Get().Info("%s-SLU:%v not found in cluster, removing from DB", ctxt, slu)
+			logger.Get().Error("%s-SLU:%v not found in cluster, removing from DB", ctxt, slu)
 			if err := coll_slu.Remove(
 				bson.M{
 					"nodeid":         slu.NodeId,
