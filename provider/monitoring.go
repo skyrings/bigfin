@@ -835,6 +835,8 @@ func updateStatsToPools(ctxt string, statistics ClusterStats, clusterId uuid.UUI
 	for _, poolStat := range statistics.Pools {
 		used := poolStat.PoolUtilization.Used
 		total := poolStat.PoolUtilization.Available
+		// Actual value of total is used + available
+		total = total + used
 		percentUsed := 0.0
 		if total != 0 {
 			percentUsed = (float64(used*100) / float64(total))
