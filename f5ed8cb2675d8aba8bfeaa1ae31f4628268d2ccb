@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_fda11caa",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 2076,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-22T09:51:53Z",
+      "side": 1,
+      "message": "Even if failed to update db, this message would be shown on top of \"Error updating the slu\". So the messages would look like...\n\n\"Error updating the slu. \u003c\u003e error: ...\"\n\"ctx-Updated the slu: \u003c\u003e on cluster: \u003c\u003e\"\n\nThis would look bad I feel, so we might suppress this line in case of error for above update may be.",
+      "range": {
+        "startLine": 2076,
+        "startChar": 3,
+        "endLine": 2076,
+        "endChar": 90
+      },
+      "revId": "f5ed8cb2675d8aba8bfeaa1ae31f4628268d2ccb",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
