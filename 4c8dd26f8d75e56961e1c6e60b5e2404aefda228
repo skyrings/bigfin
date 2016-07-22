@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_5893765b",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 839,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-07-22T14:14:03Z",
+      "side": 1,
+      "message": "The problem with this is that sometimes the max available comes as 0 so in such cases, the percent used goes to 100. so, it would be nice if we can check available is 0, then have percent used as 0.",
+      "range": {
+        "startLine": 839,
+        "startChar": 2,
+        "endLine": 839,
+        "endChar": 22
+      },
+      "revId": "4c8dd26f8d75e56961e1c6e60b5e2404aefda228",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
