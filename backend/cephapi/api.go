@@ -970,6 +970,6 @@ func closeRespBody(resp *http.Response) {
 	}
 }
 
-func (c CephApi) AddOsdToCrush(mon string, clusterName string, osdName string, host string, ctxt string) (bool, error) {
+func (c CephApi) AddOsdToCrush(mon string, clusterName string, osdName string, weight float64, host string, ctxt string) (bool, error) {
 	return true, nil
 }

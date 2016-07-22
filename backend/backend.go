@@ -146,7 +146,7 @@ type Backend interface {
 	StartCalamari(node string, ctxt string) error
 	StopCalamari(node string, ctxt string) error
 	EmitRbdEvents(node string, cluster string, ctxt string) error
-	AddOsdToCrush(mon string, clusterName string, osdName string, host string, ctxt string) (bool, error)
+	AddOsdToCrush(mon string, clusterName string, osdName string, weight float64, host string, ctxt string) (bool, error)
 }
 
 type OSDDetails struct {

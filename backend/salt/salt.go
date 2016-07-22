@@ -399,10 +399,10 @@ func (c Salt) EmitRbdEvents(node string, cluster string, ctxt string) error {
 	return err
 }
 
-func (s Salt) AddOsdToCrush(mon string, clusterName string, osdName string, host string, ctxt string) (bool, error) {
+func (s Salt) AddOsdToCrush(mon string, clusterName string, osdName string, weight float64, host string, ctxt string) (bool, error) {
 	mutex.Lock()
 	defer mutex.Unlock()
-	pyobj, err := pyFuncs["AddOsdToCrush"].Call(mon, clusterName, osdName, host, ctxt)
+	pyobj, err := pyFuncs["AddOsdToCrush"].Call(mon, clusterName, osdName, weight, host, ctxt)
 	if err == nil {
 		return gopy.Bool(pyobj), nil
 	}
