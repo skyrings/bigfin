@@ -22,6 +22,30 @@
       "revId": "886802d9dde02113a167ad558c63e234fafe2125",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_a2d253cf",
+        "filename": "provider/import_cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 498,
+      "author": {
+        "id": 1007367
+      },
+      "writtenOn": "2016-07-22T05:31:23Z",
+      "side": 1,
+      "message": "it is default not default1 sorry after testing i forgot to chang it :)",
+      "parentUuid": "baa041b7_a25b7385",
+      "range": {
+        "startLine": 498,
+        "startChar": 94,
+        "endLine": 498,
+        "endChar": 104
+      },
+      "revId": "886802d9dde02113a167ad558c63e234fafe2125",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
