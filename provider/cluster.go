@@ -676,6 +676,7 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 				State:             bigfinmodels.OSD_STATE_IN,
 				AlmStatus:         models.ALARM_STATUS_CLEARED,
 			}
+			logger.Get().Info("Adding SLU: %v", slu)
 			if ok, err := persistOSD(slu, t, ctxt); err != nil || !ok {
 				logger.Get().Error("%s-Error persisting OSD for cluster: %s. error: %v", ctxt, request.Name, err)
 				failedOSDs = append(failedOSDs, fmt.Sprintf("%s:%s", osd["host"].(string), osd["devices"]))
@@ -1948,6 +1949,11 @@ func RecalculatePgnum(ctxt string, clusterId uuid.UUID, t *task.Task) bool {
 		}
 		if pgNum == uint(currentPgNum) {
 			logger.Get().Info("No change in PgNum .. Continuing ..")
+			continue
+		}
+		// If re-calculated pgnum value is smaller than current one, no need to change
+		if pgNum < uint(currentPgNum) {
+			logger.Get().Info("Re-calculated PgNum: %v is less than current one. Continuing..")
 			continue
 		}
 		id, err := strconv.Atoi(storage.Options["id"])
