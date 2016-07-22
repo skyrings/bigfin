@@ -22,6 +22,30 @@
       "revId": "4c8dd26f8d75e56961e1c6e60b5e2404aefda228",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_b895e232",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 839,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-07-22T14:20:58Z",
+      "side": 1,
+      "message": "I heard from nishanth that the above case can happen in a valid 100% utilization case and I agree with him on this.So, please ignore my previous comments.",
+      "parentUuid": "baa041b7_5893765b",
+      "range": {
+        "startLine": 839,
+        "startChar": 2,
+        "endLine": 839,
+        "endChar": 22
+      },
+      "revId": "4c8dd26f8d75e56961e1c6e60b5e2404aefda228",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
