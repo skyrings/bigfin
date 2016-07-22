@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_a25b7385",
+        "filename": "provider/import_cluster.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 498,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-22T05:15:32Z",
+      "side": 1,
+      "message": "Is it fine to populate \"default1\" for all the pools?",
+      "range": {
+        "startLine": 498,
+        "startChar": 94,
+        "endLine": 498,
+        "endChar": 104
+      },
+      "revId": "886802d9dde02113a167ad558c63e234fafe2125",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
