@@ -105,7 +105,7 @@ def getOSDDetails(clusterName):
 
 def addOsdToCrush(clusterName, osdName, weight, host):
     hostStr = 'host='+host
-    cmd = ["ceph", "--cluster", clusterName, "osd", "crush", "create-or-move", osdName, weight, hostStr, "root=default"]
+    cmd = ["ceph", "--cluster", clusterName, "osd", "crush", "create-or-move", osdName, str(round(weight,9)), hostStr, "root=default"]
     try:
         rc, out, err = utils.execCmd(cmd)
         return rc
