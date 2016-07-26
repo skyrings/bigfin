@@ -19,6 +19,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+
 	"github.com/skyrings/bigfin/backend"
 	"github.com/skyrings/bigfin/backend/cephapi/handler"
 	"github.com/skyrings/bigfin/backend/cephapi/models"
@@ -212,8 +213,8 @@ func (c CephApi) GetClusterStatus(mon string, clusterId uuid.UUID, clusterName s
 	return clusterHealth.OverallStatus, nil
 }
 
-func (c CephApi) GetClusterStats(mon string, clusterName string, ctxt string) (backend.ClusterUtilization, error) {
-	return backend.ClusterUtilization{}, nil
+func (c CephApi) GetClusterStats(mon string, clusterName string, ctxt string) (backend.ClusterStats, error) {
+	return backend.ClusterStats{}, nil
 }
 
 func (c CephApi) GetRBDStats(mon string, poolName string, clusterName string, ctxt string) ([]backend.RBDStats, error) {

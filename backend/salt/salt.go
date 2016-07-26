@@ -164,8 +164,8 @@ func (s Salt) GetPool(mon string, clusterId uuid.UUID, pool_id int, ctxt string)
 	return backend.CephPool{}, nil
 }
 
-func (s Salt) GetClusterStats(mon string, clusterName string, ctxt string) (stats backend.ClusterUtilization, err error) {
-	stats = backend.ClusterUtilization{}
+func (s Salt) GetClusterStats(mon string, clusterName string, ctxt string) (stats backend.ClusterStats, err error) {
+	stats = backend.ClusterStats{}
 	mutex.Lock()
 	defer mutex.Unlock()
 	defer func() {

@@ -69,8 +69,17 @@ def getClusterStatus(clusterName):
     return ''
 
 
-def getClusterStats(clusterName):
+def getClusterStatsFromJsonOp(clusterName):
     cmd = ["ceph", "df", "--cluster", clusterName, "-f", "json"]
+    rc, out, err = utils.execCmd(cmd)
+    if not rc:
+        return out
+    else:
+        return err
+
+
+def getClusterStats(clusterName):
+    cmd = ["ceph", "df", "--cluster", clusterName]
     rc, out, err = utils.execCmd(cmd)
     if not rc:
         return out

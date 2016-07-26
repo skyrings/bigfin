@@ -11,6 +11,7 @@ import (
 	"text/template"
 	"time"
 
+	"github.com/skyrings/bigfin/backend"
 	bigfin_models "github.com/skyrings/bigfin/bigfinmodels"
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/conf"
@@ -29,22 +30,6 @@ var MonitoringRoutines = []interface{}{
 	FetchRBDStats,
 	FetchObjectCount,
 	FetchPGSummary,
-}
-
-type ClusterStats struct {
-	Stats struct {
-		Total     int64 `json:"total_bytes"`
-		Used      int64 `json:"total_used_bytes"`
-		Available int64 `json:"total_avail_bytes"`
-	} `json:"stats"`
-	Pools []struct {
-		Name            string `json:"name"`
-		Id              int    `json:"id"`
-		PoolUtilization struct {
-			Used      int64 `json:"bytes_used"`
-			Available int64 `json:"max_avail"`
-		} `json:"stats"`
-	} `json:"pools"`
 }
 
 type OSDStats struct {
@@ -773,31 +758,32 @@ func FetchRBDStats(ctxt string, cluster models.Cluster, monName string) (map[str
 	return metrics, statsErr
 }
 
-func updateClusterStats(ctxt string, cluster models.Cluster, monName string) (map[string]map[string]string, ClusterStats, error) {
+func updateClusterStats(ctxt string, cluster models.Cluster, monName string) (map[string]map[string]string, backend.ClusterStats, error) {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
-	percentUsed := 0.0
 
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
 
-	var statistics ClusterStats
-	response, isSuccess := getStatsFromCalamariApi(ctxt,
-		monName,
-		cluster.ClusterId,
-		map[string]string{"clusterName": cluster.Name},
-		skyring_monitoring.CLUSTER_UTILIZATION)
+	var statistics backend.ClusterStats
 
-	if !isSuccess {
-		/*
-			Already generically handled in above getStatsFromCalamariApi function.
-			So just a return from this function is required here.
-		*/
+	/*
+		response, isSuccess := getStatsFromCalamariApi(ctxt,
+			monName,
+			cluster.ClusterId,
+			map[string]string{"clusterName": cluster.Name},
+			skyring_monitoring.CLUSTER_UTILIZATION)
 
-		return nil, statistics, nil
-	}
+		if !isSuccess {
+			return nil, statistics, nil
+		}
+		if err := json.Unmarshal([]byte(response), &statistics); err != nil {
+			return nil, statistics, fmt.Errorf("Failed to fetch cluster stats from cluster %v.Could not unmarshal %v.Error %v", cluster.Name, response, err)
+		}
 
-	if err := json.Unmarshal([]byte(response), &statistics); err != nil {
-		return nil, statistics, fmt.Errorf("Failed to fetch cluster stats from cluster %v.Could not unmarshal %v.Error %v", cluster.Name, response, err)
+	*/
+	statistics, statsFetchErr := salt_backend.GetClusterStats(monName, cluster.Name, ctxt)
+	if statsFetchErr != nil {
+		return nil, statistics, fmt.Errorf("Unable to fetch cluster stats from mon %v of cluster %v.Error: %v", monName, cluster.Name, statsFetchErr)
 	}
 
 	metrics := make(map[string]map[string]string)
@@ -809,10 +795,7 @@ func updateClusterStats(ctxt string, cluster models.Cluster, monName string) (ma
 	metrics[metric_name+skyring_monitoring.FREE_SPACE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", statistics.Stats.Available)}
 	metrics[metric_name+skyring_monitoring.TOTAL_SPACE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", statistics.Stats.Total)}
 
-	if statistics.Stats.Total != 0 {
-		percentUsed = (float64(statistics.Stats.Used*100) / float64(statistics.Stats.Total))
-	}
-	metrics[metric_name+skyring_monitoring.USAGE_PERCENTAGE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", percentUsed)}
+	metrics[metric_name+skyring_monitoring.USAGE_PERCENTAGE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", statistics.Stats.PercentUsed)}
 	if err := updateDB(
 		bson.M{"clusterid": cluster.ClusterId},
 		bson.M{
@@ -820,7 +803,7 @@ func updateClusterStats(ctxt string, cluster models.Cluster, monName string) (ma
 				"usage": models.Utilization{
 					Used:        statistics.Stats.Used,
 					Total:       statistics.Stats.Total,
-					PercentUsed: percentUsed,
+					PercentUsed: statistics.Stats.PercentUsed,
 					UpdatedAt:   time.Now().String()}}},
 		models.COLL_NAME_STORAGE_CLUSTERS); err != nil {
 		return metrics, statistics, fmt.Errorf("Updating the cluster statistics to db for the cluster %v failed.Error %v", cluster.Name, err.Error())
@@ -828,19 +811,16 @@ func updateClusterStats(ctxt string, cluster models.Cluster, monName string) (ma
 	return metrics, statistics, nil
 }
 
-func updateStatsToPools(ctxt string, statistics ClusterStats, clusterId uuid.UUID) {
+func updateStatsToPools(ctxt string, statistics backend.ClusterStats, clusterId uuid.UUID) {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
 	collection := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
 	for _, poolStat := range statistics.Pools {
 		used := poolStat.PoolUtilization.Used
 		total := poolStat.PoolUtilization.Available
+		percentUsed := poolStat.PoolUtilization.PercentUsed
 		// Actual value of total is used + available
 		total = total + used
-		percentUsed := 0.0
-		if total != 0 {
-			percentUsed = (float64(used*100) / float64(total))
-		}
 		dbUpdateError := collection.Update(bson.M{"clusterid": clusterId, "name": poolStat.Name}, bson.M{"$set": bson.M{"usage": models.Utilization{
 			Used:        used,
 			Total:       total,
@@ -873,11 +853,9 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 	}
 	updateStatsToPools(ctxt, statistics, cluster.ClusterId)
 	for _, poolStat := range statistics.Pools {
-		percentUsed := 0.0
-		used := poolStat.PoolUtilization.Used
+		percentUsed := poolStat.PoolUtilization.PercentUsed
 		total := poolStat.PoolUtilization.Available + poolStat.PoolUtilization.Used
 		if total != 0 {
-			percentUsed = (float64(used*100) / float64(total))
 			event, isRaiseEvent, err := skyring_utils.AnalyseThresholdBreach(ctxt, skyring_monitoring.STORAGE_UTILIZATION, poolStat.Name, percentUsed, cluster)
 			if err != nil {
 				logger.Get().Error("%s - Failed to analyse threshold breach for pool utilization of %v.Error %v", ctxt, poolStat.Name, err)

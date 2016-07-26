@@ -584,7 +584,7 @@ def GetRBDStats(monitor, pool_name, cluster_name, ctxt=""):
         raise Exception("Failed to get RBD utilization details from mon %s for pool %s of cluster %s, error=%s" % (monitor, pool_name, cluster_name, out[monitor]))
 
 
-def GetClusterStats(monitor, cluster_name, ctxt=""):
+def GetClusterStatsFromJsonOp(monitor, cluster_name, ctxt=""):
     ret_val = {}
     local = salt.client.LocalClient()
     out = local.cmd(monitor, "ceph.getClusterStats", [cluster_name])
@@ -612,6 +612,65 @@ def GetClusterStats(monitor, cluster_name, ctxt=""):
         raise Exception("Failed to get cluster stats from mon %s, error:%s" % (monitor, err))
     log.error("%s-Failed to get cluster stats from mon %s, error=%s" % (ctxt, monitor, out[monitor]))
     raise Exception("Failed to get cluster stats from mon %s, error:%s" % (monitor, err))
+
+
+def GetClusterStats(monitor, cluster_name, ctxt=""):
+    ret_val = {}
+    local = salt.client.LocalClient()
+    out = local.cmd(monitor, "ceph.getClusterStats", [cluster_name])
+    if not out:
+        log.error("%s-Failed to get cluster statistics from %s" % (ctxt, monitor))
+        raise Exception("Failed to get cluster statistics from %s" % monitor)
+    return parseClusterStats(out[monitor])
+
+
+def parseClusterStats(cmd_op):
+    currentIndex = 0
+    parsingPools = False
+    usage = {}
+
+    poolNameIndex = -1
+    poolIdIndex = -1
+    poolUsedIndex = -1
+    poolPercentUsedIndex = -1
+    poolMaxAvailableIndex = -1
+
+    poolUsage = []
+
+    linesInOp = string.split(cmd_op, '\n')
+
+    while currentIndex < len(linesInOp):
+        if linesInOp[currentIndex].startswith("GLOBAL"):
+            currentIndex = currentIndex + 1
+
+            # Index is 1 less for percentused bcoz in RAW USED, USED adds up an extra index due to space b/w RAW and USED
+            percentUsedIndex = linesInOp[currentIndex].split().index("%RAW") - 1
+            availableIndex = linesInOp[currentIndex].split().index("AVAIL")
+            usedIndex = linesInOp[currentIndex].split().index("RAW")
+            totalIndex = linesInOp[currentIndex].split().index("SIZE")
+            currentIndex = currentIndex + 1
+
+            clusterUsage = linesInOp[currentIndex].split()
+
+            usage["stats"] = {"total_bytes": clusterUsage[totalIndex], "total_avail_bytes": clusterUsage[availableIndex], "total_used_bytes": clusterUsage[usedIndex], "percent_used": clusterUsage[percentUsedIndex]}
+        if linesInOp[currentIndex].startswith("POOLS"):
+            parsingPools = True
+
+            currentIndex = currentIndex + 1
+            poolNameIndex = linesInOp[currentIndex].split().index("NAME")
+            poolIdIndex = linesInOp[currentIndex].split().index("ID")
+            poolUsedIndex = linesInOp[currentIndex].split().index("USED")
+            poolPercentUsedIndex = linesInOp[currentIndex].split().index("%USED")
+            poolMaxAvailableIndex = linesInOp[currentIndex].split().index("MAX")
+
+            currentIndex = currentIndex + 1
+        if parsingPools:
+            poolUsages = linesInOp[currentIndex].split()
+            poolUsage.append({"name": poolUsages[poolNameIndex], "id": poolUsages[poolIdIndex], "stats": {"bytes_used": poolUsages[poolUsedIndex], "max_avail": poolUsages[poolMaxAvailableIndex], "percent_used": poolUsages[poolPercentUsedIndex]}})
+        currentIndex = currentIndex + 1
+    if parsingPools:
+        usage["pools"] = poolUsage
+    return usage
 
 
 def GetObjectCount(monitor, cluster_name, ctxt=""):
