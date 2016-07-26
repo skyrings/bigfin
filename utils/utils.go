@@ -65,48 +65,48 @@ func RandomNum(min, max int) int {
 	return rand.Intn(max-min) + min
 }
 
-func SizeFromStr(size string) uint64 {
+func SizeFromStr(size string) float64 {
 	if strings.HasSuffix(size, "MB") {
 		trimStr := strings.TrimSuffix(size, "MB")
 		val, _ := strconv.Atoi(trimStr)
-		return uint64(val * 1024)
+		return float64(val * 1024)
 	}
 	if strings.HasSuffix(size, "mb") {
 		trimStr := strings.TrimSuffix(size, "mb")
 		val, _ := strconv.Atoi(trimStr)
-		return uint64(val * 1024)
+		return float64(val * 1024)
 	}
 	if strings.HasSuffix(size, "GB") {
 		trimStr := strings.TrimSuffix(size, "GB")
 		val, _ := strconv.Atoi(trimStr)
-		return uint64(val * 1024 * 1024)
+		return float64(val * 1024 * 1024)
 	}
 	if strings.HasSuffix(size, "gb") {
 		trimStr := strings.TrimSuffix(size, "gb")
 		val, _ := strconv.Atoi(trimStr)
-		return uint64(val * 1024 * 1024)
+		return float64(val * 1024 * 1024)
 	}
 	if strings.HasSuffix(size, "TB") {
 		trimStr := strings.TrimSuffix(size, "TB")
 		val, _ := strconv.Atoi(trimStr)
-		return uint64(val * 1024 * 1024 * 1024)
+		return float64(val * 1024 * 1024 * 1024)
 	}
 	if strings.HasSuffix(size, "tb") {
 		trimStr := strings.TrimSuffix(size, "tb")
 		val, _ := strconv.Atoi(trimStr)
-		return uint64(val * 1024 * 1024 * 1024)
+		return float64(val * 1024 * 1024 * 1024)
 	}
 	if strings.HasSuffix(size, "PB") {
 		trimStr := strings.TrimSuffix(size, "PB")
 		val, _ := strconv.Atoi(trimStr)
-		return uint64(val * 1024 * 1024 * 1024 * 1024)
+		return float64(val * 1024 * 1024 * 1024 * 1024)
 	}
 	if strings.HasSuffix(size, "pb") {
 		trimStr := strings.TrimSuffix(size, "pb")
 		val, _ := strconv.Atoi(trimStr)
-		return uint64(val * 1024 * 1024 * 1024 * 1024)
+		return float64(val * 1024 * 1024 * 1024 * 1024)
 	}
-	return uint64(0)
+	return float64(0)
 }
 
 func NextTwosPower(num uint) uint {

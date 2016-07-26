@@ -46,7 +46,7 @@ func (s *CephProvider) GetDiskHierarchy(req models.RpcRequest, resp *models.RpcR
 		return err
 	}
 	hierarchy := make(map[string]map[string]string)
-	var storageSize uint64
+	var storageSize float64
 	for _, requestNode := range request.ClusterNodes {
 		disksMap := make(map[string]string)
 		uuid, err := uuid.Parse(requestNode.NodeId)
@@ -77,7 +77,7 @@ func (s *CephProvider) GetDiskHierarchy(req models.RpcRequest, resp *models.RpcR
 		}
 
 		// Utility function returns value in MB so multiply by 1024 to make is bytes
-		jSize := utils.SizeFromStr(request.JournalSize) * uint64(1024)
+		jSize := utils.SizeFromStr(request.JournalSize) * float64(1024)
 		diskWithJournalMapped := getDiskWithJournalMapped(devices, jSize)
 		for disk, journal := range diskWithJournalMapped {
 			disksMap[disk] = journal.JournalDisk

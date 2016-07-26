@@ -407,12 +407,12 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 			}
 			logger.Get().Info("%s-Updated the slu: osd.%d on cluster: %v", ctxt, osd.Id, clusterId)
 		} else {
-			var journalSize uint64
+			var journalSize float64
 			journalSize = JOURNALSIZE
 
 			cluster, err := getCluster(clusterId)
 			if err == nil && cluster.JournalSize != "" {
-				js, jsErr := strconv.ParseUint(cluster.JournalSize, 10, 64)
+				js, jsErr := strconv.ParseFloat(cluster.JournalSize, 64)
 				if jsErr == nil {
 					journalSize = js
 				}
