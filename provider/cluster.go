@@ -64,10 +64,10 @@ const (
 type JournalDetail struct {
 	JournalDisk string  `json:"journaldisk"`
 	SSD         bool    `json:"type"`
-	Size        uint64  `json:"size"`
+	Size        float64 `json:"size"`
 	Reweight    float64 `json:"reweight"`
 	OsdJournal  string  `json:"osd_journal"`
-	Available   uint64  `json:"available"`
+	Available   float64 `json:"available"`
 }
 
 type ExistingJournal struct {
@@ -565,7 +565,7 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 		request.JournalSize = cluster.JournalSize
 	}
 	// Utility function returns value in MB so multiply by 1024 to make is bytes
-	jSize := utils.SizeFromStr(request.JournalSize) * uint64(1024)
+	jSize := utils.SizeFromStr(request.JournalSize) * float64(1024)
 
 	nodes, err := util.GetNodes(request.Nodes)
 	if err != nil {
@@ -729,7 +729,7 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 func mapPendingSSDJournalDisks(
 	nodeId uuid.UUID,
 	requestNode models.ClusterNode,
-	jSize uint64,
+	jSize float64,
 	t *task.Task,
 	ctxt string) (map[string]JournalDetail, int) {
 
@@ -784,8 +784,8 @@ func getJournalDisks(nodeId uuid.UUID) (map[string]ExistingJournal, error) {
 			var journal = JournalDetail{
 				JournalDisk: journalDet["journaldisk"].(string),
 				SSD:         journalDet["ssd"].(bool),
-				Size:        uint64(journalDet["size"].(int64)),
-				Available:   uint64(journalDet["available"].(int64)),
+				Size:        journalDet["size"].(float64),
+				Available:   journalDet["available"].(float64),
 			}
 			if val, exists := retVal[journal.JournalDisk]; exists {
 				val.OsdCount += 1
@@ -864,7 +864,7 @@ func getJournalDisks(nodeId uuid.UUID) (map[string]ExistingJournal, error) {
  *	SUB CASE-3b: More SSDs are left
  *	LOGIC: Logic in case-2 is repeated for the left out disks
  */
-func getDiskWithJournalMapped(disks map[string]models.Disk, jSize uint64) map[string]JournalDetail {
+func getDiskWithJournalMapped(disks map[string]models.Disk, jSize float64) map[string]JournalDetail {
 	var maxMetadataOnSsd int
 	if val, ok := bigfin_conf.ProviderConfig.ProviderOptions["max_metadata_on_ssd"]; !ok {
 		maxMetadataOnSsd = MAX_JOURNALS_ON_SSD
@@ -911,7 +911,7 @@ func getDiskWithJournalMapped(disks map[string]models.Disk, jSize uint64) map[st
 
 	// All the disks are ssd
 	var journalDiskIdx, mappedDiskCountForJournal int
-	var ssdDiskSize uint64
+	var ssdDiskSize float64
 	if ssdCount == len(disks) {
 		var disksForSort []models.Disk
 		for _, disk := range disks {
@@ -952,7 +952,7 @@ func getDiskWithJournalMapped(disks map[string]models.Disk, jSize uint64) map[st
 	mappedDiskCountForJournal = 0
 	for _, disk := range rotationalDisks {
 		if journalDiskIdx < len(ssdDisks) {
-			ssdDiskSize = ssdDisks[journalDiskIdx].Size - jSize*uint64(mappedDiskCountForJournal+1)
+			ssdDiskSize = ssdDisks[journalDiskIdx].Size - jSize*float64(mappedDiskCountForJournal+1)
 			mappedDiskCountForJournal++
 			osdCount++
 			var journal = JournalDetail{
@@ -2153,10 +2153,10 @@ func SyncOsdStatus(clusterId uuid.UUID, ctxt string) error {
 		var journalDetail JournalDetail
 		if val, ok := slu.Options["journal"]; ok {
 			journal := val.(map[string]interface{})
-			journalDetail.Available = uint64(journal["available"].(int64))
+			journalDetail.Available = journal["available"].(float64)
 			journalDetail.JournalDisk = journal["journaldisk"].(string)
 			journalDetail.SSD = journal["ssd"].(bool)
-			journalDetail.Size = uint64(journal["size"].(int64))
+			journalDetail.Size = journal["size"].(float64)
 		}
 
 		journalDetail.OsdJournal = fetchedOSD.OsdJournal

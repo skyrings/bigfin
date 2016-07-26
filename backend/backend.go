@@ -271,5 +271,5 @@ type DeviceDetail struct {
 	Uuid     uuid.UUID `json:"uuid"`
 	PartName string    `json:"partname"`
 	FSType   string    `json:"fstype"`
-	Size     uint64    `json:"size"`
+	Size     float64   `json:"size"`
 }

@@ -420,18 +420,18 @@ func DerivePgNum(clusterId uuid.UUID, size string, replicaCount int, profile str
 		return uint(4096)
 	}
 	avgOsdSize := avg_osd_size(slus) / 1024
-	maxAllocSize := (avgOsdSize * uint64(len(slus)) / uint64(replicaCount)) * uint64(MAX_UTILIZATION_PCNT) / 100
+	maxAllocSize := (avgOsdSize * float64(len(slus)) / float64(replicaCount)) * float64(MAX_UTILIZATION_PCNT) / 100
 	pcntData := float64(utils.SizeFromStr(size)) / float64(maxAllocSize)
 	pgnum := float64(float64(TARGET_PGS_PER_OSD)*float64(len(slus))*pcntData) / float64(replicaCount)
 	return utils.NextTwosPower(uint(pgnum))
 }
 
-func avg_osd_size(slus []models.StorageLogicalUnit) uint64 {
-	var totalOsdSize uint64
+func avg_osd_size(slus []models.StorageLogicalUnit) float64 {
+	var totalOsdSize float64
 	for _, slu := range slus {
 		totalOsdSize += slu.StorageDeviceSize
 	}
-	return totalOsdSize / uint64(len(slus))
+	return totalOsdSize / float64(len(slus))
 }
 
 func (s *CephProvider) GetStorages(req models.RpcRequest, resp *models.RpcResponse) error {
