@@ -33,18 +33,22 @@ var MonitoringRoutines = []interface{}{
 
 type ClusterStats struct {
 	Stats struct {
-		Total     int64 `json:"total_bytes"`
-		Used      int64 `json:"total_used_bytes"`
-		Available int64 `json:"total_avail_bytes"`
+		Total       int64   `json:"total_bytes"`
+		Used        int64   `json:"total_used_bytes"`
+		Available   int64   `json:"total_avail_bytes"`
+		PercentUsed float64 `json:"percent_used"`
 	} `json:"stats"`
-	Pools []struct {
-		Name            string `json:"name"`
-		Id              int    `json:"id"`
-		PoolUtilization struct {
-			Used      int64 `json:"bytes_used"`
-			Available int64 `json:"max_avail"`
-		} `json:"stats"`
-	} `json:"pools"`
+	Pools []PoolStats `json:"pools"`
+}
+
+type PoolStats struct {
+	Name            string `json:"name"`
+	Id              int    `json:"id"`
+	PoolUtilization struct {
+		Used        int64   `json:"bytes_used"`
+		Available   int64   `json:"max_avail"`
+		PercentUsed float64 `json:"percent_used"`
+	} `json:"stats"`
 }
 
 type OSDStats struct {
@@ -773,14 +777,162 @@ func FetchRBDStats(ctxt string, cluster models.Cluster, monName string) (map[str
 	return metrics, statsErr
 }
 
+func parseClusterStats(cmdOp string) (stats ClusterStats, err error) {
+	var err_str string
+	var poolStats []PoolStats
+
+	cmdOp = strings.Replace(cmdOp, "RAW USED", "RAW_USED", 1)
+	cmdOp = strings.Replace(cmdOp, "%RAW USED", "%RAW_USED", 1)
+	cmdOp = strings.Replace(cmdOp, "MAX AVAIL", "MAX_AVAIL", 1)
+
+	lines := strings.Split(cmdOp, "\n")
+	if len(lines) < 3 {
+		return stats, fmt.Errorf("Failed to parse cluster and pool stats from\n%s", cmdOp)
+	}
+	index := 0
+
+	poolNameIndex := -1
+	poolIdIndex := -1
+	poolUsedIndex := -1
+	poolPercentUsedIndex := -1
+	poolMaxAvailIndex := -1
+	processPoolStats := false
+
+	if !strings.HasPrefix(cmdOp, "GLOBAL") {
+		return stats, fmt.Errorf("Missing fields from cluster stats\n%s", cmdOp)
+	}
+
+	for index < len(lines) {
+		line := lines[index]
+		if line == "" || line == "\n" {
+			if err_str != "" {
+				err = fmt.Errorf("%s", err_str)
+			}
+			return stats, err
+		}
+
+		if strings.HasPrefix(line, "GLOBAL") {
+			index = index + 1
+			if index >= len(lines) {
+				return stats, fmt.Errorf("%s.No cluster stats to parse from %s", err_str, cmdOp)
+			}
+			line := lines[index]
+			clusterFields := strings.Fields(line)
+			clusterSizeIndex := skyring_utils.StringIndexInSlice(clusterFields, "SIZE")
+			clusterAvailableSizeIndex := skyring_utils.StringIndexInSlice(clusterFields, "AVAIL")
+			clusterUsedSizeIndex := skyring_utils.StringIndexInSlice(clusterFields, "RAW_USED")
+			clusterPercentUsedIndex := skyring_utils.StringIndexInSlice(clusterFields, "%RAW_USED")
+			if clusterSizeIndex == -1 || clusterAvailableSizeIndex == -1 || clusterUsedSizeIndex == -1 || clusterPercentUsedIndex == -1 {
+				return stats, fmt.Errorf("Missing fields in cluster stats\n%s", cmdOp)
+			}
+			index = index + 1
+			if index >= len(lines) {
+				return stats, fmt.Errorf("%s.No cluster stats to parse from %s", err_str, cmdOp)
+			}
+			line = lines[index]
+			clusterFields = strings.Fields(line)
+			if len(clusterFields) < 4 {
+				return stats, fmt.Errorf("Missing fields in cluster stats\n%s", cmdOp)
+			}
+			stats.Stats.Total, err = strconv.ParseInt(strings.TrimSuffix(clusterFields[clusterSizeIndex], "M"), 10, 64)
+			if err != nil {
+				err_str = fmt.Sprintf("%s. Failed to fetch cluster total size. Error %s", err_str, err.Error())
+			}
+			stats.Stats.Used, err = strconv.ParseInt(strings.TrimSuffix(clusterFields[clusterUsedSizeIndex], "M"), 10, 64)
+			if err != nil {
+				err_str = fmt.Sprintf("%s. Failed to fetch cluster used stats.Error %s", err_str, err.Error())
+			}
+			stats.Stats.Available, err = strconv.ParseInt(strings.TrimSuffix(clusterFields[clusterAvailableSizeIndex], "M"), 10, 64)
+			if err != nil {
+				err_str = fmt.Sprintf("%s. Failed to fetch cluster available size.Error %s", err_str, err.Error())
+			}
+			stats.Stats.PercentUsed, err = strconv.ParseFloat(strings.TrimSuffix(clusterFields[clusterPercentUsedIndex], "M"), 64)
+			if err != nil {
+				err_str = fmt.Sprintf("%s. Failed to fetch cluster percent used. Error %s", err_str, err.Error())
+			}
+		}
+		if strings.HasPrefix(line, "POOLS") {
+			processPoolStats = true
+			index = index + 1
+			if index >= len(lines) {
+				if err_str != "" {
+					return stats, fmt.Errorf("%s", err_str)
+				}
+				return stats, nil
+			}
+			line = lines[index]
+			poolFields := strings.Fields(line)
+
+			poolNameIndex = skyring_utils.StringIndexInSlice(poolFields, "NAME")
+			poolIdIndex = skyring_utils.StringIndexInSlice(poolFields, "ID")
+			poolUsedIndex = skyring_utils.StringIndexInSlice(poolFields, "USED")
+			poolPercentUsedIndex = skyring_utils.StringIndexInSlice(poolFields, "%USED")
+			poolMaxAvailIndex = skyring_utils.StringIndexInSlice(poolFields, "MAX_AVAIL")
+
+			if poolNameIndex == -1 || poolIdIndex == -1 || poolUsedIndex == -1 || poolPercentUsedIndex == -1 || poolMaxAvailIndex == -1 {
+				return stats, nil
+			}
+			index = index + 1
+		}
+		if processPoolStats {
+			poolFetchSuccess := true
+			if index >= len(lines) {
+				if err_str != "" {
+					return stats, fmt.Errorf("%s", err_str)
+				}
+				return stats, nil
+			}
+			line = lines[index]
+
+			poolFields := strings.Fields(line)
+
+			var poolStat PoolStats
+
+			if len(poolFields) < 5 {
+				err_str = fmt.Sprintf("Missing fields in pool stats\n %s", line)
+				continue
+			}
+			poolStat.PoolUtilization.Available, err = strconv.ParseInt(strings.TrimSuffix(poolFields[poolMaxAvailIndex], "M"), 10, 64)
+			if err != nil {
+				poolFetchSuccess = false
+				err_str = fmt.Sprintf("%s. Failed to fetch pool available size from %s. Error %s", err_str, line, err.Error())
+			}
+			poolStat.PoolUtilization.Used, err = strconv.ParseInt(strings.TrimSuffix(poolFields[poolUsedIndex], "M"), 10, 64)
+			if err != nil {
+				poolFetchSuccess = false
+				err_str = fmt.Sprintf("%s. Failed to fetch pool used size from %s. Error %s", err_str, line, err.Error())
+			}
+			poolStat.PoolUtilization.PercentUsed, err = strconv.ParseFloat(strings.TrimSuffix(poolFields[poolPercentUsedIndex], "M"), 64)
+			if err != nil {
+				err_str = fmt.Sprintf("%s. Failed to fetch pool percent used from %s. Error %s", err_str, line, err.Error())
+			}
+			poolStat.Name = poolFields[poolNameIndex]
+			poolStat.Id, err = strconv.Atoi(poolFields[poolIdIndex])
+			if err != nil {
+				poolFetchSuccess = false
+				err_str = fmt.Sprintf("%s. Failed to fetch pool id from %s. Error %s", err_str, line, err.Error())
+			}
+			if poolFetchSuccess {
+				poolStats = append(poolStats, poolStat)
+			}
+		}
+		index = index + 1
+	}
+	stats.Pools = poolStats
+	if err_str != "" {
+		err = fmt.Errorf("%s", err_str)
+	}
+	return stats, err
+}
+
 func updateClusterStats(ctxt string, cluster models.Cluster, monName string) (map[string]map[string]string, ClusterStats, error) {
 	sessionCopy := db.GetDatastore().Copy()
 	defer sessionCopy.Close()
-	percentUsed := 0.0
 
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
 
 	var statistics ClusterStats
+
 	response, isSuccess := getStatsFromCalamariApi(ctxt,
 		monName,
 		cluster.ClusterId,
@@ -788,15 +940,9 @@ func updateClusterStats(ctxt string, cluster models.Cluster, monName string) (ma
 		skyring_monitoring.CLUSTER_UTILIZATION)
 
 	if !isSuccess {
-		/*
-			Already generically handled in above getStatsFromCalamariApi function.
-			So just a return from this function is required here.
-		*/
-
 		return nil, statistics, nil
 	}
-
-	if err := json.Unmarshal([]byte(response), &statistics); err != nil {
+	if statistics, err := parseClusterStats(response); err != nil {
 		return nil, statistics, fmt.Errorf("Failed to fetch cluster stats from cluster %v.Could not unmarshal %v.Error %v", cluster.Name, response, err)
 	}
 
@@ -809,10 +955,7 @@ func updateClusterStats(ctxt string, cluster models.Cluster, monName string) (ma
 	metrics[metric_name+skyring_monitoring.FREE_SPACE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", statistics.Stats.Available)}
 	metrics[metric_name+skyring_monitoring.TOTAL_SPACE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", statistics.Stats.Total)}
 
-	if statistics.Stats.Total != 0 {
-		percentUsed = (float64(statistics.Stats.Used*100) / float64(statistics.Stats.Total))
-	}
-	metrics[metric_name+skyring_monitoring.USAGE_PERCENTAGE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", percentUsed)}
+	metrics[metric_name+skyring_monitoring.USAGE_PERCENTAGE] = map[string]string{strconv.FormatInt(currentTimeStamp, 10): fmt.Sprintf("%v", statistics.Stats.PercentUsed)}
 	if err := updateDB(
 		bson.M{"clusterid": cluster.ClusterId},
 		bson.M{
@@ -820,7 +963,7 @@ func updateClusterStats(ctxt string, cluster models.Cluster, monName string) (ma
 				"usage": models.Utilization{
 					Used:        statistics.Stats.Used,
 					Total:       statistics.Stats.Total,
-					PercentUsed: percentUsed,
+					PercentUsed: statistics.Stats.PercentUsed,
 					UpdatedAt:   time.Now().String()}}},
 		models.COLL_NAME_STORAGE_CLUSTERS); err != nil {
 		return metrics, statistics, fmt.Errorf("Updating the cluster statistics to db for the cluster %v failed.Error %v", cluster.Name, err.Error())
@@ -835,12 +978,9 @@ func updateStatsToPools(ctxt string, statistics ClusterStats, clusterId uuid.UUI
 	for _, poolStat := range statistics.Pools {
 		used := poolStat.PoolUtilization.Used
 		total := poolStat.PoolUtilization.Available
+		percentUsed := poolStat.PoolUtilization.PercentUsed
 		// Actual value of total is used + available
 		total = total + used
-		percentUsed := 0.0
-		if total != 0 {
-			percentUsed = (float64(used*100) / float64(total))
-		}
 		dbUpdateError := collection.Update(bson.M{"clusterid": clusterId, "name": poolStat.Name}, bson.M{"$set": bson.M{"usage": models.Utilization{
 			Used:        used,
 			Total:       total,
@@ -873,11 +1013,9 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 	}
 	updateStatsToPools(ctxt, statistics, cluster.ClusterId)
 	for _, poolStat := range statistics.Pools {
-		percentUsed := 0.0
-		used := poolStat.PoolUtilization.Used
+		percentUsed := poolStat.PoolUtilization.PercentUsed
 		total := poolStat.PoolUtilization.Available + poolStat.PoolUtilization.Used
 		if total != 0 {
-			percentUsed = (float64(used*100) / float64(total))
 			event, isRaiseEvent, err := skyring_utils.AnalyseThresholdBreach(ctxt, skyring_monitoring.STORAGE_UTILIZATION, poolStat.Name, percentUsed, cluster)
 			if err != nil {
 				logger.Get().Error("%s - Failed to analyse threshold breach for pool utilization of %v.Error %v", ctxt, poolStat.Name, err)
