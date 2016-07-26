@@ -875,7 +875,7 @@ func FetchClusterStats(ctxt string, cluster models.Cluster, monName string) (map
 	for _, poolStat := range statistics.Pools {
 		percentUsed := 0.0
 		used := poolStat.PoolUtilization.Used
-		total := poolStat.PoolUtilization.Available
+		total := poolStat.PoolUtilization.Available + poolStat.PoolUtilization.Used
 		if total != 0 {
 			percentUsed = (float64(used*100) / float64(total))
 			event, isRaiseEvent, err := skyring_utils.AnalyseThresholdBreach(ctxt, skyring_monitoring.STORAGE_UTILIZATION, poolStat.Name, percentUsed, cluster)
