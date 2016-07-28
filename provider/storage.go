@@ -18,6 +18,7 @@ import (
 	"net/http"
 	"strconv"
 
+	"github.com/skyrings/bigfin/backend/cephapi"
 	"github.com/skyrings/bigfin/bigfinmodels"
 	"github.com/skyrings/bigfin/utils"
 	"github.com/skyrings/skyring-common/conf"
@@ -297,10 +298,7 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 			ruleset["rulesetid"].(int),
 			ctxt)
 	}
-	if err != nil || !ok {
-		utils.FailTask(fmt.Sprintf("Create pool %s failed on cluster: %s", request.Name, cluster.Name), fmt.Errorf("%s - %v", ctxt, err), t)
-		return nil, false
-	} else {
+	if err == cephapi.ErrTimedOut || err == nil {
 		pools, err := cephapi_backend.GetPools(monnode.Hostname, clusterId, ctxt)
 		if err != nil {
 			utils.FailTask("Error getting created pools", fmt.Errorf("%s - %v", ctxt, err), t)
@@ -360,6 +358,9 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 			}
 		}
 		return storage_id, true
+	} else {
+		utils.FailTask(fmt.Sprintf("Create pool %s failed on cluster: %s", request.Name, cluster.Name), fmt.Errorf("%s - %v", ctxt, err), t)
+		return nil, false
 	}
 }
 
