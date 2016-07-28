@@ -1474,13 +1474,13 @@ func ExpandClusterUsingSalt(cluster_uuid *uuid.UUID, request models.AddClusterRe
 				err)
 		}
 		if len(succeededOSDs) > 0 {
-			t.UpdateStatus("Recalculating pgnum/pgpnum")
+			/*t.UpdateStatus("Recalculating pgnum/pgpnum")
 			if ok := RecalculatePgnum(ctxt, *cluster_uuid, t); !ok {
 				logger.Get().Warning(
 					"%s-Could not re-calculate pgnum/pgpnum for cluster: %v",
 					ctxt,
 					*cluster_uuid)
-			}
+			}*/
 			//Update the CRUSH MAP
 			/*t.UpdateStatus("Updating the CRUSH Map")
 			if err := UpdateCrushNodeItems(ctxt, *cluster_uuid); err != nil {
@@ -1613,14 +1613,14 @@ func ExpandClusterUsingInstaller(cluster_uuid *uuid.UUID, request models.AddClus
 			t.UpdateStatus(fmt.Sprintf("OSD addition failed for %v", failedOSDs))
 		}
 		if len(slus) > 0 {
-			t.UpdateStatus("Recalculating pgnum/pgpnum")
+			/*t.UpdateStatus("Recalculating pgnum/pgpnum")
 			if ok := RecalculatePgnum(ctxt, *cluster_uuid, t); !ok {
 				logger.Get().Warning(
 					"%s-Could not re-calculate pgnum/pgpnum for cluster: %v",
 					ctxt,
 					*cluster_uuid)
 				t.UpdateStatus("Recalculating pgnum/pgpnum failed")
-			}
+			}*/
 			//Update the CRUSH MAP
 			t.UpdateStatus("Updating the CRUSH Map")
 			if err := UpdateCrushNodeItems(ctxt, *cluster_uuid, slus); err != nil {
