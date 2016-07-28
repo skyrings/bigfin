@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_914f8691",
+        "filename": "provider/block_devices.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 351,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-28T10:42:38Z",
+      "side": 1,
+      "message": "Done",
+      "parentUuid": "baa041b7_91c1c6e6",
+      "range": {
+        "startLine": 351,
+        "startChar": 61,
+        "endLine": 351,
+        "endChar": 68
+      },
+      "revId": "625f2043d3528a01bb68ae54060c547d2475b967",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_31b31a9a",
         "filename": "provider/storage.go",
         "patchSetId": 1
@@ -36,6 +60,30 @@
       "writtenOn": "2016-07-28T10:38:59Z",
       "side": 1,
       "message": "I think the calculation should be -\u003e  (OSD count / pool size) rounded to the next power of 2",
+      "range": {
+        "startLine": 429,
+        "startChar": 2,
+        "endLine": 429,
+        "endChar": 33
+      },
+      "revId": "625f2043d3528a01bb68ae54060c547d2475b967",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_51457e6c",
+        "filename": "provider/storage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 429,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-28T10:42:38Z",
+      "side": 1,
+      "message": "Oh yeah. Somehow I missed it.\nWill correct it.",
+      "parentUuid": "baa041b7_31b31a9a",
       "range": {
         "startLine": 429,
         "startChar": 2,
