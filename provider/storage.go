@@ -423,7 +423,13 @@ func DerivePgNum(clusterId uuid.UUID, size string, replicaCount int, profile str
 	maxAllocSize := (avgOsdSize * float64(len(slus)) / float64(replicaCount)) * float64(MAX_UTILIZATION_PCNT) / 100
 	pcntData := float64(utils.SizeFromStr(size)) / float64(maxAllocSize)
 	pgnum := float64(float64(TARGET_PGS_PER_OSD)*float64(len(slus))*pcntData) / float64(replicaCount)
-	return utils.NextTwosPower(uint(pgnum))
+	derivedPgNum := utils.NextTwosPower(uint(pgnum))
+	if derivedPgNum < uint(osdsNum) {
+		// Consider next 2's power value
+		newPgNum := osdsNum / replicaCount
+		derivedPgNum = utils.NextTwosPower(uint(newPgNum))
+	}
+	return derivedPgNum
 }
 
 func avg_osd_size(slus []models.StorageLogicalUnit) float64 {
