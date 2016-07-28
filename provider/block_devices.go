@@ -348,7 +348,7 @@ func (s *CephProvider) ResizeBlockDevice(req models.RpcRequest, resp *models.Rpc
 					return
 				}
 				t.UpdateStatus("Resizing block device")
-				cmd := fmt.Sprintf("rbd resize --image %s --cluster %s --size %d --pool %s", blockDevice.Name, cluster.Name, sizeMBs, storage.Name)
+				cmd := fmt.Sprintf("rbd resize --image %s --cluster %s --size %f --pool %s", blockDevice.Name, cluster.Name, sizeMBs, storage.Name)
 				ok, _, err := cephapi_backend.ExecCmd(monnode.Hostname, *cluster_id, cmd, ctxt)
 				if err != nil || !ok {
 					utils.FailTask(fmt.Sprintf("Resizing of block device failed on cluster: %s", *cluster_id), fmt.Errorf("%s - %v", ctxt, err), t)
