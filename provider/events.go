@@ -825,9 +825,26 @@ func ceph_pool_add_handler(event models.AppEvent, ctxt string) (models.AppEvent,
 	}
 	event.ClusterName = cluster.Name
 
+	//get the storage profile of the pool.
+	rulesetmapval, ok := cluster.Options["rulesetmap"]
+	if !ok {
+		logger.Get().Error("Error getting the ruleset for cluster: %s", cluster.Name)
+	}
+	rulesetmap := rulesetmapval.(map[string]interface{})
+
+	var profile string
+	for k, v := range rulesetmap {
+		profilemap := v.(map[string]interface{})
+		if el, ok := profilemap["rulesetid"]; ok && el.(int) == pool.CrushRuleSet {
+			profile = k
+			break
+		}
+	}
+
 	storage := models.Storage{
 		Name:     pool.Name,
 		Replicas: pool.Size,
+		Profile:  profile,
 	}
 	event.Message = fmt.Sprintf("Detected addition of new pool %s in cluster %s", pool.Name,
 		cluster.Name)

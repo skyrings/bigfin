@@ -554,9 +554,26 @@ func syncStoragePools(mon string, clusterId uuid.UUID, ctxt string) error {
 	}
 	var storages []models.Storage
 	for _, pool := range pools {
+		//get the storage profile of the pool.
+		rulesetmapval, ok := cluster.Options["rulesetmap"]
+		if !ok {
+			logger.Get().Error("Error getting the ruleset for cluster: %s", cluster.Name)
+		}
+		rulesetmap := rulesetmapval.(map[string]interface{})
+
+		var profile string
+		for k, v := range rulesetmap {
+			profilemap := v.(map[string]interface{})
+			if el, ok := profilemap["rulesetid"]; ok && el.(int) == pool.CrushRuleSet {
+				profile = k
+				break
+			}
+		}
+
 		storage := models.Storage{
 			Name:     pool.Name,
 			Replicas: pool.Size,
+			Profile:  profile,
 		}
 		if pool.QuotaMaxObjects != 0 || pool.QuotaMaxBytes != 0 {
 			storage.QuotaEnabled = true
