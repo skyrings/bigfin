@@ -554,9 +554,43 @@ func syncStoragePools(mon string, clusterId uuid.UUID, ctxt string) error {
 	}
 	var storages []models.Storage
 	for _, pool := range pools {
+		//get the storage profile of the pool.
+		rulesetmapval, ok := cluster.Options["rulesetmap"]
+		if !ok {
+			logger.Get().Error("Error getting the ruleset for cluster: %s", cluster.Name)
+		}
+		rulesetmap := rulesetmapval.(map[string]interface{})
+
+		var (
+			profile string
+			found   bool
+		)
+		for k, v := range rulesetmap {
+			profilemap := v.(map[string]interface{})
+			if el, ok := profilemap["rulesetid"]; ok && el.(int) == pool.CrushRuleSet {
+				profile = k
+				found = true
+				break
+			}
+		}
+		if !found {
+			cRule, err := cephapi_backend.GetCrushRule(mon, clusterId, pool.CrushRuleSet, ctxt)
+			if err != nil {
+				logger.Get().Error("Failed to retrieve Crush rule:%v for cluster: %s. error: %v", pool.CrushRuleSet, clusterId, err)
+			}
+			for _, stepMap := range cRule["steps"].([]interface{}) {
+				step := stepMap.(map[string]interface{})
+				if step["op"].(string) == "take" {
+					profile = step["item_name"].(string)
+				}
+			}
+		}
+
 		storage := models.Storage{
 			Name:     pool.Name,
 			Replicas: pool.Size,
+			Profile:  profile,
+			Status:   models.STORAGE_STATUS_OK,
 		}
 		if pool.QuotaMaxObjects != 0 || pool.QuotaMaxBytes != 0 {
 			storage.QuotaEnabled = true
