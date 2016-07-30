@@ -46,6 +46,30 @@
       "revId": "b282500f2e6ea37e0ed09fbe82bed8444429433e",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_43c24d86",
+        "filename": "provider/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 946,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-07-30T13:40:14Z",
+      "side": 1,
+      "message": "I think in UI we calculated the target allocation size based on OSDs etc. You can check the logic and assign accordingly.",
+      "parentUuid": "baa041b7_c3041d16",
+      "range": {
+        "startLine": 945,
+        "startChar": 0,
+        "endLine": 946,
+        "endChar": 1
+      },
+      "revId": "b282500f2e6ea37e0ed09fbe82bed8444429433e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
