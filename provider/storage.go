@@ -344,17 +344,9 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 				storage.Options = options
 
 				coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE)
-				var existing_storage models.Storage
-				if err := coll.Find(bson.M{"name": storage.Name, "clusterid": storage.ClusterId}).One(&existing_storage); err != nil {
-					if err.Error() == mgo.ErrNotFound.Error() {
-						if err := coll.Insert(storage); err != nil {
-							utils.FailTask(fmt.Sprintf("Error persisting pool %s for cluster: %s", request.Name, cluster.Name), fmt.Errorf("%s - %v", ctxt, err), t)
-							return nil, false
-						}
-					} else {
-						utils.FailTask(fmt.Sprintf("Error persisting pool %s for cluster: %s", request.Name, cluster.Name), fmt.Errorf("%s - %v", ctxt, err), t)
-						return nil, false
-					}
+				if _, err := coll.Upsert(bson.M{"name": storage.Name, "clusterid": storage.ClusterId}, bson.M{"$set": storage}); err != nil {
+					utils.FailTask(fmt.Sprintf("Error persisting pool %s for cluster: %s", request.Name, cluster.Name), fmt.Errorf("%s - %v", ctxt, err), t)
+					return nil, false
 				}
 				break
 			}
