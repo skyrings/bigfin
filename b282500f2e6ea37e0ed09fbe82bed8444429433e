@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_8842b466",
+        "filename": "provider/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 946,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-07-30T06:34:56Z",
+      "side": 1,
+      "message": "Are we still missing Status, Size(Target allocation size)??\n\nI understand that the target allocation size is user specified, still we need to have mechanism to figure this out(some default or some percentage of available size), otherwise the PG re-calc won\u0027t be appropriate. Since we are not doing this in current release, this is fine to not handle for current release.",
+      "range": {
+        "startLine": 945,
+        "startChar": 0,
+        "endLine": 946,
+        "endChar": 1
+      },
+      "revId": "b282500f2e6ea37e0ed09fbe82bed8444429433e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
