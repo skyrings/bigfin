@@ -22,6 +22,30 @@
       "revId": "b282500f2e6ea37e0ed09fbe82bed8444429433e",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_c3041d16",
+        "filename": "provider/events.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 946,
+      "author": {
+        "id": 1006236
+      },
+      "writtenOn": "2016-07-30T07:54:18Z",
+      "side": 1,
+      "message": "have Added status in the latest patch",
+      "parentUuid": "baa041b7_8842b466",
+      "range": {
+        "startLine": 945,
+        "startChar": 0,
+        "endLine": 946,
+        "endChar": 1
+      },
+      "revId": "b282500f2e6ea37e0ed09fbe82bed8444429433e",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
