@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_be680ef6",
+        "filename": "provider/storage.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 358,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-08-01T04:39:14Z",
+      "side": 1,
+      "message": "Remove this and verify the patch.",
+      "range": {
+        "startLine": 347,
+        "startChar": 4,
+        "endLine": 358,
+        "endChar": 7
+      },
+      "revId": "a554af649b9c03d60b6196bb2d551849341546b4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
