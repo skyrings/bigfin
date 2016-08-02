@@ -20,6 +20,7 @@ import (
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/uuid"
 	skyring_utils "github.com/skyrings/skyring-common/utils"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -335,6 +336,9 @@ func UpdatePgNumToSummaries(cluster models.Cluster, ctxt string) {
 func ComputeSystemPGNum() (map[string]uint64, error) {
 	var err_str string
 	pgNum := make(map[string]uint64)
+	pgNum["error"] = 0
+	pgNum["warning"] = 0
+	pgNum["total"] = 0
 	clusterSummaries, clusterSummariesFetchErr := skyring_utils.GetClusterSummaries(bson.M{"type": bigfin_models.CLUSTER_TYPE})
 	if clusterSummariesFetchErr != nil {
 		if system, systemFetchErr := skyring_utils.GetSystem(); systemFetchErr == nil {
@@ -346,16 +350,37 @@ func ComputeSystemPGNum() (map[string]uint64, error) {
 		}
 		return pgNum, fmt.Errorf("Unable to fetch clusters of type %v. Err %v", bigfin_models.CLUSTER_TYPE, clusterSummariesFetchErr)
 	}
+	var unManagedClustersId []uuid.UUID
+	clusters, err := skyring_utils.GetClusters(nil)
+	if err != nil {
+		if err != mgo.ErrNotFound {
+			return pgNum, fmt.Errorf("Unable to fetch clusters .Err %v", err)
+		}
+	}
+	for _, cluster := range clusters {
+		if cluster.State == models.CLUSTER_STATE_UNMANAGED {
+			unManagedClustersId = append(unManagedClustersId, cluster.ClusterId)
+		}
+	}
 	for _, clusterSummary := range clusterSummaries {
-		if pgnum, ok := clusterSummary.ProviderMonitoringDetails[bigfin_models.CLUSTER_TYPE]["pgnum"].(map[string]interface{}); ok {
-			if errorCnt, errorCntOk := pgnum["error"].(float64); errorCntOk {
-				pgNum["error"] = pgNum["error"] + uint64(errorCnt)
+		found := false
+		for _, unManagedClusterId := range unManagedClustersId {
+			if clusterSummary.ClusterId == unManagedClusterId {
+				found = true
+				break
 			}
-			if warnCnt, warnCntOk := pgnum["warning"].(float64); warnCntOk {
-				pgNum["warning"] = pgNum["warning"] + uint64(warnCnt)
-			}
-			if totalCnt, totalCntOk := pgnum["total"].(float64); totalCntOk {
-				pgNum["total"] = pgNum["total"] + uint64(totalCnt)
+		}
+		if !found {
+			if pgnum, ok := clusterSummary.ProviderMonitoringDetails[bigfin_models.CLUSTER_TYPE]["pgnum"].(map[string]interface{}); ok {
+				if errorCnt, errorCntOk := pgnum["error"].(float64); errorCntOk {
+					pgNum["error"] = pgNum["error"] + uint64(errorCnt)
+				}
+				if warnCnt, warnCntOk := pgnum["warning"].(float64); warnCntOk {
+					pgNum["warning"] = pgNum["warning"] + uint64(warnCnt)
+				}
+				if totalCnt, totalCntOk := pgnum["total"].(float64); totalCntOk {
+					pgNum["total"] = pgNum["total"] + uint64(totalCnt)
+				}
 			}
 		}
 	}
@@ -386,7 +411,32 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 	mon_down_count := 0
 	monCriticalAlertsCount := 0
 	var err_str string
-	mons, monErr := GetMons(nil)
+	var unManagedClustersId []uuid.UUID
+	var clusters []models.Cluster
+	var err error
+	clusters, err = skyring_utils.GetClusters(nil)
+	if err != nil {
+		if err != mgo.ErrNotFound {
+			err_str = fmt.Sprintf("Unable to fetch clusters.Error %v", err.Error())
+			logger.Get().Error("%s - Unable to fetch clusters.Error %v", ctxt, err.Error())
+			result[models.Monitor] = map[string]int{skyring_monitoring.TOTAL: 0, models.STATUS_DOWN: mon_down_count, "criticalAlerts": monCriticalAlertsCount}
+			result["pgnum"] = 0
+			result["objects"] = 0
+			bytes, marshalErr := json.Marshal(result)
+			if marshalErr != nil {
+				*resp = utils.WriteResponseWithData(http.StatusInternalServerError, fmt.Sprintf("%s-%s", ctxt, err_str), []byte{})
+				logger.Get().Error("%s-Failed to marshal %v.Error %v", ctxt, result, marshalErr)
+				return fmt.Errorf("%s-Failed to marshal %v.Error %v", ctxt, result, marshalErr)
+			}
+			*resp = utils.WriteResponseWithData(http.StatusInternalServerError, err_str, bytes)
+		}
+	}
+	for _, cluster := range clusters {
+		if cluster.State == models.CLUSTER_STATE_UNMANAGED {
+			unManagedClustersId = append(unManagedClustersId, cluster.ClusterId)
+		}
+	}
+	mons, monErr := GetMons(bson.M{"clusterid": bson.M{"$nin": unManagedClustersId}})
 	if monErr != nil {
 		err_str = fmt.Sprintf("Unable to fetch monitor nodes.Error %v", monErr.Error())
 		logger.Get().Error("%s - Unable to fetch monitor nodes.Error %v", ctxt, monErr.Error())
@@ -400,8 +450,6 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 		result[models.Monitor] = map[string]int{skyring_monitoring.TOTAL: len(mons), models.STATUS_DOWN: mon_down_count, "criticalAlerts": monCriticalAlertsCount}
 	}
 
-	var err error
-
 	result["pgnum"], err = ComputeSystemPGNum()
 	err_str = err_str + fmt.Sprintf("%s", err)
 
@@ -412,7 +460,7 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 			httpStatusCode = http.StatusInternalServerError
 		}
 	}
-	objCount, err := ComputeObjectCount(nil)
+	objCount, err := ComputeObjectCount(bson.M{"clusterid": bson.M{"$nin": unManagedClustersId}})
 	if err != nil {
 		logger.Get().Error("%s - Error fetching the object count. Error %v", ctxt, err)
 	}
