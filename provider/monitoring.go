@@ -20,6 +20,7 @@ import (
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/uuid"
 	skyring_utils "github.com/skyrings/skyring-common/utils"
+	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -280,7 +281,12 @@ func UpdateMonCountToSummaries(ctxt string, cluster models.Cluster) {
 	} else {
 		updateField := fmt.Sprintf("providermonitoringdetails.%s.monitor", cluster.Type)
 		skyring_utils.UpdateDb(bson.M{"clusterid": cluster.ClusterId}, bson.M{updateField: monCnt}, models.COLL_NAME_CLUSTER_SUMMARY, ctxt)
-		monCnt, monErr := ComputeMonCount(nil)
+		unManagedClustersId, unmanagedClusterErr := skyring_utils.GetUnmanagedClusterids()
+		if unmanagedClusterErr != nil && unmanagedClusterErr != mgo.ErrNotFound {
+			logger.Get().Error("Unable to fetch unmanaged clusters id.Error %v", unmanagedClusterErr)
+			return
+		}
+		monCnt, monErr := ComputeMonCount(bson.M{"clusterid": bson.M{"$nin": unManagedClustersId}})
 		if monErr != nil {
 			logger.Get().Error("%s - Failed to upadte system mon count.Error %v", ctxt, monErr)
 		}
@@ -339,7 +345,12 @@ func UpdatePgNumToSummaries(cluster models.Cluster, ctxt string) {
 func ComputeSystemPGNum() (map[string]uint64, error) {
 	var err_str string
 	pgNum := make(map[string]uint64)
-	clusterSummaries, clusterSummariesFetchErr := skyring_utils.GetClusterSummaries(bson.M{"type": bigfin_models.CLUSTER_TYPE})
+
+	unManagedClustersId, unmanagedClusterErr := skyring_utils.GetUnmanagedClusterids()
+	if unmanagedClusterErr != nil && unmanagedClusterErr != mgo.ErrNotFound {
+		return pgNum, fmt.Errorf("Unable to fetch unmanaged clusters. Err %v", unmanagedClusterErr)
+	}
+	clusterSummaries, clusterSummariesFetchErr := skyring_utils.GetClusterSummaries(bson.M{"type": bigfin_models.CLUSTER_TYPE, "clusterid": bson.M{"$nin": unManagedClustersId}})
 	if clusterSummariesFetchErr != nil {
 		if system, systemFetchErr := skyring_utils.GetSystem(); systemFetchErr == nil {
 			if providerDetails, ok := system.ProviderMonitoringDetails[bigfin_models.CLUSTER_TYPE]; ok {
@@ -372,7 +383,12 @@ func UpdateObjectCountToSummaries(ctxt string, cluster models.Cluster) {
 		logger.Get().Error("%s - Failed to get object count from cluster %v. Error %v", ctxt, cluster.Name)
 	} else {
 		skyring_utils.UpdateDb(bson.M{"clusterid": cluster.ClusterId}, bson.M{"objectcount": objCnt}, models.COLL_NAME_CLUSTER_SUMMARY, ctxt)
-		objCnt, err := ComputeObjectCount(nil)
+		unManagedClustersId, unmanagedClusterErr := skyring_utils.GetUnmanagedClusterids()
+		if unmanagedClusterErr != nil && unmanagedClusterErr != mgo.ErrNotFound {
+			logger.Get().Error("Unable to fetch unmanaged clusters id.Error %v", unmanagedClusterErr)
+			return
+		}
+		objCnt, err := ComputeObjectCount(bson.M{"clusterid": bson.M{"$nin": unManagedClustersId}})
 		if err != nil {
 			logger.Get().Error("%s - Failed to update object count for system summary. Error %v", ctxt)
 		} else {
@@ -390,7 +406,20 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 	mon_down_count := 0
 	monCriticalAlertsCount := 0
 	var err_str string
-	mons, monErr := GetMons(nil)
+	unManagedClustersId, unmanagedClusterErr := skyring_utils.GetUnmanagedClusterids()
+	if unmanagedClusterErr != nil && unmanagedClusterErr != mgo.ErrNotFound {
+		err_str = fmt.Sprintf("Unable to fetch unmanaged clusters.Error %v", unmanagedClusterErr.Error())
+		bytes, marshalErr := json.Marshal(result)
+		if marshalErr != nil {
+			*resp = utils.WriteResponseWithData(http.StatusInternalServerError, fmt.Sprintf("%s-%s", ctxt, err_str), []byte{})
+			logger.Get().Error("%s-Failed to marshal %v.Error %v", ctxt, result, marshalErr)
+			return fmt.Errorf("%s-Failed to marshal %v.Error %v", ctxt, result, marshalErr)
+		}
+		logger.Get().Error("%s - Unable to fetch unmanaged clusters id.Error %v", ctxt, unmanagedClusterErr.Error())
+		*resp = utils.WriteResponseWithData(http.StatusInternalServerError, err_str, bytes)
+		return fmt.Errorf("%s - Unable to fetch unmanaged clusters id.Error %v", ctxt, unmanagedClusterErr.Error())
+	}
+	mons, monErr := GetMons(bson.M{"clusterid": bson.M{"$nin": unManagedClustersId}})
 	if monErr != nil {
 		err_str = fmt.Sprintf("Unable to fetch monitor nodes.Error %v", monErr.Error())
 		logger.Get().Error("%s - Unable to fetch monitor nodes.Error %v", ctxt, monErr.Error())
@@ -416,7 +445,7 @@ func (s *CephProvider) GetSummary(req models.RpcRequest, resp *models.RpcRespons
 			httpStatusCode = http.StatusInternalServerError
 		}
 	}
-	objCount, err := ComputeObjectCount(nil)
+	objCount, err := ComputeObjectCount(bson.M{"clusterid": bson.M{"$nin": unManagedClustersId}})
 	if err != nil {
 		logger.Get().Error("%s - Error fetching the object count. Error %v", ctxt, err)
 	}
@@ -446,7 +475,6 @@ func ComputeObjectCount(selectCriteria bson.M) (map[string]int64, error) {
 func updateOSDStats(ctxt string, cluster models.Cluster, monName string) (map[string]map[string]string, OSDStats, error) {
 	var statistics OSDStats
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
-
 	response, isSuccess := getStatsFromCalamariApi(ctxt,
 		monName,
 		cluster.ClusterId,
@@ -948,7 +976,6 @@ func updateClusterStats(ctxt string, cluster models.Cluster, monName string) (ma
 	monitoringConfig := conf.SystemConfig.TimeSeriesDBConfig
 
 	var statistics ClusterStats
-
 	response, isSuccess := getStatsFromCalamariApi(ctxt,
 		monName,
 		cluster.ClusterId,
