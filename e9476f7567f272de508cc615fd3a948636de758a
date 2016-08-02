@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_a3447246",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 384,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-08-02T10:21:32Z",
+      "side": 1,
+      "message": "I expect this suffices https://paste.fedoraproject.org/399654/12350814/",
+      "range": {
+        "startLine": 353,
+        "startChar": 0,
+        "endLine": 384,
+        "endChar": 4
+      },
+      "revId": "e9476f7567f272de508cc615fd3a948636de758a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_a3b7d21f",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 424,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-08-02T10:21:32Z",
+      "side": 1,
+      "message": "What we used to do here is in case of error, we log it and if it failed to fetch anything say for ex: pgnum, the map corresponding to key will be blank in the return value. I think here we might have 2 differing opinions:\n\na. Pass previously calculated value.\nb. Initialize the values to 0 and pass it instead of absence of key.\n\nBoth a and b are misleading, because a 0 may be a valid 0 as well how does the user get to know whether it is a failure to fetch information or a valid 0 at all unless he looks at the logs.\n\nWith the approach that is taken prior to this patch it is striking the users attention that something failed and he needs to look at the logs. I think UI/rest api user needs to be aware that if something is missing in the api response, there is something really wrong and he would then check the logs.",
+      "range": {
+        "startLine": 423,
+        "startChar": 3,
+        "endLine": 424,
+        "endChar": 24
+      },
+      "revId": "e9476f7567f272de508cc615fd3a948636de758a",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
