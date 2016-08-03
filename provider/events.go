@@ -830,7 +830,12 @@ func ceph_pool_add_handler(event models.AppEvent, ctxt string) (models.AppEvent,
 	if !ok {
 		logger.Get().Error("Error getting the ruleset for cluster: %s", cluster.Name)
 	}
-	rulesetmap := rulesetmapval.(map[string]interface{})
+	var rulesetmap map[string]interface{}
+	if rulesetmapval == nil {
+		rulesetmap = make(map[string]interface{})
+	} else {
+		rulesetmap = rulesetmapval.(map[string]interface{})
+	}
 
 	var (
 		profile string

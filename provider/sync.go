@@ -559,7 +559,12 @@ func syncStoragePools(mon string, clusterId uuid.UUID, ctxt string) error {
 		if !ok {
 			logger.Get().Error("Error getting the ruleset for cluster: %s", cluster.Name)
 		}
-		rulesetmap := rulesetmapval.(map[string]interface{})
+		var rulesetmap map[string]interface{}
+		if rulesetmapval == nil {
+			rulesetmap = make(map[string]interface{})
+		} else {
+			rulesetmap = rulesetmapval.(map[string]interface{})
+		}
 
 		var (
 			profile string
