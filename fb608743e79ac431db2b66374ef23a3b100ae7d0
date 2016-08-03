@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_f456ae5a",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 362,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-08-03T09:11:03Z",
+      "side": 1,
+      "message": "you said you would discuss about default initialization. What was the outcome?",
+      "range": {
+        "startLine": 360,
+        "startChar": 1,
+        "endLine": 362,
+        "endChar": 19
+      },
+      "revId": "fb608743e79ac431db2b66374ef23a3b100ae7d0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
