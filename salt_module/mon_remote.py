@@ -85,7 +85,7 @@ class ClusterHandle():
         self.cluster_handle.shutdown()
 
 
-def rbd_listing(cluster_handle):
+def rbd_listing(cluster_handle, clustername='ceph'):
     """
     For each pool list the rbd images
     return a mapping of pool name to rbd images
@@ -94,7 +94,12 @@ def rbd_listing(cluster_handle):
     pools = rados_command(cluster_handle, "osd lspools")
     for pool in pools:
         name = pool['poolname']
-        result = rbd_command(['ls', '-l', '--format', 'json'], name)
+        if clustername == 'ceph':
+            args = ['ls', '-l', '--format', 'json']
+        else:
+            args = ['ls', '-l', '--cluster', clustername, '--format', 'json']
+
+        result = rbd_command(args, name)
         if result['status'] == 0:
             listing[name] = json.loads(result['out'])
         else:
@@ -212,7 +217,7 @@ def _set_data(cluster_name='ceph'):
         status = json.loads(outbuf)
         fsid = status['fsid']
 
-        data = rbd_listing(cluster_handle)
+        data = rbd_listing(cluster_handle, cluster_name)
         version = md5(msgpack.packb(data)).hexdigest()
         __salt__['data.update']('rbd_list', (version,data))
 
