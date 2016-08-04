@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_faffb431",
+        "filename": "salt_module/mon_remote.py",
+        "patchSetId": 1
+      },
+      "lineNbr": 98,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-08-04T12:07:48Z",
+      "side": 1,
+      "message": "Is it a problem if we pass cluster name here as well ?",
+      "range": {
+        "startLine": 98,
+        "startChar": 12,
+        "endLine": 98,
+        "endChar": 51
+      },
+      "revId": "c3c8419cfcf7365befe592a0f6a3da4a218621ca",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
