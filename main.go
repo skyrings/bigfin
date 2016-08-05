@@ -14,6 +14,7 @@ limitations under the License.
 package main
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"fmt"
 	"github.com/natefinch/pie"
@@ -33,8 +34,10 @@ import (
 )
 
 func main() {
+	confStr := make([]byte, base64.StdEncoding.DecodedLen(len(os.Args[1])))
+	l, _ := base64.StdEncoding.Decode(confStr, []byte(os.Args[1]))
 	var config conf.SkyringCollection
-	if err := json.Unmarshal([]byte(os.Args[1]), &config); err != nil {
+	if err := json.Unmarshal([]byte(confStr[:l]), &config); err != nil {
 		panic(fmt.Sprintf("Reading configurations failed. error: %v", err))
 	}
 	conf.SystemConfig = config
