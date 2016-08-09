@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_eeda4c4a",
+        "filename": "backend/salt/python/bigfin/saltwrapper.py",
+        "patchSetId": 4
+      },
+      "lineNbr": 712,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-08-09T07:07:08Z",
+      "side": 1,
+      "message": "Can you please add a comment as to why this?",
+      "range": {
+        "startLine": 712,
+        "startChar": 16,
+        "endLine": 712,
+        "endChar": 28
+      },
+      "revId": "7569b4e2fa2489c646e0355f886888b2890881ff",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
