@@ -1,0 +1,21 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_2e6034a4",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 4
+      },
+      "lineNbr": 0,
+      "author": {
+        "id": 1006318
+      },
+      "writtenOn": "2016-08-09T06:29:08Z",
+      "side": 1,
+      "message": "In some of the functions, I see you have added checks for seeing if the cluster is managed or not. I feel they are not necessary I see no harm in having them(but please add a little more context to it as in what was actually happening while it was found that the cluster was un-managed. We probably need to do this in most other places as well in monitoring.) but I would like to see if this is a possibility from any path and disable its possibility in that path(except you know the only corner case that the summary calculation was triggered but the cluster was un-managed while the calculation was underway).",
+      "revId": "4bc8c89e7924c897e020ce0506d3ca3fe0f729a4",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
