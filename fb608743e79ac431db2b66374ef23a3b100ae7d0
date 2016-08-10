@@ -22,6 +22,30 @@
       "revId": "fb608743e79ac431db2b66374ef23a3b100ae7d0",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_976081a6",
+        "filename": "provider/monitoring.go",
+        "patchSetId": 2
+      },
+      "lineNbr": 362,
+      "author": {
+        "id": 1007367
+      },
+      "writtenOn": "2016-08-10T08:26:20Z",
+      "side": 1,
+      "message": "if all the clusters are in unmanaged state it return blank.. that why i initialized here, for error it will print old values as you told",
+      "parentUuid": "baa041b7_f456ae5a",
+      "range": {
+        "startLine": 360,
+        "startChar": 1,
+        "endLine": 362,
+        "endChar": 19
+      },
+      "revId": "fb608743e79ac431db2b66374ef23a3b100ae7d0",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
