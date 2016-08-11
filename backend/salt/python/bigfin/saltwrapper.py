@@ -718,6 +718,48 @@ def GetPartDeviceDetails(node, partPath, ctxt=""):
     return dev_info
 
 
+def GetJournalDeviceDetails(node, journalPath, ctxt=""):
+    '''
+    returns structure
+    {"devname":  "devname",
+     "uuid": "uuid"
+     "partname": "partname",
+     "fstype":   "fstype",
+     "size":     uint64,
+    }
+    '''
+
+    columes = 'NAME,KNAME,FSTYPE,MOUNTPOINT,UUID,PARTUUID,MODEL,SIZE,TYPE,' \
+              'PKNAME,VENDOR'
+    keys = columes.split(',')
+    lsblk = ("lsblk --all --bytes --noheadings --output='%s' --path --raw %s" %
+             (columes, journalPath))
+    print lsblk
+    local = salt.client.LocalClient()
+    out = local.cmd([node], 'cmd.run', [lsblk], expr_form='list')
+    print out
+
+    if not out[node]:
+        return {}
+
+    devlist = map(lambda line: dict(zip(keys, line.split(' '))),
+                  out[node].splitlines())
+
+    print devlist
+    dev_info = {}
+    try:
+	u = list(bytearray(uuid.UUID(devlist[0]["UUID"]).get_bytes()))
+    except ValueError:
+	log.warn("%s-Unable to parse device uuid for %s" % (ctxt, devlist[0]["PKNAME"]))
+	u = [0] * 16
+    dev_info["DevName"] = devlist[0]["PKNAME"]
+    dev_info["Uuid"] = u
+    dev_info["PartName"] = devlist[0]["KNAME"]
+    dev_info["FSType"] = devlist[0]["FSTYPE"]
+    dev_info["Size"] = long(devlist[0]["SIZE"])
+    return dev_info
+
+
 def GetServiceCount(node, ctxt=""):
     service_count = {'SluServiceCount':0,'MonServiceCount':0}
     local = salt.client.LocalClient()
