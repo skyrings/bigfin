@@ -407,17 +407,18 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 			}
 			logger.Get().Info("%s-Updated the slu: osd.%d on cluster: %v", ctxt, osd.Id, clusterId)
 		} else {
-			var journalSize float64
-			journalSize = JOURNALSIZE
-
-			cluster, err := getCluster(clusterId)
-			if err == nil && cluster.JournalSize != "" {
-				js, jsErr := strconv.ParseFloat(cluster.JournalSize, 64)
-				if jsErr == nil {
-					journalSize = js
-				}
+			journalDeviceDetails, err := salt_backend.GetJournalDeviceDetails(
+				node.Hostname,
+				osd.OsdJournal,
+				ctxt)
+			if err != nil {
+				logger.Get().Warning(
+					"%s-Error getting journal device details of osd.%d. error: %v",
+					ctxt,
+					osd.Id,
+					err)
+				continue
 			}
-
 			newSlu := models.StorageLogicalUnit{
 				SluId:     osd.Uuid,
 				Name:      fmt.Sprintf("osd.%d", osd.Id),
@@ -429,9 +430,10 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 			}
 
 			journalDetail := JournalDetail{
-				Size:       journalSize,
-				OsdJournal: osd.OsdJournal,
-				Reweight:   float64(osd.Reweight),
+				Size:        journalDeviceDetails.Size,
+				OsdJournal:  journalDeviceDetails.PartName,
+				JournalDisk: journalDeviceDetails.DevName,
+				Reweight:    float64(osd.Reweight),
 			}
 
 			newSlu.StorageDeviceId = deviceDetails.Uuid

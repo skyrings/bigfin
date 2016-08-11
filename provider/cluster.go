@@ -562,7 +562,11 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 				err)
 			return failedOSDs, slus, err
 		}
-		request.JournalSize = cluster.JournalSize
+		if cluster.JournalSize != "" {
+			request.JournalSize = cluster.JournalSize
+		} else {
+			request.JournalSize = fmt.Sprintf("%dMB", JOURNALSIZE)
+		}
 	}
 	// Utility function returns value in MB so multiply by 1024 to make is bytes
 	jSize := utils.SizeFromStr(request.JournalSize) * float64(1024)
@@ -2028,6 +2032,18 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 				err)
 			continue
 		}
+		journalDeviceDetails, err := salt_backend.GetJournalDeviceDetails(
+			node.Hostname,
+			osd.OsdJournal,
+			ctxt)
+		if err != nil {
+			logger.Get().Warning(
+				"%s-Error getting journal device details of osd.%d. error: %v",
+				ctxt,
+				osd.Id,
+				err)
+			continue
+		}
 
 		if slu, ok := slus[fmt.Sprintf("%s:%s", node.NodeId.String(), deviceDetails.DevName)]; ok {
 			status := mapOsdStatus(osd.Up, osd.In)
@@ -2044,8 +2060,10 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 			if val, ok := slu.Options["journal"]; ok {
 				journalDetail = val.(JournalDetail)
 			}
-			journalDetail.OsdJournal = osd.OsdJournal
 			journalDetail.Reweight = float64(osd.Reweight)
+			journalDetail.Size = journalDeviceDetails.Size
+			journalDetail.OsdJournal = journalDeviceDetails.PartName
+			journalDetail.JournalDisk = journalDeviceDetails.DevName
 			slu.Options["journal"] = journalDetail
 
 			//Update Service list in accordance with new slu state
