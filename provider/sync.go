@@ -382,6 +382,18 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 				err)
 			continue
 		}
+		journalDeviceDetails, err := salt_backend.GetJournalDeviceDetails(
+			node.Hostname,
+			osd.OsdJournal,
+			ctxt)
+		if err != nil {
+			logger.Get().Warning(
+				"%s-Error getting journal device details of osd.%d. error: %v",
+				ctxt,
+				osd.Id,
+				err)
+			continue
+		}
 
 		if _, ok := fetchedSlusMap[fmt.Sprintf("%s:%s", node.NodeId.String(), deviceDetails.DevName)]; ok {
 			status := mapOsdStatus(osd.Up, osd.In)
@@ -401,23 +413,14 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 					"status": status,
 					"state":  state,
 					"name":   fmt.Sprintf("osd.%d", osd.Id),
+					"options.journal.journaldisk": journalDeviceDetails.DevName,
+					"options.journal.osdjournal":  osd.OsdJournal,
 				}}); err != nil {
 				logger.Get().Error("%s-Error updating the slu: %s. error: %v", ctxt, osd.Uuid.String(), err)
 				continue
 			}
 			logger.Get().Info("%s-Updated the slu: osd.%d on cluster: %v", ctxt, osd.Id, clusterId)
 		} else {
-			var journalSize float64
-			journalSize = JOURNALSIZE
-
-			cluster, err := getCluster(clusterId)
-			if err == nil && cluster.JournalSize != "" {
-				js, jsErr := strconv.ParseFloat(cluster.JournalSize, 64)
-				if jsErr == nil {
-					journalSize = js
-				}
-			}
-
 			newSlu := models.StorageLogicalUnit{
 				SluId:     osd.Uuid,
 				Name:      fmt.Sprintf("osd.%d", osd.Id),
@@ -429,8 +432,8 @@ func syncOsds(mon string, clusterId uuid.UUID, ctxt string) error {
 			}
 
 			journalDetail := JournalDetail{
-				Size:       journalSize,
-				OsdJournal: osd.OsdJournal,
+				Size:       journalDeviceDetails.Size,
+				OsdJournal: journalDeviceDetails.DevName,
 				Reweight:   float64(osd.Reweight),
 			}
 
