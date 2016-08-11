@@ -562,7 +562,11 @@ func configureOSDs(clusterId uuid.UUID, request models.AddClusterRequest,
 				err)
 			return failedOSDs, slus, err
 		}
-		request.JournalSize = cluster.JournalSize
+		if cluster.JournalSize != "" {
+			request.JournalSize = cluster.JournalSize
+		} else {
+			request.JournalSize = fmt.Sprintf("%dMB", JOURNALSIZE)
+		}
 	}
 	// Utility function returns value in MB so multiply by 1024 to make is bytes
 	jSize := utils.SizeFromStr(request.JournalSize) * float64(1024)
@@ -2044,7 +2048,6 @@ func syncOsdDetails(clusterId uuid.UUID, slus map[string]models.StorageLogicalUn
 			if val, ok := slu.Options["journal"]; ok {
 				journalDetail = val.(JournalDetail)
 			}
-			journalDetail.OsdJournal = osd.OsdJournal
 			journalDetail.Reweight = float64(osd.Reweight)
 			slu.Options["journal"] = journalDetail
 
