@@ -410,7 +410,7 @@ func DerivePgNum(clusterId uuid.UUID, size string, replicaCount int, profile str
 		return uint(512)
 	}
 	if osdsNum <= 50 {
-		return uint(4096)
+		return uint(1024)
 	}
 	avgOsdSize := avg_osd_size(slus) / 1024
 	maxAllocSize := (avgOsdSize * float64(len(slus)) / float64(replicaCount)) * float64(MAX_UTILIZATION_PCNT) / 100
