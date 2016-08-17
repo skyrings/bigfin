@@ -403,15 +403,21 @@ func DerivePgNum(clusterId uuid.UUID, size string, replicaCount int, profile str
 	osdsNum := len(slus)
 
 	// Calculate the pgnum value
-	if osdsNum <= 5 {
+	switch {
+	case osdsNum >= 0 && osdsNum <= 5:
 		return uint(DEFAULT_PG_NUM)
-	}
-	if osdsNum <= 10 {
+	case osdsNum > 5 && osdsNum <= 10:
 		return uint(512)
-	}
-	if osdsNum <= 50 {
+	case osdsNum > 10 && osdsNum <= 20:
+		return uint(1024)
+	case osdsNum > 20 && osdsNum <= 30:
+		return uint(2048)
+	case osdsNum > 30 && osdsNum <= 40:
+		return uint(3072)
+	case osdsNum > 40 && osdsNum <= 50:
 		return uint(4096)
 	}
+
 	avgOsdSize := avg_osd_size(slus) / 1024
 	maxAllocSize := (avgOsdSize * float64(len(slus)) / float64(replicaCount)) * float64(MAX_UTILIZATION_PCNT) / 100
 	pcntData := float64(utils.SizeFromStr(size)) / float64(maxAllocSize)
