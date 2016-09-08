@@ -25,6 +25,30 @@
     },
     {
       "key": {
+        "uuid": "baa041b7_38bc96da",
+        "filename": "backend/salt/python/bigfin/saltwrapper.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 737,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-09-08T14:02:31Z",
+      "side": 1,
+      "message": "Oh yes. this was missed. only added for debugging.",
+      "parentUuid": "baa041b7_15b51b7d",
+      "range": {
+        "startLine": 737,
+        "startChar": 4,
+        "endLine": 737,
+        "endChar": 15
+      },
+      "revId": "22b079c3c14c4b23609af8e27ff93601e25ad63b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
         "uuid": "baa041b7_f5b75783",
         "filename": "backend/salt/python/bigfin/saltwrapper.py",
         "patchSetId": 5
@@ -36,6 +60,30 @@
       "writtenOn": "2016-09-08T12:22:47Z",
       "side": 1,
       "message": "can we remove this",
+      "range": {
+        "startLine": 740,
+        "startChar": 4,
+        "endLine": 740,
+        "endChar": 13
+      },
+      "revId": "22b079c3c14c4b23609af8e27ff93601e25ad63b",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_18b3120c",
+        "filename": "backend/salt/python/bigfin/saltwrapper.py",
+        "patchSetId": 5
+      },
+      "lineNbr": 740,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-09-08T14:02:31Z",
+      "side": 1,
+      "message": "Oh yes. this was missed. only added for debugging.",
+      "parentUuid": "baa041b7_f5b75783",
       "range": {
         "startLine": 740,
         "startChar": 4,
