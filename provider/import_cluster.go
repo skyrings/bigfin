@@ -215,6 +215,9 @@ func (s *CephProvider) ImportCluster(req models.RpcRequest, resp *models.RpcResp
 				clusterName,
 				err)
 		}
+		// Check and disable auto expand if colocated journals
+		checkAndUpdateAutoExpand(t, *cluster_uuid, ctxt)
+
 		// Get and update block devices
 		t.UpdateStatus("Updating cluster block devices")
 		if err := PopulateBlockDevices(request.BootstrapNode, *cluster_uuid, ctxt); err != nil {
@@ -299,6 +302,41 @@ func (s *CephProvider) ImportCluster(req models.RpcRequest, resp *models.RpcResp
 			[]byte{})
 	}
 	return nil
+}
+
+func checkAndUpdateAutoExpand(t *task.Task, clusterId uuid.UUID, ctxt string) {
+	sessionCopy := db.GetDatastore().Copy()
+	defer sessionCopy.Close()
+	coll := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_LOGICAL_UNITS)
+	var slus []models.StorageLogicalUnit
+	if err := coll.Find(bson.M{"clusterid": clusterId}).All(&slus); err != nil {
+		logger.Get().Error(
+			"%s-Error getting SLUs of cluster: %v for colocation check. error: %v",
+			ctxt,
+			clusterId,
+			err)
+		return
+	}
+
+	for _, slu := range slus {
+		journalDet := slu.Options["journal"].(map[string]interface{})
+		if slu.Options["device"] == journalDet["journaldisk"].(string) {
+			coll1 := sessionCopy.DB(conf.SystemConfig.DBConfig.Database).C(models.COLL_NAME_STORAGE_CLUSTERS)
+			if err := coll1.Update(
+				bson.M{"clusterid": clusterId},
+				bson.M{"$set": bson.M{"autoexpand": false}}); err != nil {
+				logger.Get().Error(
+					"%s-Error setting autoexpand flag for cluster: %v. error: %v",
+					ctxt,
+					clusterId,
+					err)
+				return
+			}
+			t.UpdateStatus("Disabled auto expand for cluster")
+			break
+		}
+	}
+	return
 }
 
 func PopulateClusterDetails(bootstrapNode string, ctxt string) (*uuid.UUID, string, error) {
