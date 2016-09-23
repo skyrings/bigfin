@@ -226,32 +226,31 @@ func createPool(ctxt string, clusterId uuid.UUID, request models.AddStorageReque
 
 	// Invoke backend api to create pool
 	var pgNum uint
-	if request.Options["pgnum"] != "" {
+	if request.Options["pgnum"] == "" {
+		utils.FailTask("", fmt.Errorf("%s - Pg num not provided", ctxt), t)
+		return nil, false
+	} else {
 		val, _ := strconv.ParseUint(request.Options["pgnum"], 10, 32)
 		pgNum = uint(val)
-	} else {
-		if request.Type == models.STORAGE_TYPE_ERASURE_CODED {
-			ok, err := validECProfile(ctxt, monnode.Hostname, cluster, request.Options["ecprofile"])
-			if err != nil {
-				utils.FailTask("", fmt.Errorf("%s - Error checking validity of ec profile value. error: %v", ctxt, err), t)
-				return nil, false
-			}
-			if !ok {
-				utils.FailTask(
-					"",
-					fmt.Errorf(
-						"%s-Invalid EC profile value: %s passed for pool: %s creation on cluster: %s. error: %v",
-						ctxt,
-						request.Options["ecprofile"],
-						request.Name,
-						cluster.Name,
-						err),
-					t)
-				return nil, false
-			}
-			pgNum = DerivePgNum(clusterId, request.Size, ec_pool_sizes[request.Options["ecprofile"]], request.Profile)
-		} else {
-			pgNum = DerivePgNum(clusterId, request.Size, request.Replicas, request.Profile)
+	}
+	if request.Type == models.STORAGE_TYPE_ERASURE_CODED {
+		ok, err := validECProfile(ctxt, monnode.Hostname, cluster, request.Options["ecprofile"])
+		if err != nil {
+			utils.FailTask("", fmt.Errorf("%s - Error checking validity of ec profile value. error: %v", ctxt, err), t)
+			return nil, false
+		}
+		if !ok {
+			utils.FailTask(
+				"",
+				fmt.Errorf(
+					"%s-Invalid EC profile value: %s passed for pool: %s creation on cluster: %s. error: %v",
+					ctxt,
+					request.Options["ecprofile"],
+					request.Name,
+					cluster.Name,
+					err),
+				t)
+			return nil, false
 		}
 	}
 	rulesetmapval, ok := cluster.Options["rulesetmap"]
