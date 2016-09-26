@@ -24,8 +24,11 @@ import (
 	"github.com/skyrings/bigfin/tools/task"
 	"github.com/skyrings/skyring-common/conf"
 	"github.com/skyrings/skyring-common/db"
+	"github.com/skyrings/skyring-common/models"
+	"github.com/skyrings/skyring-common/tools/crypto"
 	"github.com/skyrings/skyring-common/tools/logger"
 	"github.com/skyrings/skyring-common/tools/schedule"
+	"io/ioutil"
 	"net/rpc/jsonrpc"
 	"os"
 	"path/filepath"
@@ -36,8 +39,15 @@ import (
 func main() {
 	confStr := make([]byte, base64.StdEncoding.DecodedLen(len(os.Args[1])))
 	l, _ := base64.StdEncoding.Decode(confStr, []byte(os.Args[1]))
+
+	key, err := ioutil.ReadFile(models.SKYRING_ENC_KEY_FILE)
+	if err != nil {
+		panic(fmt.Sprintf("Reading enc key failed. error: %v", err))
+	}
+	cfgs, err := crypto.Decrypt(key, []byte(confStr[:l]))
+
 	var config conf.SkyringCollection
-	if err := json.Unmarshal([]byte(confStr[:l]), &config); err != nil {
+	if err := json.Unmarshal(cfgs, &config); err != nil {
 		panic(fmt.Sprintf("Reading configurations failed. error: %v", err))
 	}
 	conf.SystemConfig = config
