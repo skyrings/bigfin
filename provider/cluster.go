@@ -2156,14 +2156,26 @@ func SyncOsdStatus(clusterId uuid.UUID, ctxt string) error {
 		var journalDetail JournalDetail
 		if val, ok := slu.Options["journal"]; ok {
 			journal := val.(map[string]interface{})
+			journalDeviceDetails, err := salt_backend.GetJournalDeviceDetails(
+				fetchedOSD.Server,
+				fetchedOSD.OsdJournal,
+				ctxt)
+			if err != nil {
+				logger.Get().Warning(
+					"%s-Error getting journal device details of osd.%d. error: %v",
+					ctxt,
+					fetchedOSD.Id,
+					err)
+				continue
+			}
 			journalDetail.Available = journal["available"].(float64)
-			journalDetail.JournalDisk = journal["journaldisk"].(string)
+			journalDetail.JournalDisk = journalDeviceDetails.DevName
 			journalDetail.SSD = journal["ssd"].(bool)
-			journalDetail.Size = journal["size"].(float64)
+			journalDetail.Size = journalDeviceDetails.Size
+			journalDetail.OsdJournal = journalDeviceDetails.PartName
+			journalDetail.Reweight = float64(fetchedOSD.Reweight)
 		}
 
-		journalDetail.OsdJournal = fetchedOSD.OsdJournal
-		journalDetail.Reweight = float64(fetchedOSD.Reweight)
 		status := mapOsdStatus(fetchedOSD.Up, fetchedOSD.In)
 		state := mapOsdState(fetchedOSD.In)
 		slu.Options["in"] = strconv.FormatBool(fetchedOSD.In)
