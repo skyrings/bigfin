@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "baa041b7_62cb48a5",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 2179,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-09-28T17:21:34Z",
+      "side": 1,
+      "message": "I am not sure why you want to overwrite the journal details after creating a pool. Its might be there in the code because \u0027SyncStorageLogicalUnitParams\u0027 also uses the same function. But I have a feeling that this is something which is not required during pool creation. Thoughts?",
+      "range": {
+        "startLine": 2158,
+        "startChar": 0,
+        "endLine": 2179,
+        "endChar": 54
+      },
+      "revId": "606ade0ee27b3aad5d5aff615a9cae092740143d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
+    }
+  ]
+}
