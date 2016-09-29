@@ -46,6 +46,30 @@
       "revId": "606ade0ee27b3aad5d5aff615a9cae092740143d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_85c6569a",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 2179,
+      "author": {
+        "id": 1006044
+      },
+      "writtenOn": "2016-09-29T06:16:41Z",
+      "side": 1,
+      "message": "As you rightly said, its not used anywhere. if that is the case, why don\u0027t we go ahead and remove it? and modify the syncOSD to not update OSDs. Do you think its risky?",
+      "parentUuid": "baa041b7_656fd2c4",
+      "range": {
+        "startLine": 2158,
+        "startChar": 0,
+        "endLine": 2179,
+        "endChar": 54
+      },
+      "revId": "606ade0ee27b3aad5d5aff615a9cae092740143d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
