@@ -22,6 +22,30 @@
       "revId": "606ade0ee27b3aad5d5aff615a9cae092740143d",
       "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
       "unresolved": false
+    },
+    {
+      "key": {
+        "uuid": "baa041b7_656fd2c4",
+        "filename": "provider/cluster.go",
+        "patchSetId": 1
+      },
+      "lineNbr": 2179,
+      "author": {
+        "id": 1006049
+      },
+      "writtenOn": "2016-09-29T03:11:25Z",
+      "side": 1,
+      "message": "Thats true. SyncStorageLogicalUnitParams does use this function. But I dint find a place where SyncStorageLogicalUnitParams() is used in skyring.\n\nAnyway as journal details were being updated here so it was overwritting the journal path. This logic correct the journal device details same way we do in other places.\n\nNot sure if we can invest enough time at the moment to figure out the impact if we remove the full logic from here.\n\nWhat you say?",
+      "parentUuid": "baa041b7_62cb48a5",
+      "range": {
+        "startLine": 2158,
+        "startChar": 0,
+        "endLine": 2179,
+        "endChar": 54
+      },
+      "revId": "606ade0ee27b3aad5d5aff615a9cae092740143d",
+      "serverId": "d5d70762-12d0-45a1-890d-524b12d3f735",
+      "unresolved": false
     }
   ]
 }
