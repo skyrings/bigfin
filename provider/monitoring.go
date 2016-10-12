@@ -786,8 +786,23 @@ func GetStatInBytes(stat string) (int64, error) {
 		size, err := strconv.ParseInt(strings.TrimSuffix(stat, "G"), 10, 64)
 		return size * 1024 * 1024 * 1024, err
 	}
-	size, err := strconv.ParseInt(strings.TrimSuffix(stat, "k"), 10, 64)
-	return size * 1024, err
+	if strings.HasSuffix(stat, "T") {
+		size, err := strconv.ParseInt(strings.TrimSuffix(stat, "T"), 10, 64)
+		return size * 1024 * 1024 * 1024 * 1024, err
+	}
+	if strings.HasSuffix(stat, "P") {
+		size, err := strconv.ParseInt(strings.TrimSuffix(stat, "P"), 10, 64)
+		return size * 1024 * 1024 * 1024 * 1024 * 1024, err
+	}
+	if strings.HasSuffix(stat, "E") {
+		size, err := strconv.ParseInt(strings.TrimSuffix(stat, "E"), 10, 64)
+		return size * 1024 * 1024 * 1024 * 1024 * 1024 * 1024, err
+	}
+	if strings.HasSuffix(stat, "k") {
+		size, err := strconv.ParseInt(strings.TrimSuffix(stat, "k"), 10, 64)
+		return size * 1024, err
+	}
+	return strconv.ParseInt(stat, 10, 64)
 }
 
 func parseClusterStats(cmdOp string) (stats ClusterStats, err error) {
